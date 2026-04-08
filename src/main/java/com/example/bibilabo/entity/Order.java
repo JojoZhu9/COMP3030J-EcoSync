@@ -85,5 +85,4 @@ public class Order {
         this.orderId = orderId;
     }
 
-    // 请务必在这里生成 Getter 和 Setter !
 }

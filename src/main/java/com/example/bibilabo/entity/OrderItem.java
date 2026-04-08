@@ -47,5 +47,4 @@ public class OrderItem {
         this.pointsPrice = pointsPrice;
     }
 
-    // 请务必在这里生成 Getter 和 Setter !
 }

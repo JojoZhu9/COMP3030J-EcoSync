@@ -49,5 +49,4 @@ public class ShoppingCart {
         this.addedAt = addedAt;
     }
 
-    // 请务必在这里生成 Getter 和 Setter !
 }
