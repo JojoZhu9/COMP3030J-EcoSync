@@ -24,7 +24,7 @@ services:
     container_name: ecosync-app
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "9090:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
