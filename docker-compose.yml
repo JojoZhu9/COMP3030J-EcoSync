@@ -13,9 +13,10 @@ services:
       - ./src/main/resources/database/init_711_db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      start_period: 120s
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
     image: ghcr.io/jojozhu9/ecosync:latest
