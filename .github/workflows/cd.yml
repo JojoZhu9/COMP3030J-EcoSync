@@ -84,7 +84,6 @@ jobs:
           proxy_username: ${{ secrets.BASTION_USER }}
           proxy_key: ${{ secrets.BASTION_SSH_KEY }}
           proxy_port: 22
-          fingerprint: ${{ secrets.TARGET_FINGERPRINT }}
 
           script: |
             cd /opt/EcoSync
