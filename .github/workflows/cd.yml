@@ -76,17 +76,15 @@ jobs:
       - name: Deploy with SSH proxy (bastion)
         uses: appleboy/ssh-action@v1
         with:
-          # Target VM (intranet)
           host: ${{ secrets.TARGET_HOST }}
           username: ${{ secrets.TARGET_USER }}
           key: ${{ secrets.TARGET_SSH_KEY }}
           port: 22
-
-          # Bastion host (public)
           proxy_host: ${{ secrets.BASTION_HOST }}
           proxy_username: ${{ secrets.BASTION_USER }}
           proxy_key: ${{ secrets.BASTION_SSH_KEY }}
           proxy_port: 22
+          fingerprint: ${{ secrets.TARGET_FINGERPRINT }}
 
           script: |
             cd /opt/EcoSync
