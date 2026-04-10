@@ -65,13 +65,31 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # ========== 部署说明 ==========
-  # 由于服务器在校园网内，GitHub Actions 无法直接 SSH 连接。
-  # CI 自动完成编译和镜像构建，部署需在服务器上手动执行。
-  #
-  # 首次部署（在服务器上执行）:
-  #   cd /opt && sudo git clone https://github.com/JojoZhu9/EcoSync.git && cd EcoSync
-  #   sudo docker compose up -d
-  #
-  # 后续更新（在服务器上执行）:
-  #   cd /opt/EcoSync && sudo git pull && sudo docker compose up -d --build
+  # ========== Job 3: 通过跳板机部署到内网虚拟机 ==========
+  deploy-via-bastion:
+    name: Deploy via Bastion
+    runs-on: ubuntu-latest
+    needs: docker-build-push
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy with SSH proxy (bastion)
+        uses: appleboy/ssh-action@v1
+        with:
+          # Target VM (intranet)
+          host: ${{ secrets.TARGET_HOST }}
+          username: ${{ secrets.TARGET_USER }}
+          key: ${{ secrets.TARGET_SSH_KEY }}
+          port: 22
+
+          # Bastion host (public)
+          proxy_host: ${{ secrets.BASTION_HOST }}
+          proxy_username: ${{ secrets.BASTION_USER }}
+          proxy_key: ${{ secrets.BASTION_SSH_KEY }}
+          proxy_port: 22
+
+          script: |
+            cd /opt/EcoSync
+            git pull
+            sudo docker compose down
+            sudo docker compose up -d --build
