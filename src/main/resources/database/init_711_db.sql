@@ -201,3 +201,13 @@ INSERT INTO order_items (item_id, order_id, product_id, quantity, actual_price) 
                                                                                     (4, 3, 7, 1, 10.50), -- Order 3: Mixed Fruit Salad
                                                                                     (5, 4, 2, 1, 4.00),  -- Order 4: Tuna Mayonnaise Onigiri
                                                                                     (6, 5, 10, 1, 5.00); -- Order 5: Roasted Sweet Potato
+
+
+-- 将所有员工账号的密码明文 'hash_emp_123' 刷成 MD5 密文
+UPDATE users SET password_hash = MD5('hash_emp_123') WHERE role = 'EMPLOYEE';
+
+-- 将所有消费者账号的密码明文 'hash_usr_123' 刷成 MD5 密文
+UPDATE users SET password_hash = MD5('hash_usr_123') WHERE role = 'CONSUMER';
+
+-- 将超级管理员账号的密码明文 'hash_admin_123' 刷成 MD5 密文
+UPDATE users SET password_hash = MD5('hash_admin_123') WHERE role = 'ADMIN';
