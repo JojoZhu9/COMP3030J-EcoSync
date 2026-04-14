@@ -1,88 +1,40 @@
 package com.example.bibilabo.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class Order {
     private Integer orderId;
     private Integer userId;
     private Integer storeId;
-    private Integer totalPointsSpent;
-    private String deliveryAddress;
-    private String contactPhone;
-    private String status; // 对应 ENUM('PENDING', 'DELIVERING', 'COMPLETED', 'CANCELLED')
+    private BigDecimal totalAmount; // 修改：总金额
+    private String pickupCode;      // 新增：唯一核销码
+    private String status;          // 状态：PENDING, CANCELLED, PAID, AWAITING_PICKUP, COMPLETED
     private Date createdAt;
-    private Date deliveredAt;
+    private Date completedAt;       // 修改：送达时间变为核销完成时间
 
-    public Date getDeliveredAt() {
-        return deliveredAt;
-    }
+    // --- Getter & Setter ---
+    public Integer getOrderId() { return orderId; }
+    public void setOrderId(Integer orderId) { this.orderId = orderId; }
 
-    public void setDeliveredAt(Date deliveredAt) {
-        this.deliveredAt = deliveredAt;
-    }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
+    public Integer getStoreId() { return storeId; }
+    public void setStoreId(Integer storeId) { this.storeId = storeId; }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
-    public String getStatus() {
-        return status;
-    }
+    public String getPickupCode() { return pickupCode; }
+    public void setPickupCode(String pickupCode) { this.pickupCode = pickupCode; }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 
-    public String getContactPhone() {
-        return contactPhone;
-    }
+    public Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
-    }
-
-    public String getDeliveryAddress() {
-        return deliveryAddress;
-    }
-
-    public void setDeliveryAddress(String deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
-
-    public Integer getTotalPointsSpent() {
-        return totalPointsSpent;
-    }
-
-    public void setTotalPointsSpent(Integer totalPointsSpent) {
-        this.totalPointsSpent = totalPointsSpent;
-    }
-
-    public Integer getStoreId() {
-        return storeId;
-    }
-
-    public void setStoreId(Integer storeId) {
-        this.storeId = storeId;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Integer userId) {
-        this.userId = userId;
-    }
-
-    public Integer getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Integer orderId) {
-        this.orderId = orderId;
-    }
-
+    public Date getCompletedAt() { return completedAt; }
+    public void setCompletedAt(Date completedAt) { this.completedAt = completedAt; }
 }

@@ -2,6 +2,7 @@ package com.example.bibilabo.mapper;
 
 import com.example.bibilabo.entity.User;
 import org.apache.ibatis.annotations.*;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Mapper
@@ -13,23 +14,23 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE user_id = #{userId}")
     User findById(Integer userId);
 
-    // 后续登录鉴权必备：根据用户名查找用户
     @Select("SELECT * FROM users WHERE username = #{username}")
     User findByUsername(String username);
 
-    @Insert("INSERT INTO users(username, password_hash, role, store_id, points, phone_number, default_address) " +
-            "VALUES(#{username}, #{passwordHash}, #{role}, #{storeId}, #{points}, #{phoneNumber}, #{defaultAddress})")
+    @Insert("INSERT INTO users(username, password_hash, role, status, store_id, balance, phone_number) " +
+            "VALUES(#{username}, #{passwordHash}, #{role}, #{status}, #{storeId}, #{balance}, #{phoneNumber})")
     @Options(useGeneratedKeys = true, keyProperty = "userId")
     int insert(User user);
 
-    @Update("UPDATE users SET password_hash = #{passwordHash}, role = #{role}, store_id = #{storeId}, " +
-            "points = #{points}, phone_number = #{phoneNumber}, default_address = #{defaultAddress} " +
+    @Update("UPDATE users SET password_hash = #{passwordHash}, role = #{role}, status = #{status}, " +
+            "store_id = #{storeId}, balance = #{balance}, phone_number = #{phoneNumber} " +
             "WHERE user_id = #{userId}")
     int update(User user);
 
+    // 🔥 核心逻辑：扣减余额（替代了以前的积分扣减）
+    @Update("UPDATE users SET balance = balance - #{amount} WHERE user_id = #{userId} AND balance >= #{amount}")
+    int decreaseBalance(@Param("userId") Integer userId, @Param("amount") BigDecimal amount);
+
     @Delete("DELETE FROM users WHERE user_id = #{userId}")
     int deleteById(Integer userId);
-
-    @Update("UPDATE users SET points = points - #{points} WHERE user_id = #{userId} AND points >= #{points}")
-    int decreasePoints(@Param("userId") Integer userId, @Param("points") Integer points);
 }

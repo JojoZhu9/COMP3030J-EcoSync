@@ -13,38 +13,34 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
-@Tag(name = "5. 交易与订单模块", description = "核心结算逻辑：包含防超卖扣库存、积分计算、订单生成流程")
+@Tag(name = "5. 交易与核销模块", description = "提供用户自提下单、金额计算、库存扣减、及店员扫码核销功能")
 public class OrderController {
 
     @Autowired
     private OrderService orderService;
 
     @PostMapping("/checkout")
-    @Operation(summary = "提交订单 (结算购物车)", description = "根据购物车内容，动态计算随时间变化的最终折扣，扣减库存、扣除积分并生成订单。")
+    @Operation(summary = "提交自提订单", description = "扣减库存和账户余额，计算JSON阶梯折扣，生成核销自提码")
     public String checkout(@RequestBody Map<String, Object> payload) {
         Integer userId = (Integer) payload.get("userId");
         Integer storeId = (Integer) payload.get("storeId");
-        String deliveryAddress = (String) payload.get("deliveryAddress");
-        String contactPhone = (String) payload.get("contactPhone");
 
         try {
-            return orderService.checkout(userId, storeId, deliveryAddress, contactPhone);
+            return orderService.checkout(userId, storeId);
         } catch (Exception e) {
             return "下单失败: " + e.getMessage();
         }
     }
 
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "查询用户订单", description = "获取指定消费者的所有历史订单列表")
-    public List<Order> getUserOrders(@Parameter(description = "用户ID") @PathVariable("userId") Integer userId) {
-        return orderService.getUserOrders(userId);
+    @PostMapping("/pickup")
+    @Operation(summary = "店员核销提货码", description = "消费者出示提货码，店员调用此接口完成交易")
+    public String confirmPickup(@RequestParam("pickupCode") String pickupCode) {
+        return orderService.confirmPickup(pickupCode);
     }
 
-    @PutMapping("/{orderId}/status")
-    @Operation(summary = "更新订单状态", description = "管理员或店员更新物流状态（例如：将 PENDING 改为 DELIVERING 或 COMPLETED）")
-    public String updateStatus(
-            @Parameter(description = "订单ID") @PathVariable("orderId") Integer orderId,
-            @Parameter(description = "新状态") @RequestParam("status") String status) {
-        return orderService.updateOrderStatus(orderId, status);
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "查询用户历史订单")
+    public List<Order> getUserOrders(@Parameter(description = "用户ID") @PathVariable("userId") Integer userId) {
+        return orderService.getUserOrders(userId);
     }
 }
