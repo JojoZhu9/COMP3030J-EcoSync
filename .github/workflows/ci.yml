@@ -75,9 +75,6 @@ jobs:
             sleep 2
           done
 
-      - name: Initialize database schema & seed data
-        run: mysql -h 127.0.0.1 -u root -pci_test_password 711ex < src/main/resources/database/init_711_db.sql
-
       - name: Run tests
         run: mvn test -B
         env:
