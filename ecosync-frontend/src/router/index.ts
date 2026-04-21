@@ -4,7 +4,8 @@ import LoginView from '../views/LoginView.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', redirect: '/login' },
+    // 将原本的重定向改为引入 Landing 页面
+    { path: '/', name: 'landing', component: () => import('../views/Landing.vue') },
     { path: '/login', name: 'login', component: LoginView },
 
     // --- 用户端 (CONSUMER) ---
@@ -33,13 +34,16 @@ router.beforeEach((to) => {
   // 核心判断逻辑：排除脏数据
   const isLogged = token && token !== 'null' && token !== 'undefined'
 
-  // 1. 未登录强制拦截
-  if (!isLogged && to.name !== 'login') {
+  // 定义不需要登录就能访问的白名单页面
+  const publicPages = ['login', 'landing']
+
+  // 1. 未登录强制拦截 (如果去的地方不在白名单里，统一去登录页)
+  if (!isLogged && !publicPages.includes(to.name as string)) {
     return { name: 'login' }
   }
 
-  // 2. 已登录禁止去登录页
-  if (isLogged && to.name === 'login') {
+  // 2. 已登录禁止再去登录页或落地页，直接根据角色送去各自首页
+  if (isLogged && publicPages.includes(to.name as string)) {
     const userRole = (rawRole || '').toUpperCase()
     if (userRole === 'ADMIN') return { name: 'AccountManage' }
     if (userRole === 'EMPLOYEE') return { name: 'staffHome' }

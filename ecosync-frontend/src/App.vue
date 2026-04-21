@@ -1,6 +1,10 @@
 <template>
   <div class="pc-layout">
-    <template v-if="route.name === 'login'">
+    <template v-if="['login', 'landing'].includes(route.name as string)">
+      <router-view />
+    </template>
+
+    <template v-else-if="currentRole === 'EMPLOYEE'">
       <router-view />
     </template>
 
@@ -12,40 +16,34 @@
           <nav class="nav-menu">
             <template v-if="currentRole === 'ADMIN'">
               <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">
-                <el-icon><UserFilled /></el-icon> <span>用户账号管理</span>
+                <el-icon><UserFilled /></el-icon> <span>Account Management</span>
               </div>
               <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">
-                <el-icon><Box /></el-icon> <span>商品信息管理</span>
+                <el-icon><Box /></el-icon> <span>Inventory Management</span>
               </div>
               <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">
-                <el-icon><TrendCharts /></el-icon> <span>数据统计报表</span>
-              </div>
-            </template>
-
-            <template v-else-if="currentRole === 'EMPLOYEE'">
-              <div class="menu-item" :class="{ active: route.path.includes('staff/home') }" @click="go('/staff/home')">
-                <el-icon><HomeFilled /></el-icon> <span>店面概览</span>
+                <el-icon><TrendCharts /></el-icon> <span>Dashboard</span>
               </div>
             </template>
 
             <template v-else>
               <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">
-                <el-icon><HomeFilled /></el-icon> <span>商城首页</span>
+                <el-icon><HomeFilled /></el-icon> <span>Store Home</span>
               </div>
               <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">
-                <el-icon><ShoppingCart /></el-icon> <span>购物车</span>
+                <el-icon><ShoppingCart /></el-icon> <span>Shopping Cart</span>
               </div>
               <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">
-                <el-icon><List /></el-icon> <span>我的订单</span>
+                <el-icon><List /></el-icon> <span>My Orders</span>
               </div>
               <div class="menu-item" :class="{ active: route.path === '/profile' }" @click="go('/profile')">
-                <el-icon><User /></el-icon> <span>个人中心</span>
+                <el-icon><User /></el-icon> <span>Profile</span>
               </div>
             </template>
           </nav>
 
           <div class="logout-footer" @click="handleLogout">
-            <el-icon><SwitchButton /></el-icon> 退出登录
+            <el-icon><SwitchButton /></el-icon> Logout
           </div>
         </aside>
 
@@ -68,27 +66,23 @@ import {
 const route = useRoute()
 const router = useRouter()
 
-// 关键修复点：获取角色前必须验证 token 是否有效
 const getCurrentUserRole = () => {
   const token = localStorage.getItem('token')
-  if (!token || token === 'null' || token === 'undefined') {
-    return null
-  }
-  return localStorage.getItem('role')
+  if (!token || token === 'null' || token === 'undefined') return null
+  return (localStorage.getItem('role') || '').toUpperCase()
 }
 
 const currentRole = ref(getCurrentUserRole())
 
 const roleClass = computed(() => {
   if (currentRole.value === 'ADMIN') return 'bg-admin'
-  if (currentRole.value === 'EMPLOYEE') return 'bg-staff'
   return 'bg-consumer'
 })
 
 const roleTitle = computed(() => {
-  if (currentRole.value === 'ADMIN') return '管理后台'
-  if (currentRole.value === 'EMPLOYEE') return '员工端'
-  return '商城系统'
+  if (currentRole.value === 'ADMIN') return 'Admin Panel'
+  if (currentRole.value === 'EMPLOYEE') return 'Staff Panel'
+  return 'Store'
 })
 
 const sync = () => {
@@ -96,9 +90,11 @@ const sync = () => {
 }
 
 onMounted(sync)
+// Listen for route changes to ensure role state is synced
 watch(() => route.path, sync)
 
 const go = (p: string) => router.push(p)
+
 const handleLogout = () => {
   localStorage.clear()
   sync()
@@ -107,10 +103,10 @@ const handleLogout = () => {
 </script>
 
 <style>
+/* Styles remain unchanged */
 .main-wrapper { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 .side-bar { width: 220px; color: white; display: flex; flex-direction: column; transition: 0.3s; z-index: 100; }
 .bg-admin { background: #001529; }
-.bg-staff { background: #1677ff; }
 .bg-consumer { background: #2c3e50; }
 .logo-area { padding: 25px 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center; }
 .nav-menu { flex: 1; padding: 15px 0; }
@@ -118,5 +114,5 @@ const handleLogout = () => {
 .menu-item:hover { color: white; background: rgba(255,255,255,0.1); }
 .menu-item.active { background: #409eff; color: white; font-weight: bold; }
 .logout-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: #ff7875; display: flex; align-items: center; gap: 10px; }
-.content-area { flex: 1; background: #f0f2f5; padding: 20px; overflow-y: auto; }
+.content-area { flex: 1; background: #f0f2f5; padding: 0; overflow-y: auto; }
 </style>
