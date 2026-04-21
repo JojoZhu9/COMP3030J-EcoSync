@@ -1,27 +1,37 @@
 import request from '@/utils/request'
 
-// 登录接口
 export const loginApi = (data: any) => {
   return request({
-    url: '/users/login', // 注意：我们在 vite.config 里配了 /api 代理，这里直接写 /users/login
+    url: '/users/login',
     method: 'post',
     data
   })
 }
 
-// 注册接口
 export const registerApi = (data: any) => {
   return request({
     url: '/users',
     method: 'post',
-    data
+    data: {
+      ...data,
+      balance: 0, // 初始化余额
+      status: 'NORMAL' // 默认状态
+    }
   })
 }
 
-// 获取当前用户信息 (可选，用于登录后展示角色)
 export const getUserInfoApi = (id: number) => {
   return request({
     url: `/users/${id}`,
     method: 'get'
+  })
+}
+
+// 管理员：修改用户状态（封禁/解封）
+export const updateUserStatusApi = (id: number, status: 'NORMAL' | 'BANNED') => {
+  return request({
+    url: `/users/${id}`,
+    method: 'put',
+    data: { status }
   })
 }

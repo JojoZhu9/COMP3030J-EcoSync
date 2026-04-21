@@ -60,45 +60,76 @@ const toggleMode = () => {
 const handleSubmit = async () => {
   if (!form.username || !form.password) return ElMessage.warning('请填写完整信息')
   loading.value = true
+
   try {
     if (isRegister.value) {
       if (form.password !== form.rePassword) {
         loading.value = false
         return ElMessage.error('两次输入的密码不一致')
       }
-      await registerApi({ username: form.username, passwordHash: form.password, role: 'CONSUMER' })
+      await registerApi({
+        username: form.username,
+        passwordHash: form.password,
+        role: 'CONSUMER'
+      })
       ElMessage.success('注册成功，请登录')
       isRegister.value = false
     } else {
+      // 执行登录
       const res = await loginApi(form) as any
-      const resStr = typeof res === 'string' ? res : JSON.stringify(res)
+      // 强转字符串处理后端返回的 "登录成功，Token: xxx"
+      const resStr = String(res)
 
       if (resStr.includes('成功')) {
-        const tokenMatch = resStr.match(/Token:\s*([^,，\s]+)/)
+        // 优化正则表达式：兼容中英文冒号、空格及逗号
+        const tokenMatch = resStr.match(/Token[:：]\s*([^,，\s]+)/)
         const token = tokenMatch ? tokenMatch[1].trim() : null
 
         if (token) {
-          // --- 关键点：存入新数据前清空旧数据，防止角色污染 ---
-          localStorage.clear()
-          localStorage.setItem('token', token)
+          try {
+            // 解析 Token Payload
+            const base64Url = token.split('.')[1]
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+            const payload = JSON.parse(window.atob(base64))
 
-          const payload = JSON.parse(window.atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-          const finalRole = (payload.role || 'CONSUMER').toUpperCase()
+            if (payload.status === 'BANNED') {
+              loading.value = false
+              return ElMessage.error('您的账号已被封禁，请联系管理员处理')
+            }
 
-          localStorage.setItem('role', finalRole)
-          localStorage.setItem('username', payload.username)
+            // 清理并存储
+            localStorage.clear()
+            localStorage.setItem('token', token)
 
-          ElMessage.success('登录成功')
-          if (finalRole === 'ADMIN') await router.push('/admin/accounts')
-          else if (finalRole === 'EMPLOYEE') await router.push('/staff/home')
-          else await router.push('/home')
+            const finalRole = (payload.role || 'CONSUMER').toUpperCase()
+            localStorage.setItem('role', finalRole)
+            localStorage.setItem('username', payload.username)
+            localStorage.setItem('userId', payload.userId)
+            localStorage.setItem('balance', payload.balance || '0.00')
+
+            ElMessage.success('欢迎回来！')
+
+            // 路由跳转
+            if (finalRole === 'ADMIN') await router.push('/admin/accounts')
+            else if (finalRole === 'EMPLOYEE') await router.push('/staff/home')
+            else await router.push('/home')
+
+          } catch (e) {
+            console.error('Token解析错误:', e)
+            ElMessage.error('身份验证解析失败，请联系开发人员')
+          }
+        } else {
+          ElMessage.error('无法解析身份令牌(Token)')
         }
       } else {
-        ElMessage.error('登录失败：用户名或密码错误')
+        // 如果后端返回的是 "登录失败：xxx"，直接抛出该信息
+        ElMessage.error(resStr.replace('登录失败: ', '') || '用户名或密码错误')
       }
     }
   } catch (error: any) {
-    ElMessage.error('服务器连接失败')
+    // 捕获 HTTP 错误（如 401, 404, 500）
+    const errorMsg = error.response?.data || '服务器连接失败'
+    ElMessage.error(typeof errorMsg === 'string' ? errorMsg : '系统繁忙')
   } finally {
     loading.value = false
   }
