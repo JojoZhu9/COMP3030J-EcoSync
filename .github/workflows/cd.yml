@@ -5,9 +5,9 @@ on:
     branches: [ main ]
 
 jobs:
-  # ========== Job 1: 运行 CI 检查 ==========
+  # ========== Job 1: 后端/前端基础检查 ==========
   ci-check:
-    name: CI Check
+    name: CI Check (Backend + Frontend)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,12 +20,25 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build & Test
+      - name: Backend package (skip tests)
         run: mvn package -DskipTests -B
 
-  # ========== Job 2: 构建 Docker 镜像并推送到 GitHub Container Registry ==========
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ecosync-frontend/package-lock.json
+
+      - name: Frontend build check
+        working-directory: ecosync-frontend
+        run: |
+          npm ci
+          npm run build-only
+
+  # ========== Job 2: 构建并推送后端 + 前端镜像 ==========
   docker-build-push:
-    name: Build & Push Docker Image
+    name: Build & Push Docker Images
     runs-on: ubuntu-latest
     needs: ci-check
     permissions:
@@ -46,22 +59,43 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels)
-        id: meta
+      - name: Extract metadata for app image
+        id: meta-app
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository_owner }}/ecosync-app
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push Docker image
+      - name: Extract metadata for frontend image
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/ecosync-frontend
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push app image
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-app.outputs.tags }}
+          labels: ${{ steps.meta-app.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ecosync-frontend
+          file: ./ecosync-frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -86,8 +120,10 @@ jobs:
           proxy_port: 22
 
           script: |
-            git config --global --add safe.directory /opt/EcoSync
             cd /opt/EcoSync
             git pull
-            docker compose down
-            docker compose up -d --build
+            export APP_IMAGE=ghcr.io/${{ github.repository_owner }}/ecosync-app
+            export FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/ecosync-frontend
+            export IMAGE_TAG=${{ github.sha }}
+            docker compose pull
+            docker compose up -d

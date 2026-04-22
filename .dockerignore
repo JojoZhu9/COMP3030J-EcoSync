@@ -8,3 +8,5 @@ target/
 .gitignore
 .gitattributes
 docker-compose.yml
+ecosync-frontend/
+nginx.conf
