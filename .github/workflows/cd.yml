@@ -65,7 +65,7 @@ jobs:
         with:
           images: ghcr.io/jojozhu9/ecosync-app
           tags: |
-            type=sha,prefix=
+            type=raw,value=${{ github.sha }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Extract metadata for frontend image
@@ -74,7 +74,7 @@ jobs:
         with:
           images: ghcr.io/jojozhu9/ecosync-frontend
           tags: |
-            type=sha,prefix=
+            type=raw,value=${{ github.sha }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push app image
