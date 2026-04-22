@@ -9,7 +9,7 @@
 - **后端**：Spring Boot 3.2 / MyBatis / MySQL 8 / Flyway（数据库版本管理）/ JWT
 - **接口文档**：Knife4j (OpenAPI 3)
 - **前端**：见 `ecosync-frontend/`
-- **容器化**：`docker-compose.yml`（MySQL + App + Frontend）
+- **容器化**：`docker-compose.yml`（MySQL + App + Frontend + Gateway Nginx）
 
 ---
 
@@ -36,6 +36,8 @@ docker compose up -d --build
 ```
 
 > 首次启动时间较长（通常 3-10 分钟），取决于网络与镜像缓存情况。
+> 启动后会有 4 个核心容器：`ecosync-mysql`、`ecosync-app`、`ecosync-frontend`、`ecosync-gateway`。
+> MySQL 对外访问端口为 `3307`（由网关转发到 MySQL 容器 `3306`）。
 
 #### 3) 查看服务状态（可选）
 
