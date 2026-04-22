@@ -63,7 +63,7 @@ jobs:
         id: meta-app
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/ecosync-app
+          images: ghcr.io/jojozhu9/ecosync-app
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
@@ -72,7 +72,7 @@ jobs:
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/ecosync-frontend
+          images: ghcr.io/jojozhu9/ecosync-frontend
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable={{is_default_branch}}
@@ -122,8 +122,8 @@ jobs:
           script: |
             cd /opt/EcoSync
             git pull
-            export APP_IMAGE=ghcr.io/${{ github.repository_owner }}/ecosync-app
-            export FRONTEND_IMAGE=ghcr.io/${{ github.repository_owner }}/ecosync-frontend
+            export APP_IMAGE=ghcr.io/jojozhu9/ecosync-app
+            export FRONTEND_IMAGE=ghcr.io/jojozhu9/ecosync-frontend
             export IMAGE_TAG=${{ github.sha }}
             docker compose pull
             docker compose up -d
