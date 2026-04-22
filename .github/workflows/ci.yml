@@ -36,11 +36,35 @@ jobs:
           path: target/*.jar
           retention-days: 7
 
-  # ========== Job 2: 带 MySQL 的集成测试 ==========
+  # ========== Job 2: 前端构建检查 ==========
+  frontend-build:
+    name: Frontend Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ecosync-frontend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: ecosync-frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ecosync-frontend
+        run: npm run build-only
+
+  # ========== Job 3: 带 MySQL 的集成测试 ==========
   test:
     name: Integration Test
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, frontend-build]
 
     services:
       mysql:
