@@ -12,6 +12,7 @@ public class User {
     private Integer storeId;
     private BigDecimal balance; // 修改：积分(points) 变为 余额(balance)
     private String phoneNumber;
+    private String userAddress;
     private Date createdAt;
 
     // --- Getter & Setter ---
@@ -38,6 +39,9 @@ public class User {
 
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+    public String getUserAddress() { return userAddress; } // 🔥 新增
+    public void setUserAddress(String userAddress) { this.userAddress = userAddress; } // 🔥 新增
 
     public Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
