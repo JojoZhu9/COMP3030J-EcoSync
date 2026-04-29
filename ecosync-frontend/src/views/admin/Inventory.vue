@@ -187,12 +187,18 @@ const submitAdd = async () => {
 const handleDelete = (row: any) => {
   const id = row.barcode
   ElMessageBox.confirm(`Are you sure you want to delete [${row.product_name}]?`, 'Warning', { type: 'warning' }).then(async () => {
-    await request.delete(`/products/${id}`)
-    fetchData()
-  })
+    try {
+      await request.delete(`/products/${id}`)
+      ElMessage.success('Deleted successfully')
+      fetchData()
+    } catch (e) {
+      ElMessage.error('Delete failed')
+    }
+  }).catch(() => {})
 }
 
 const goDetail = (row: any) => {
+  // 這裡跳轉至 AdminHome 並帶上商品條碼作為查詢參數
   router.push({ name: 'AdminHome', query: { id: row.barcode } })
 }
 
@@ -205,10 +211,8 @@ onMounted(fetchData)
 .brand-strip { width: 4px; height: 18px; background: #409eff; margin-right: 10px; display: inline-block; vertical-align: middle; }
 .main-title { font-weight: bold; font-size: 16px; }
 
-/* Layout: Chart Left, Form Right */
 .dialog-flex-layout { display: flex; gap: 25px; align-items: flex-start; }
 
-/* Preview Panel Styles */
 .preview-panel {
   flex: 1; background: #1a1c1e; border-radius: 8px; padding: 20px; color: #fff;
   box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
@@ -232,7 +236,6 @@ onMounted(fetchData)
 .stat-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
 .highlight { color: #409eff; font-weight: bold; font-size: 15px; }
 
-/* Matrix Grid */
 .form-panel { flex: 1.3; }
 .matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .discount-input-group {
@@ -243,4 +246,5 @@ onMounted(fetchData)
 
 :deep(.el-divider__text) { font-weight: bold; color: #409eff; }
 .price-tag { color: #f56c6c; font-weight: bold; }
+.mr-5 { margin-right: 5px; }
 </style>

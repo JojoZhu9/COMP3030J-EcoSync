@@ -132,19 +132,16 @@ const handleSubmit = async () => {
 
   try {
     if (isRegister.value) {
-      // --- 註冊邏輯修復 ---
       if (form.password !== form.rePassword) {
         loading.value = false
         return ElMessage.error('兩次輸入的密碼不一致')
       }
 
-      // 關鍵修復：解決 rawPassword is null
-      // 我們把密碼塞進所有後端可能識別的欄位：password, passwordHash, rawPassword
       const registerPayload = {
         username: form.username,
-        password: form.password,      // 常見欄位 1
-        passwordHash: form.password,  // 常見欄位 2
-        rawPassword: form.password,   // 根據報錯日誌中變數名的猜測 3
+        password: form.password,
+        passwordHash: form.password,
+        rawPassword: form.password,
         role: 'CONSUMER'
       }
 
@@ -159,7 +156,6 @@ const handleSubmit = async () => {
       }
 
     } else {
-      // --- 登錄邏輯修復 ---
       const res = await loginApi({
         username: form.username,
         password: form.password
@@ -175,12 +171,21 @@ const handleSubmit = async () => {
           const payload = parseJwt(token)
           if (!payload) throw new Error('解析令牌失敗')
 
+          // --- 關鍵修復：存入數據用於 Profile 頁面 ---
           localStorage.setItem('token', token)
           localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
           localStorage.setItem('username', payload.username || form.username)
 
+          // 🌟 這裡非常重要：從 JWT 中提取 userId 並存入 localStorage
+          // 這裡兼容了 payload.userId 或 payload.id 兩種命名方式
+          const userId = payload.userId || payload.id
+          if (userId) {
+            localStorage.setItem('userId', String(userId))
+          }
+
           ElMessage.success('登錄成功')
           const finalRole = (payload.role || 'CONSUMER').toUpperCase()
+
           if (finalRole === 'ADMIN') router.push('/admin/accounts')
           else if (finalRole === 'EMPLOYEE') router.push('/staff/home')
           else router.push('/home')
@@ -194,7 +199,6 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('Error:', error)
     const backendError = error.response?.data
-    // 如果後端拋出 NPE，通常這裡會顯示詳細錯誤
     ElMessage.error(typeof backendError === 'string' ? backendError : '伺服器業務處理異常')
   } finally {
     loading.value = false
@@ -203,7 +207,6 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* 樣式保持不變，確保佈局正確 */
 .login-page { height: 100vh; width: 100vw; display: flex; flex-direction: column; background-color: #f4f7f5; position: relative; overflow: hidden; }
 .brand-top-stripe { height: 8px; width: 100%; background: linear-gradient(to right, #ff7900 33.33%, #007934 33.33%, #007934 66.66%, #e2231a 66.66%); position: fixed; top: 0; z-index: 100; }
 .login-wrapper { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
