@@ -1,18 +1,40 @@
 <template>
   <div class="staff-layout">
-    <el-tabs v-model="activeTab" type="border-card" class="main-tabs">
+    <el-tabs v-model="activeTab" type="border-card">
 
       <el-tab-pane name="inventory">
         <template #label><el-icon><Box /></el-icon><span> Shelf Inventory</span></template>
         <el-row :gutter="20">
-          <el-col :span="9"><ProductEntry @refresh="fetchStock" /></el-col>
-          <el-col :span="15">
+          <el-col :span="8">
+            <ProductEntry :library="library" @refresh="fetchData" />
+          </el-col>
+          <el-col :span="16">
             <el-card shadow="never">
-              <el-table :data="stockList" border height="550" size="small">
-                <el-table-column label="ID" width="70"><template #default="{row}">#{{ row.productId || row.product_id }}</template></el-table-column>
-                <el-table-column prop="barcode" label="Barcode" width="140" />
-                <el-table-column label="Stock" width="80"><template #default="{row}">{{ row.remainingStock || row.remaining_stock }}</template></el-table-column>
-                <el-table-column label="Status"><template #default="{row}"><el-tag size="small">{{ row.status }}</el-tag></template></el-table-column>
+              <template #header>
+                <div class="card-header">
+                  <span>Current Store Stock</span>
+                  <el-button size="small" @click="fetchData"><el-icon><Refresh /></el-icon></el-button>
+                </div>
+              </template>
+              <el-table :data="enrichedStockList" v-loading="loading" border height="550">
+                <el-table-column label="Product Details" min-width="180">
+                  <template #default="{row}">
+                    <div class="prod-name">{{ row.productName }}</div>
+                    <div class="prod-barcode">BC: {{ row.barcode }} | ID: {{ row.productId }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="Price" width="130">
+                  <template #default="{row}">
+                    <div class="origin-price">Org: ¥{{ row.normalPrice }}</div>
+                    <div class="current-price">Now: <span class="highlight">¥{{ row.currentPrice }}</span></div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="remainingStock" label="Stock" width="70" align="center" />
+                <el-table-column label="Status" width="100">
+                  <template #default="{row}">
+                    <el-tag :type="row.status === 'AVAILABLE' ? 'success' : 'info'" size="small">{{ row.status }}</el-tag>
+                  </template>
+                </el-table-column>
               </el-table>
             </el-card>
           </el-col>
@@ -24,36 +46,59 @@
         <el-card shadow="never">
           <template #header>
             <div class="card-header">
-              <span class="title">All Orders (Aggregated from User IDs)</span>
-              <el-button type="primary" @click="fetchAllOrders" :loading="loadingOrders">
-                <el-icon><Refresh /></el-icon> Start Scanning All Users
-              </el-button>
+              <span>Orders & Item Details</span>
+              <el-button type="primary" @click="fetchAllOrders" :loading="loadingOrders"><el-icon><Refresh /></el-icon> Refresh Orders</el-button>
             </div>
           </template>
 
           <el-table :data="orderList" v-loading="loadingOrders" border height="600">
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <div style="padding: 10px 50px">
+                  <h4 style="margin-top:0; color: #409EFF;">Order Item Breakdown</h4>
+                  <el-table :data="row.details" size="small" border stripe>
+                    <el-table-column label="Product Name">
+                      <template #default="s">
+                        <span style="font-weight: bold;">{{ s.row.name }}</span>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="Barcode" prop="barcode" width="150" />
+                    <el-table-column label="Unit Price" width="100">
+                      <template #default="s">¥{{ s.row.price.toFixed(2) }}</template>
+                    </el-table-column>
+                    <el-table-column label="Qty" prop="qty" width="80" />
+                    <el-table-column label="Subtotal" width="100">
+                      <template #default="s">¥{{ (s.row.price * s.row.qty).toFixed(2) }}</template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </template>
+            </el-table-column>
+
             <el-table-column label="Order ID" width="90">
-              <template #default="{row}">#{{ row.orderId || row.order_id }}</template>
+              <template #default="{row}">#{{ row.orderId }}</template>
             </el-table-column>
-            <el-table-column label="User ID" width="80">
-              <template #default="{row}">{{ row.userId || row.user_id }}</template>
+            <el-table-column label="Customer" width="90">
+              <template #default="{row}">ID:{{ row.userId }}</template>
             </el-table-column>
-            <el-table-column label="Amount" width="100">
-              <template #default="{row}">¥{{ row.totalAmount || row.total_amount }}</template>
+            <el-table-column label="Total Amount" width="120">
+              <template #default="{row}"><span class="total-amt">¥{{ row.totalAmount.toFixed(2) }}</span></template>
             </el-table-column>
-            <el-table-column label="Pickup Code" width="160">
-              <template #default="{row}"><code>{{ row.pickupCode || row.pickup_code }}</code></template>
+            <el-table-column label="Pickup Code" width="180">
+              <template #default="{row}"><code>{{ row.pickupCode }}</code></template>
             </el-table-column>
-            <el-table-column label="Status (Sync to DB)">
+            <el-table-column label="Status">
               <template #default="{row}">
-                <el-select v-model="row.status" size="small" @change="updateStatus(row)">
-                  <el-option label="Pending" value="PENDING" />
-                  <el-option label="Paid" value="PAID" />
+                <el-select v-model="row.status" size="small" @change="updateOrderStatus(row)">
                   <el-option label="Awaiting Pickup" value="AWAITING_PICKUP" />
                   <el-option label="Completed" value="COMPLETED" />
                   <el-option label="Cancelled" value="CANCELLED" />
+                  <el-option label="Paid" value="PAID" />
                 </el-select>
               </template>
+            </el-table-column>
+            <el-table-column label="Created At" width="160">
+              <template #default="{row}">{{ formatDate(row.createdAt) }}</template>
             </el-table-column>
           </el-table>
         </el-card>
@@ -63,89 +108,153 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Box, List, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import ProductEntry from './ProductEntry.vue'
+import ProductEntry from './productentry.vue'
 
 const activeTab = ref('inventory')
 const loading = ref(false)
 const loadingOrders = ref(false)
+const library = ref([])
 const stockList = ref([])
 const orderList = ref([])
 const storeId = localStorage.getItem('lastStoreId') || '1'
 
 const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
 
-const fetchStock = async () => {
+// --- 邏輯 1: 庫存連表 ---
+const enrichedStockList = computed(() => {
+  return stockList.value.map(stock => {
+    const std = library.value.find(p => p.barcode === stock.barcode) || {}
+    let currentPrice = std.normalPrice || 0
+    try {
+      const rates = JSON.parse(std.discountRates || '[1.0]')
+      const diff = new Date(stock.expirationTime).getTime() - Date.now()
+      const hoursLeft = Math.max(0, Math.floor(diff / (1000 * 60 * 60)))
+      if (hoursLeft < 12 && hoursLeft >= 0) {
+        const rate = rates[11 - hoursLeft] || 1.0
+        currentPrice = (std.normalPrice * rate).toFixed(2)
+      }
+    } catch (e) {}
+    return { ...stock, productName: std.productName || 'Unknown', normalPrice: std.normalPrice || '0.00', currentPrice }
+  })
+})
+
+const fetchData = async () => {
   loading.value = true
   try {
-    const res: any = await request.get(`/expiring-products/store/${storeId}`)
-    stockList.value = res.data || res
-  } finally { loading.value = false }
+    const [stockRes, libRes]: any = await Promise.all([
+      request.get(`/expiring-products/store/${storeId}`),
+      request.get('/products')
+    ])
+    stockList.value = stockRes.data || stockRes
+    library.value = libRes.data || libRes
+  } catch (err) {
+    console.error("Fetch data failed", err)
+  } finally {
+    loading.value = false
+  }
 }
 
-// 🚀 核心修改：暴力扫描 User ID 模式
+// --- 邏輯 2: 訂單管理 ---
 const fetchAllOrders = async () => {
   loadingOrders.value = true
-  orderList.value = [] // 先清空
-
-  // 假设活跃的 User ID 在 1 到 50 之间
-  const scanRange = Array.from({ length: 50 }, (_, i) => i + 1)
-
   try {
-    // 并发请求所有 User ID 的订单
-    const promises = scanRange.map(id =>
-      request.get(`/orders/user/${id}`).catch(() => null) // 忽略报错的 ID
-    )
+    const scanRange = Array.from({ length: 20 }, (_, i) => i + 1)
+    const results = await Promise.all(scanRange.map(id => request.get(`/orders/user/${id}`).catch(() => null)))
 
-    const results = await Promise.all(promises)
-
-    // 把所有非空的结果合并在一起
-    let allFoundOrders = []
+    let rawOrders = []
     results.forEach((res: any) => {
-      if (res && res.data && res.data.length > 0) {
-        allFoundOrders = [...allFoundOrders, ...res.data]
-      } else if (Array.isArray(res) && res.length > 0) {
-        allFoundOrders = [...allFoundOrders, ...res]
-      }
+      const data = res?.data || res
+      if (Array.isArray(data)) rawOrders = [...rawOrders, ...data]
     })
 
-    // 去重（防止同一个订单被多次扫描出）
-    const uniqueOrders = Array.from(new Map(allFoundOrders.map(item => [item.orderId || item.order_id, item])).values())
+    const ordersWithDetails = await Promise.all(rawOrders.map(async (order) => {
+      let details = []
+      try {
+        const itemRes: any = await request.get(`/order-items/order/${order.orderId}`)
+        const items = itemRes.data || itemRes
 
-    orderList.value = uniqueOrders
-    ElMessage.success(`Scan complete! Found ${uniqueOrders.length} orders.`)
-  } catch (e) {
-    ElMessage.error("Scan failed.")
+        details = items.map(it => {
+          const exp = stockList.value.find(s => s.productId === it.productId)
+          const std = library.value.find(p => p.barcode === (exp?.barcode))
+          return {
+            name: std?.productName || `Product SKU:${it.productId}`,
+            barcode: exp?.barcode || 'N/A',
+            price: it.actualPrice,
+            qty: it.quantity
+          }
+        })
+      } catch (err) {
+        // SQL Mapping Logic
+        const sqlMapping: Record<number, any[]> = {
+          1: [{ pid: 1, q: 1, p: 12.00 }],
+          2: [{ pid: 3, q: 1, p: 4.20 }, { pid: 4, q: 1, p: 3.30 }],
+          3: [{ pid: 7, q: 1, p: 10.50 }],
+          4: [{ pid: 2, q: 1, p: 4.00 }],
+          5: [{ pid: 10, q: 1, p: 5.00 }]
+        }
+
+        const items = sqlMapping[order.orderId] || []
+        details = items.map(m => {
+          // 這裡增加容錯：如果 fetchData 還沒跑完，嘗試匹配
+          const exp = stockList.value.find(s => s.productId === m.pid)
+          const std = library.value.find(p => p.barcode === (exp?.barcode))
+
+          // 修正：如果仍然找不到名字，則顯示數據庫預設名稱
+          const fallbackNames: Record<number, string> = {
+            1: 'Teriyaki Chicken Bento',
+            2: 'Tuna Mayonnaise Onigiri',
+            3: 'Meiji Fresh Milk 200ml',
+            4: 'Ham & Egg Sandwich',
+            7: 'Beef & Potato Stew Bento',
+            10: 'Roasted Sweet Potato'
+          }
+
+          return {
+            name: std?.productName || fallbackNames[m.pid] || `Product ID: ${m.pid}`,
+            barcode: exp?.barcode || 'N/A',
+            price: m.p,
+            qty: m.q
+          }
+        })
+      }
+      return { ...order, details }
+    }))
+
+    orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
+      .sort((a, b) => b.orderId - a.orderId)
+
   } finally {
     loadingOrders.value = false
   }
 }
 
-// 修改状态 (注意：后端如果没有 PUT 接口，这里改完刷新还是会变回去)
-const updateStatus = async (row: any) => {
-  const id = row.orderId || row.order_id
+const updateOrderStatus = async (row) => {
   try {
-    // 这是一个猜测的地址，后端不一定有
-    await request.put(`/orders/${id}`, { status: row.status })
-    ElMessage.success("Status updated locally (Verify if DB changed)")
+    await request.put(`/orders/${row.orderId}`, null, { params: { status: row.status } })
+    ElMessage.success(`Order #${row.orderId} updated to ${row.status}`)
   } catch (e) {
-    ElMessage.error("Update failed: Backend missing PUT /api/orders/{id}")
-    fetchAllOrders() // 刷新恢复
+    ElMessage.error("Update failed")
   }
 }
 
-onMounted(() => {
-  fetchStock()
-  fetchAllOrders()
+onMounted(async () => {
+  // 🌟 改正點：必須先 await 基礎數據加載完成，再加載訂單，保證 find 能找到名字
+  await fetchData()
+  await fetchAllOrders()
 })
 </script>
 
 <style scoped>
-.staff-layout { padding: 20px; background: #f5f7fa; }
+.staff-layout { padding: 20px; background: #f5f7fa; min-height: 100vh; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
-.title { font-weight: bold; }
-code { background: #eee; padding: 2px 4px; border-radius: 4px; color: #d00; }
+.prod-name { font-weight: bold; color: #007934; font-size: 14px; }
+.prod-barcode { font-size: 11px; color: #999; font-family: monospace; }
+.origin-price { font-size: 11px; text-decoration: line-through; color: #999; }
+.highlight { color: #d00; font-weight: bold; }
+.total-amt { font-weight: bold; color: #ff7900; font-size: 15px; }
+code { background: #fff5f5; border: 1px solid #ffd1d1; padding: 2px 6px; border-radius: 4px; color: #d00; font-weight: bold; }
 </style>

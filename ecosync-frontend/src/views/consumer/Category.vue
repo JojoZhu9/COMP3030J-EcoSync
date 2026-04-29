@@ -1,11 +1,10 @@
 <template>
   <div class="category-page">
-    <div class="brand-stripe"></div>
     <div class="category-header">
       <div class="title-main">
-        <span class="c-green">Fresh</span> <span class="c-orange">Selection</span>
+        <span class="c-green">7-ELEVEN</span> <span class="c-orange">Fresh</span>
       </div>
-      <div class="title-sub">Explore Daily Discounts by Category</div>
+      <div class="title-sub">SmartChain Retail Tech - Category Selection</div>
     </div>
 
     <div class="category-grid">
@@ -27,15 +26,11 @@
     <div class="promo-banner">
       <div class="promo-content">
         <el-icon><Timer /></el-icon>
-        <span class="promo-text">Real-time shelf updates every hour</span>
+        <span class="promo-text">Stocks update every 60 mins</span>
       </div>
     </div>
 
-    <el-empty class="smartchain-empty" description="Select a department to view items near expiration">
-      <template #image>
-        <el-icon :size="60" class="empty-icon"><Compass /></el-icon>
-      </template>
-    </el-empty>
+    <div style="height: 100px;"></div>
   </div>
 </template>
 
@@ -43,45 +38,92 @@
 import { ref } from 'vue'
 import {
   Menu, Food, Coffee, Bowl,
-  IceTea, Dessert, Timer,
-  Compass, IceCream
+  IceTea, IceCream, Timer
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
 const categories = ref([
-  { name: 'Bento/Meals', icon: Bowl, color: '#ff7900', bg: '#fff7ed' },
+  { name: 'Bento', icon: Bowl, color: '#ff7900', bg: '#fff7ed' },
   { name: 'Sandwich', icon: Food, color: '#2196F3', bg: '#eff6ff' },
   { name: 'Onigiri', icon: Menu, color: '#007934', bg: '#f0fdf4' },
-  { name: 'Desserts', icon: IceCream, color: '#E91E63', bg: '#fdf2f8' },
-  { name: 'Beverages', icon: Coffee, color: '#00BCD4', bg: '#ecfeff' },
-  { name: 'Dairy/Other', icon: IceTea, color: '#9E9E9E', bg: '#f8fafc' }
+  { name: 'Dessert', icon: IceCream, color: '#E91E63', bg: '#fdf2f8' },
+  { name: 'Drinks', icon: Coffee, color: '#00BCD4', bg: '#ecfeff' },
+  { name: 'Bakery', icon: IceTea, color: '#9E9E9E', bg: '#f8fafc' }
 ])
 
 const handleCategoryClick = (name: string) => {
-  router.push({ path: '/home', query: { category: name } })
+  // 跳轉回首頁，並帶上分類參數
+  router.push({
+    path: '/home',
+    query: { category: name }
+  })
 }
 </script>
 
 <style scoped>
-.category-page { padding: 0 0 40px; background: #ffffff; min-height: 100vh; }
-.brand-stripe { height: 4px; background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%); }
-.category-header { padding: 30px 20px 20px; }
-.title-main { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; text-transform: uppercase; }
+.category-page {
+  background: #fff;
+  min-height: 100vh;
+  /* 確保內容不被手機狀態欄或導航欄遮蓋 */
+  padding-top: env(safe-area-inset-top);
+}
+
+.category-header { padding: 40px 20px 20px; }
+.title-main { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
 .c-green { color: #007934; }
 .c-orange { color: #ff7900; }
-.title-sub { font-size: 12px; color: #94a3b8; font-weight: 700; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+.title-sub { font-size: 13px; color: #94a3b8; margin-top: 4px; font-weight: 600; }
+
 .category-grid { padding: 10px 20px; }
-.category-tile { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; cursor: pointer; transition: transform 0.2s; }
-.category-tile:active { transform: scale(0.92); }
-.tile-icon-wrapper { width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 12px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.status-dot { position: absolute; top: 12px; right: 12px; width: 6px; height: 6px; background: #48bb78; border-radius: 50%; border: 2px solid #fff; }
-.tile-label { font-size: 13px; font-weight: 800; color: #475569; }
-.promo-banner { margin: 10px 20px; padding: 12px; background: #f1f5f9; border-radius: 12px; display: flex; justify-content: center; }
-.promo-content { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 12px; font-weight: 700; }
-.smartchain-empty { margin-top: 20px; }
-.empty-icon { color: #e2e8f0; }
-:deep(.el-empty__description) { font-weight: 600; font-size: 13px; color: #cbd5e1; }
-@media (min-width: 768px) { .category-grid { max-width: 600px; margin: 0 auto; } }
+.category-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.category-tile:active { transform: scale(0.9); }
+
+.tile-icon-wrapper {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 10px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.status-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.tile-label { font-size: 13px; font-weight: 700; color: #334155; }
+
+.promo-banner {
+  margin: 10px 20px;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
 </style>
