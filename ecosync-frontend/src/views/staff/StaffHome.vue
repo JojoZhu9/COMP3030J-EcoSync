@@ -112,7 +112,7 @@ import { ref, computed, onMounted } from 'vue'
 import { Box, List, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import ProductEntry from './productentry.vue'
+import ProductEntry from './ProductEntry.vue'
 
 const activeTab = ref('inventory')
 const loading = ref(false)
