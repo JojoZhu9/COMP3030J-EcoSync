@@ -1,5 +1,7 @@
 <template>
   <div class="landing-container">
+    <div class="brand-top-stripe"></div>
+
     <header class="navbar">
       <div class="logo">
         <div class="brand-logo-mock">
@@ -9,20 +11,21 @@
         <span class="logo-text">Intelligent Near-Expiry Sales Platform</span>
       </div>
       <div class="nav-actions">
-        <el-button type="success" color="#007934" round @click="goLogin">Staff / User Login</el-button>
+        <el-button type="success" class="login-nav-btn" round @click="goLogin">Staff / User Login</el-button>
       </div>
     </header>
 
     <section class="hero-section">
+      <div class="hero-bg-pattern"></div>
       <div class="hero-content">
         <el-tag type="danger" effect="dark" round class="pulse-tag">Official & Authentic · Safety Guaranteed</el-tag>
-        <h1 class="hero-title">Rescue Delicious Food, Embrace an Eco-Friendly Life</h1>
+        <h1 class="hero-title">Rescue Delicious Food,<br/><span class="c-green">Embrace an Eco-Friendly Life</span></h1>
         <p class="hero-subtitle">
-          The official 7-ELEVEn near-expiry food platform powered by Smart Chain Retail Tech.<br />
-          Grab premium bentos, onigiri, and dairy products at ultra-low discounts, eliminate information gaps, and say no to food waste.
+          The official 7-ELEVEn near-expiry food platform powered by SMARTCHAIN RETAIL TECH.<br />
+          Grab premium bentos, onigiri, and dairy products at ultra-low discounts.
         </p>
         <div class="hero-actions">
-          <el-button type="primary" color="#e2231a" size="large" class="cta-btn" round @click="goLogin">
+          <el-button type="primary" size="large" class="cta-btn primary-cta" round @click="goLogin">
             Start Your Savings Journey <el-icon class="el-icon--right"><ArrowRight /></el-icon>
           </el-button>
           <el-button size="large" class="cta-btn outline-btn" round @click="goLogin">
@@ -33,50 +36,60 @@
     </section>
 
     <section class="features-section">
-      <h2 class="section-title">Reshaping the Near-Expiry Ecosystem</h2>
+      <div class="section-header">
+        <h2 class="section-title">Reshaping the Near-Expiry Ecosystem</h2>
+        <div class="title-underline"></div>
+      </div>
+
       <el-row :gutter="40" class="feature-row">
         <el-col :xs="24" :sm="8" class="feature-col">
-          <div class="feature-card">
-            <el-icon class="f-icon c-green"><Monitor /></el-icon>
+          <div class="feature-card border-green">
+            <div class="icon-box bg-green">
+              <el-icon><Monitor /></el-icon>
+            </div>
             <h3>Digitalization & Transparency</h3>
-            <p>Say goodbye to traditional manual recording. Real-time synchronization of inventory and expiration dates, purchased through official channels, completely eliminating information opacity.</p>
+            <p>Real-time synchronization of inventory and expiration dates, purchased through official channels, completely eliminating information opacity.</p>
           </div>
         </el-col>
 
         <el-col :xs="24" :sm="8" class="feature-col">
-          <div class="feature-card">
-            <el-icon class="f-icon c-orange"><Discount /></el-icon>
+          <div class="feature-card border-orange">
+            <div class="icon-box bg-orange">
+              <el-icon><Discount /></el-icon>
+            </div>
             <h3>Ultimate Cost-Effectiveness</h3>
-            <p>Targeted at consumers with a strong demand for cost-effective food. As the expiration date approaches, the system automatically applies stepped smart discounts.</p>
+            <p>Targeted at consumers with a strong demand for value. As the expiration date approaches, the system applies stepped smart discounts.</p>
           </div>
         </el-col>
 
         <el-col :xs="24" :sm="8" class="feature-col">
-          <div class="feature-card">
-            <el-icon class="f-icon c-red"><Sunny /></el-icon>
-            <h3>Sustainable Responsible Consumption</h3>
-            <p>Every order you place directly reduces urban food waste, helping 7-ELEVEn boost profitability while lightening the burden on our planet.</p>
+          <div class="feature-card border-red">
+            <div class="icon-box bg-red">
+              <el-icon><Sunny /></el-icon>
+            </div>
+            <h3>Sustainable Consumption</h3>
+            <p>Every order directly reduces urban food waste, helping 7-ELEVEn boost profitability while lightening the burden on our planet.</p>
           </div>
         </el-col>
       </el-row>
     </section>
 
     <section class="promo-section">
+      <div class="promo-overlay"></div>
       <div class="promo-content">
         <h2 class="promo-title">Empowering Sustainable Retail</h2>
-        <h3 class="promo-subtitle">Smart Chain Retail Tech × 7-ELEVEn</h3>
+        <h3 class="promo-subtitle">SMARTCHAIN RETAIL TECH × 7-ELEVEn</h3>
         <div class="promo-divider"></div>
-        <p class="promo-text">
-          Every day, countless high-quality food items face the risk of disposal simply due to approaching expiration dates. At <strong>Smart Chain Retail Tech</strong>, we believe in a smarter, greener future.
-        </p>
-        <p class="promo-text">
-          Our intelligent platform bridges the gap between 7-ELEVEn stores and eco-conscious consumers. By leveraging real-time inventory tracking, dynamic pricing algorithms, and seamless digital integration, we successfully transform potential food waste into shared value.
-        </p>
-        <p class="promo-text highlight-text">
-          Join us in our mission to revolutionize convenience store operations, boost profitability, and champion responsible consumption for a better planet.
-        </p>
+        <div class="promo-text-container">
+          <p class="promo-text">
+            Every day, countless high-quality food items face the risk of disposal simply due to approaching expiration dates. At <strong>SMARTCHAIN RETAIL TECH</strong>, we believe in a smarter, greener future.
+          </p>
+          <p class="promo-text highlight-text">
+            Join us in our mission to revolutionize convenience store operations and champion responsible consumption for a better planet.
+          </p>
+        </div>
         <div class="promo-action">
-          <el-button type="warning" color="#ff7900" size="large" round @click="goLogin">
+          <el-button class="explore-btn" size="large" round @click="goLogin">
             Explore the Platform
           </el-button>
         </div>
@@ -85,9 +98,13 @@
 
     <footer class="footer">
       <div class="footer-content">
-        <p class="brand-footer"><span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span> Near-Expiry Product Management System</p>
-        <p class="copyright">© 2026 Developed by <strong>Group 8: Bibilabo</strong> (Smart Chain Retail Tech). All Rights Reserved.</p>
-        <p class="disclaimer">Note: This system is custom-developed for 7-ELEVEn stores by Team Bibilabo, dedicated to reducing food waste.</p>
+        <div class="footer-logo">
+          <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
+        </div>
+        <p class="brand-footer">Near-Expiry Product Management System</p>
+        <div class="footer-divider"></div>
+        <p class="copyright">© 2026 Developed by <strong>Group 8: Bibilabo</strong>. All Rights Reserved.</p>
+        <p class="disclaimer">Custom-developed for 7-ELEVEn stores by Team Bibilabo.</p>
       </div>
     </footer>
   </div>
@@ -104,63 +121,171 @@ const goLogin = () => router.push('/login')
 </script>
 
 <style scoped>
-.landing-container { font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif; color: #2c3e50; background: #f8f9fa; }
+:root {
+  --711-green: #007934;
+  --711-red: #e2231a;
+  --711-orange: #ff7900;
+}
 
-/* 品牌配色 */
+.landing-container {
+  font-family: 'Inter', 'PingFang SC', sans-serif;
+  color: #1a1a1a;
+  background: #ffffff;
+}
+
+/* Brand Colors */
 .c-green { color: #007934; }
 .c-red { color: #e2231a; }
 .c-orange { color: #ff7900; }
 
-/* 导航栏 */
-.navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 50px; background: rgba(255,255,255,0.95); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); backdrop-filter: blur(10px); }
-.logo { display: flex; align-items: center; gap: 12px; }
-.brand-logo-mock { font-size: 26px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
-.logo-text { font-size: 16px; font-weight: 500; color: #666; }
-.divider { color: #ddd; font-weight: 300; }
+.bg-green { background: #007934; }
+.bg-red { background: #e2231a; }
+.bg-orange { background: #ff7900; }
 
-/* 首屏区域 */
-.hero-section { background: linear-gradient(135deg, #e8f5e9 0%, #fff3e0 50%, #ffebee 100%); padding: 100px 20px; text-align: center; position: relative; overflow: hidden; }
-.pulse-tag { margin-bottom: 20px; animation: pulse 2s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(226, 35, 26, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(226, 35, 26, 0); } 100% { box-shadow: 0 0 0 0 rgba(226, 35, 26, 0); } }
-.hero-title { font-size: 52px; font-weight: 800; color: #111; margin-bottom: 25px; letter-spacing: 1px; }
-.hero-subtitle { font-size: 20px; color: #555; line-height: 1.8; margin-bottom: 40px; }
-.hero-actions { display: flex; justify-content: center; gap: 20px; }
-.cta-btn { font-size: 18px; padding: 25px 40px; font-weight: bold; }
-.outline-btn { color: #007934; border-color: #007934; background: transparent; }
-.outline-btn:hover { background: #f0f9f4; }
+/* Brand Top Stripe */
+.brand-top-stripe {
+  height: 6px;
+  width: 100%;
+  background: linear-gradient(to right,
+  #ff7900 0%, #ff7900 33.33%,
+  #007934 33.33%, #007934 66.66%,
+  #e2231a 66.66%, #e2231a 100%);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+}
 
-/* 优势区域 */
-.features-section { padding: 80px 50px; background: #fff; }
-.section-title { text-align: center; font-size: 32px; font-weight: bold; margin-bottom: 20px; color: #222; }
-.feature-card { text-align: center; padding: 40px 25px; border-radius: 16px; background: #fafafa; border: 1px solid #eee; transition: all 0.3s; height: 100%; box-sizing: border-box; }
-.feature-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.06); background: #fff; }
-.f-icon { font-size: 45px; margin-bottom: 20px; }
-.feature-card h3 { font-size: 20px; margin-bottom: 15px; color: #333; }
-.feature-card p { color: #666; line-height: 1.6; font-size: 15px; }
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 60px;
+  background: rgba(255,255,255,0.9);
+  position: sticky;
+  top: 6px;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  backdrop-filter: blur(15px);
+}
+.brand-logo-mock { font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: -1.5px; }
+.logo-text { font-size: 15px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.divider { margin: 0 5px; color: #eee; }
 
-/* 全英文宣传文案区域 (深色高级感) */
-.promo-section { padding: 100px 20px; background: linear-gradient(135deg, #004d2c 0%, #007934 100%); color: white; text-align: center; }
-.promo-content { max-width: 800px; margin: 0 auto; }
-.promo-title { font-size: 38px; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-.promo-subtitle { font-size: 20px; color: #a7f3d0; font-weight: 400; margin-bottom: 30px; letter-spacing: 0.5px; }
-.promo-divider { width: 60px; height: 4px; background: #e2231a; margin: 0 auto 35px; border-radius: 2px; }
-.promo-text { font-size: 17px; line-height: 1.8; color: #e2e8f0; margin-bottom: 20px; text-align: center; font-weight: 300; }
-.highlight-text { font-size: 20px; font-weight: 600; color: #ffce99; margin-top: 35px; margin-bottom: 40px; }
-.promo-action { margin-top: 20px; }
+.login-nav-btn {
+  background-color: #007934 !important;
+  border: none;
+  font-weight: bold;
+  padding: 10px 25px;
+  box-shadow: 0 4px 10px rgba(0, 121, 52, 0.2);
+}
 
-/* 页脚 */
-.footer { background: #1a1a1a; color: #888; padding: 50px 20px; text-align: center; }
-.brand-footer { font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #fff; }
-.copyright { font-size: 14px; margin-bottom: 10px; }
-.disclaimer { font-size: 12px; color: #555; }
+/* Hero Section */
+.hero-section {
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #fff7ed 50%, #fef2f2 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg-pattern {
+  position: absolute;
+  width: 100%; height: 100%;
+  background-image: radial-gradient(#007934 0.5px, transparent 0.5px);
+  background-size: 30px 30px;
+  opacity: 0.05;
+}
+.hero-content { position: relative; z-index: 10; text-align: center; max-width: 900px; }
+.pulse-tag { margin-bottom: 30px; border: none; font-weight: bold; font-size: 14px; padding: 12px 20px; }
+.hero-title { font-size: 64px; font-weight: 900; line-height: 1.1; margin-bottom: 25px; color: #002d14; letter-spacing: -2px; }
+.hero-subtitle { font-size: 22px; color: #4b5563; line-height: 1.6; margin-bottom: 45px; font-weight: 400; }
+
+.cta-btn { font-size: 18px; padding: 28px 45px; font-weight: 700; transition: all 0.3s ease; }
+.primary-cta { background-color: #e2231a !important; border: none; box-shadow: 0 10px 20px rgba(226, 35, 26, 0.2); }
+.primary-cta:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(226, 35, 26, 0.3); }
+.outline-btn { color: #007934; border: 2px solid #007934; background: transparent; }
+.outline-btn:hover { background: rgba(0, 121, 52, 0.05); }
+
+/* Features Section */
+.features-section { padding: 120px 60px; background: #fff; }
+.section-header { text-align: center; margin-bottom: 80px; }
+.section-title { font-size: 40px; font-weight: 800; color: #002d14; margin-bottom: 15px; }
+.title-underline { width: 80px; height: 5px; background: #ff7900; margin: 0 auto; border-radius: 10px; }
+
+.feature-card {
+  padding: 50px 35px;
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+.feature-card:hover { transform: translateY(-12px); box-shadow: 0 30px 60px rgba(0,0,0,0.08); }
+.icon-box {
+  width: 70px; height: 70px;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; color: white;
+  margin-bottom: 30px;
+}
+.feature-card h3 { font-size: 22px; font-weight: 800; margin-bottom: 15px; color: #111; }
+.feature-card p { color: #6b7280; line-height: 1.7; font-size: 16px; margin: 0; }
+
+.border-green:hover { border-bottom: 6px solid #007934; }
+.border-orange:hover { border-bottom: 6px solid #ff7900; }
+.border-red:hover { border-bottom: 6px solid #e2231a; }
+
+/* Promo Section */
+.promo-section {
+  padding: 140px 20px;
+  background: url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=2000') no-repeat center center;
+  background-size: cover;
+  position: relative;
+  color: white;
+  text-align: center;
+}
+.promo-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(0,77,44,0.95) 0%, rgba(0,45,20,0.9) 100%);
+}
+.promo-content { position: relative; z-index: 10; max-width: 850px; margin: 0 auto; }
+.promo-title { font-size: 48px; font-weight: 900; margin-bottom: 10px; letter-spacing: -1px; }
+.promo-subtitle { font-size: 20px; color: #4ade80; font-weight: 500; margin-bottom: 35px; }
+.promo-divider { width: 50px; height: 4px; background: #e2231a; margin: 0 auto 40px; }
+.promo-text { font-size: 19px; line-height: 1.8; color: #d1d5db; margin-bottom: 25px; font-weight: 300; }
+.highlight-text { font-size: 22px; font-weight: 700; color: #ffce99; margin-top: 40px; }
+
+.explore-btn {
+  background-color: #ff7900 !important;
+  color: white !important;
+  border: none;
+  font-weight: 800;
+  padding: 25px 50px;
+  font-size: 18px;
+  box-shadow: 0 10px 25px rgba(255, 121, 0, 0.4);
+}
+
+/* Footer */
+.footer { background: #0a0a0a; color: #9ca3af; padding: 80px 20px; text-align: center; }
+.footer-logo { font-size: 36px; font-weight: 900; font-style: italic; margin-bottom: 10px; }
+.brand-footer { font-size: 18px; font-weight: 600; margin-bottom: 30px; color: #fff; letter-spacing: 1px; }
+.footer-divider { width: 100%; max-width: 1200px; height: 1px; background: rgba(255,255,255,0.1); margin: 0 auto 30px; }
+.copyright { font-size: 14px; margin-bottom: 8px; }
+.disclaimer { font-size: 12px; opacity: 0.5; }
 
 @media (max-width: 768px) {
-  .navbar { padding: 15px 20px; }
-  .logo-text.divider, .logo-text { display: none; }
-  .hero-title { font-size: 36px; }
-  .hero-actions { flex-direction: column; }
-  .features-section, .promo-section { padding: 60px 20px; }
-  .promo-title { font-size: 28px; }
-  .promo-text { font-size: 15px; text-align: left; }
+  .navbar { padding: 15px 25px; }
+  .logo-text { display: none; }
+  .hero-title { font-size: 42px; }
+  .hero-actions { flex-direction: column; gap: 15px; }
+  .features-section { padding: 80px 25px; }
+  .promo-title { font-size: 32px; }
+  .feature-card { padding: 40px 25px; }
 }
 </style>
