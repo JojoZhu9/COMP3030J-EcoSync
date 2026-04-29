@@ -1,38 +1,62 @@
 <template>
-  <div class="staff-layout">
-    <el-tabs v-model="activeTab" type="border-card">
+  <div class="staff-app-container">
+    <div class="top-brand-bar">
+      <div class="brand-content">
+        <span class="brand-logo">7-ELEVEn</span>
+        <span class="brand-title">Smart Store Management</span>
+      </div>
+    </div>
 
+    <el-tabs v-model="activeTab" type="card" class="main-tabs">
       <el-tab-pane name="inventory">
-        <template #label><el-icon><Box /></el-icon><span> Shelf Inventory</span></template>
-        <el-row :gutter="20">
+        <template #label>
+          <div class="tab-label">
+            <el-icon><Box /></el-icon><span>Inventory Console</span>
+          </div>
+        </template>
+
+        <el-row :gutter="25">
           <el-col :span="8">
-            <ProductEntry :library="library" @refresh="fetchData" />
+            <div class="side-panel">
+              <ProductEntry :library="library" @refresh="fetchData" />
+            </div>
           </el-col>
+
           <el-col :span="16">
-            <el-card shadow="never">
+            <el-card class="modern-card" shadow="hover">
               <template #header>
                 <div class="card-header">
-                  <span>Current Store Stock</span>
-                  <el-button size="small" @click="fetchData"><el-icon><Refresh /></el-icon></el-button>
+                  <div class="title-group">
+                    <span class="dot"></span>
+                    <span class="title-text">Live Shelf Stock</span>
+                  </div>
+                  <el-button @click="fetchData" :loading="loading" icon="Refresh" circle />
                 </div>
               </template>
-              <el-table :data="enrichedStockList" v-loading="loading" border height="550">
-                <el-table-column label="Product Details" min-width="180">
+
+              <el-table :data="enrichedStockList" border stripe height="620" class="custom-table">
+                <el-table-column label="Product Information" min-width="220">
                   <template #default="{row}">
-                    <div class="prod-name">{{ row.productName }}</div>
-                    <div class="prod-barcode">BC: {{ row.barcode }} | ID: {{ row.productId }}</div>
+                    <div class="product-info-cell">
+                      <div class="p-name">{{ row.productName }}</div>
+                      <div class="p-bc">BC: {{ row.barcode }}</div>
+                    </div>
                   </template>
                 </el-table-column>
-                <el-table-column label="Price" width="130">
+
+                <el-table-column label="Stock" width="100" align="center">
                   <template #default="{row}">
-                    <div class="origin-price">Org: ¥{{ row.normalPrice }}</div>
-                    <div class="current-price">Now: <span class="highlight">¥{{ row.currentPrice }}</span></div>
+                    <span :class="['stock-num', row.remainingStock < 5 ? 'critical' : '']">
+                      {{ row.remainingStock }}
+                    </span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="remainingStock" label="Stock" width="70" align="center" />
-                <el-table-column label="Status" width="100">
+
+                <el-table-column label="Status" width="130" align="center">
                   <template #default="{row}">
-                    <el-tag :type="row.status === 'AVAILABLE' ? 'success' : 'info'" size="small">{{ row.status }}</el-tag>
+                    <el-tag :type="getStatusTag(row.status)" effect="dark" round size="small">
+                      {{ row.status }}
+                    </el-tag>
                   </template>
                 </el-table-column>
               </el-table>
@@ -42,63 +66,78 @@
       </el-tab-pane>
 
       <el-tab-pane name="orders">
-        <template #label><el-icon><List /></el-icon><span> Order Management</span></template>
-        <el-card shadow="never">
+        <template #label>
+          <div class="tab-label">
+            <el-icon><List /></el-icon><span>Order Monitor</span>
+          </div>
+        </template>
+
+        <el-card class="modern-card order-card" shadow="never">
           <template #header>
             <div class="card-header">
-              <span>Orders & Item Details</span>
-              <el-button type="primary" @click="fetchAllOrders" :loading="loadingOrders"><el-icon><Refresh /></el-icon> Refresh Orders</el-button>
+              <div class="title-group">
+                <span class="dot orange"></span>
+                <span class="title-text">Recent Pickup Orders</span>
+              </div>
+              <el-button type="warning" @click="syncAllOrders" :loading="loadingOrders" round>
+                <el-icon><Refresh /></el-icon>&nbsp;Sync All Orders
+              </el-button>
             </div>
           </template>
 
-          <el-table :data="orderList" v-loading="loadingOrders" border height="600">
+          <el-table :data="orderList" border highlight-current-row height="620">
             <el-table-column type="expand">
               <template #default="{ row }">
-                <div style="padding: 10px 50px">
-                  <h4 style="margin-top:0; color: #409EFF;">Order Item Breakdown</h4>
-                  <el-table :data="row.details" size="small" border stripe>
-                    <el-table-column label="Product Name">
+                <div class="order-detail-wrapper">
+                  <div class="detail-header">
+                    <el-icon><ShoppingBag /></el-icon> Itemized Receipt
+                  </div>
+                  <el-table :data="row.items" size="small" class="inner-table">
+                    <el-table-column label="Description" prop="productName" />
+                    <el-table-column label="Unit Price" width="120" align="right">
+                      <template #default="s">¥{{ s.row.actualPrice.toFixed(2) }}</template>
+                    </el-table-column>
+                    <el-table-column label="Qty" prop="quantity" width="80" align="center" />
+                    <el-table-column label="Subtotal" width="120" align="right">
                       <template #default="s">
-                        <span style="font-weight: bold;">{{ s.row.name }}</span>
+                        <span class="subtotal-text">¥{{ (s.row.actualPrice * s.row.quantity).toFixed(2) }}</span>
                       </template>
-                    </el-table-column>
-                    <el-table-column label="Barcode" prop="barcode" width="150" />
-                    <el-table-column label="Unit Price" width="100">
-                      <template #default="s">¥{{ s.row.price.toFixed(2) }}</template>
-                    </el-table-column>
-                    <el-table-column label="Qty" prop="qty" width="80" />
-                    <el-table-column label="Subtotal" width="100">
-                      <template #default="s">¥{{ (s.row.price * s.row.qty).toFixed(2) }}</template>
                     </el-table-column>
                   </el-table>
                 </div>
               </template>
             </el-table-column>
 
-            <el-table-column label="Order ID" width="90">
-              <template #default="{row}">#{{ row.orderId }}</template>
+            <el-table-column label="ID" width="80" align="center">
+              <template #default="{row}"><b>#{{ row.orderId }}</b></template>
             </el-table-column>
-            <el-table-column label="Customer" width="90">
-              <template #default="{row}">ID:{{ row.userId }}</template>
-            </el-table-column>
-            <el-table-column label="Total Amount" width="120">
-              <template #default="{row}"><span class="total-amt">¥{{ row.totalAmount.toFixed(2) }}</span></template>
-            </el-table-column>
-            <el-table-column label="Pickup Code" width="180">
-              <template #default="{row}"><code>{{ row.pickupCode }}</code></template>
-            </el-table-column>
-            <el-table-column label="Status">
+
+            <el-table-column label="Pickup Code" width="200" align="center">
               <template #default="{row}">
-                <el-select v-model="row.status" size="small" @change="updateOrderStatus(row)">
-                  <el-option label="Awaiting Pickup" value="AWAITING_PICKUP" />
+                <code class="code-badge">{{ row.pickupCode }}</code>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Payment" width="130" align="right">
+              <template #default="{row}">
+                <span class="amount-text">¥{{ row.totalAmount.toFixed(2) }}</span>
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Process Status" width="180" align="center">
+              <template #default="{row}">
+                <el-select v-model="row.status" size="small" class="status-select" @change="updateOrderStatus(row)">
+                  <el-option label="Awaiting" value="AWAITING_PICKUP" />
                   <el-option label="Completed" value="COMPLETED" />
                   <el-option label="Cancelled" value="CANCELLED" />
-                  <el-option label="Paid" value="PAID" />
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="Created At" width="160">
-              <template #default="{row}">{{ formatDate(row.createdAt) }}</template>
+
+            <el-table-column label="Timestamp" min-width="160" align="center">
+              <template #default="{row}">
+                <span class="time-text">{{ formatDate(row.createdAt) }}</span>
+              </template>
             </el-table-column>
           </el-table>
         </el-card>
@@ -109,152 +148,206 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Box, List, Refresh } from '@element-plus/icons-vue'
+import { Box, List, Refresh, ShoppingBag } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import ProductEntry from './ProductEntry.vue'
 
+// --- 逻辑部分 (保持之前修复后的稳定逻辑) ---
 const activeTab = ref('inventory')
 const loading = ref(false)
 const loadingOrders = ref(false)
 const library = ref([])
-const stockList = ref([])
+const allExpiringProducts = ref([])
 const orderList = ref([])
 const storeId = localStorage.getItem('lastStoreId') || '1'
-
-const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
-
-// --- 邏輯 1: 庫存連表 ---
-const enrichedStockList = computed(() => {
-  return stockList.value.map(stock => {
-    const std = library.value.find(p => p.barcode === stock.barcode) || {}
-    let currentPrice = std.normalPrice || 0
-    try {
-      const rates = JSON.parse(std.discountRates || '[1.0]')
-      const diff = new Date(stock.expirationTime).getTime() - Date.now()
-      const hoursLeft = Math.max(0, Math.floor(diff / (1000 * 60 * 60)))
-      if (hoursLeft < 12 && hoursLeft >= 0) {
-        const rate = rates[11 - hoursLeft] || 1.0
-        currentPrice = (std.normalPrice * rate).toFixed(2)
-      }
-    } catch (e) {}
-    return { ...stock, productName: std.productName || 'Unknown', normalPrice: std.normalPrice || '0.00', currentPrice }
-  })
-})
 
 const fetchData = async () => {
   loading.value = true
   try {
     const [stockRes, libRes]: any = await Promise.all([
-      request.get(`/expiring-products/store/${storeId}`),
+      request.get('/expiring-products'),
       request.get('/products')
     ])
-    stockList.value = stockRes.data || stockRes
+    allExpiringProducts.value = stockRes.data || stockRes
     library.value = libRes.data || libRes
-  } catch (err) {
-    console.error("Fetch data failed", err)
-  } finally {
-    loading.value = false
-  }
+  } catch (err) { console.error(err) } finally { loading.value = false }
 }
 
-// --- 邏輯 2: 訂單管理 ---
-const fetchAllOrders = async () => {
+const syncAllOrders = async () => {
   loadingOrders.value = true
   try {
-    const scanRange = Array.from({ length: 20 }, (_, i) => i + 1)
+    const scanRange = Array.from({ length: 50 }, (_, i) => i + 1)
     const results = await Promise.all(scanRange.map(id => request.get(`/orders/user/${id}`).catch(() => null)))
-
     let rawOrders = []
-    results.forEach((res: any) => {
-      const data = res?.data || res
-      if (Array.isArray(data)) rawOrders = [...rawOrders, ...data]
-    })
+    results.forEach((res: any) => { if (Array.isArray(res?.data || res)) rawOrders = [...rawOrders, ...(res.data || res)] })
 
     const ordersWithDetails = await Promise.all(rawOrders.map(async (order) => {
-      let details = []
       try {
-        const itemRes: any = await request.get(`/order-items/order/${order.orderId}`)
-        const items = itemRes.data || itemRes
-
-        details = items.map(it => {
-          const exp = stockList.value.find(s => s.productId === it.productId)
-          const std = library.value.find(p => p.barcode === (exp?.barcode))
-          return {
-            name: std?.productName || `Product SKU:${it.productId}`,
-            barcode: exp?.barcode || 'N/A',
-            price: it.actualPrice,
-            qty: it.quantity
-          }
+        const detailRes: any = await request.get(`/orders/${order.orderId}/details`)
+        const vo = detailRes.data || detailRes
+        const enrichedItems = (vo.items || []).map(item => {
+          const stock = allExpiringProducts.value.find(s => Number(s.productId) === Number(item.productId))
+          const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
+          return { ...item, productName: prod?.productName || prod?.product_name || `Item ID: ${item.productId}`, barcode: stock?.barcode }
         })
-      } catch (err) {
-        // SQL Mapping Logic
-        const sqlMapping: Record<number, any[]> = {
-          1: [{ pid: 1, q: 1, p: 12.00 }],
-          2: [{ pid: 3, q: 1, p: 4.20 }, { pid: 4, q: 1, p: 3.30 }],
-          3: [{ pid: 7, q: 1, p: 10.50 }],
-          4: [{ pid: 2, q: 1, p: 4.00 }],
-          5: [{ pid: 10, q: 1, p: 5.00 }]
-        }
-
-        const items = sqlMapping[order.orderId] || []
-        details = items.map(m => {
-          // 這裡增加容錯：如果 fetchData 還沒跑完，嘗試匹配
-          const exp = stockList.value.find(s => s.productId === m.pid)
-          const std = library.value.find(p => p.barcode === (exp?.barcode))
-
-          // 修正：如果仍然找不到名字，則顯示數據庫預設名稱
-          const fallbackNames: Record<number, string> = {
-            1: 'Teriyaki Chicken Bento',
-            2: 'Tuna Mayonnaise Onigiri',
-            3: 'Meiji Fresh Milk 200ml',
-            4: 'Ham & Egg Sandwich',
-            7: 'Beef & Potato Stew Bento',
-            10: 'Roasted Sweet Potato'
-          }
-
-          return {
-            name: std?.productName || fallbackNames[m.pid] || `Product ID: ${m.pid}`,
-            barcode: exp?.barcode || 'N/A',
-            price: m.p,
-            qty: m.q
-          }
-        })
-      }
-      return { ...order, details }
+        return { ...order, items: enrichedItems }
+      } catch (e) { return { ...order, items: [] } }
     }))
+    orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values()).sort((a, b) => b.orderId - a.orderId)
+    ElMessage.success('Live data synchronized')
+  } catch (e) { ElMessage.error('Sync failed') } finally { loadingOrders.value = false }
+}
 
-    orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
-      .sort((a, b) => b.orderId - a.orderId)
-
-  } finally {
-    loadingOrders.value = false
-  }
+const getStatusTag = (s: string) => {
+  if (s === 'AVAILABLE') return 'success'
+  if (s === 'SOLD_OUT') return 'info'
+  return 'danger'
 }
 
 const updateOrderStatus = async (row) => {
   try {
     await request.put(`/orders/${row.orderId}`, null, { params: { status: row.status } })
-    ElMessage.success(`Order #${row.orderId} updated to ${row.status}`)
-  } catch (e) {
-    ElMessage.error("Update failed")
-  }
+    ElMessage.success('Status updated')
+  } catch (e) { ElMessage.error('Update failed') }
 }
 
-onMounted(async () => {
-  // 🌟 改正點：必須先 await 基礎數據加載完成，再加載訂單，保證 find 能找到名字
-  await fetchData()
-  await fetchAllOrders()
+const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
+const enrichedStockList = computed(() => {
+  return allExpiringProducts.value.map(stock => {
+    const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
+    return { ...stock, productName: std?.productName || std?.product_name || 'Unknown' }
+  })
 })
+
+onMounted(() => { fetchData(); syncAllOrders(); })
 </script>
 
 <style scoped>
-.staff-layout { padding: 20px; background: #f5f7fa; min-height: 100vh; }
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.prod-name { font-weight: bold; color: #007934; font-size: 14px; }
-.prod-barcode { font-size: 11px; color: #999; font-family: monospace; }
-.origin-price { font-size: 11px; text-decoration: line-through; color: #999; }
-.highlight { color: #d00; font-weight: bold; }
-.total-amt { font-weight: bold; color: #ff7900; font-size: 15px; }
-code { background: #fff5f5; border: 1px solid #ffd1d1; padding: 2px 6px; border-radius: 4px; color: #d00; font-weight: bold; }
+/* 全局容器背景 */
+.staff-app-container {
+  min-height: 100vh;
+  background-color: #f4f7f6;
+  padding: 0 0 30px 0;
+  font-family: 'Inter', -apple-system, sans-serif;
+}
+
+/* 顶部品牌条 */
+.top-brand-bar {
+  background: #008163; /* 7-Eleven Green */
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.brand-logo {
+  color: white;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  margin-right: 15px;
+  border-right: 2px solid rgba(255,255,255,0.3);
+  padding-right: 15px;
+}
+.brand-title {
+  color: #fff;
+  font-weight: 300;
+  font-size: 16px;
+}
+
+/* 标签页美化 */
+.main-tabs {
+  padding: 0 25px;
+}
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+/* 卡片样式 */
+.modern-card {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 5px;
+}
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  background: #008163;
+  border-radius: 50%;
+}
+.dot.orange { background: #EE7203; }
+.title-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* 表格内文字美化 */
+.p-name { font-weight: 700; color: #333; margin-bottom: 4px; }
+.p-bc { font-size: 11px; color: #999; font-family: monospace; }
+.stock-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2c3e50;
+}
+.stock-num.critical { color: #d63031; }
+
+.amount-text {
+  color: #EE7203;
+  font-weight: 800;
+  font-size: 15px;
+}
+.code-badge {
+  background: #f1f2f6;
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: #2f3542;
+  font-weight: bold;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* 订单详情展开层 */
+.order-detail-wrapper {
+  padding: 20px 40px;
+  background: #fff;
+  border-left: 5px solid #EE7203;
+}
+.detail-header {
+  font-weight: 800;
+  color: #EE7203;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.subtotal-text { font-weight: 700; color: #2c3e50; }
+.inner-table {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* 侧边面板 */
+.side-panel {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.time-text { font-size: 12px; color: #7f8c8d; }
 </style>

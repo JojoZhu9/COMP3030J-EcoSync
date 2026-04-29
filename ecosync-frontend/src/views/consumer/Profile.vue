@@ -13,7 +13,7 @@
             <span class="member-id">UID: {{ userId }}</span>
             <el-tag size="small" class="active-tag">ACTIVE MEMBER</el-tag>
           </div>
-          <h2 class="welcome-text">Welcome back, Eco-Partner!</h2>
+          <h2 class="welcome-text">Welcome back, {{ userForm.username || 'Eco-Partner' }}!</h2>
         </div>
       </div>
     </div>
@@ -92,49 +92,65 @@ import { MapLocation, Location, Phone, SwitchButton, ArrowRight } from '@element
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 
-const userId = localStorage.getItem('userId') || '4'
+const userId = localStorage.getItem('userId') || '12'
 const saving = ref(false)
 const rawUserData = ref<any>({})
-const userForm = reactive({ address: '', phone: '', points: 0 })
 
-// 强制获取后端最新数据
+const userForm = reactive({
+  address: '',
+  phone: '',
+  points: 0,
+  username: ''
+})
+
 const fetchUser = async () => {
   try {
     const res: any = await request.get(`/users/${userId}`)
-    rawUserData.value = res.data || res
+    const data = res.data?.data || res.data || res
+    console.log('Final Data Check:', data)
 
-    // 确保与后端的 defaultAddress 和 phoneNumber 字段正确映射
-    userForm.address = rawUserData.value.defaultAddress || ''
-    userForm.phone = rawUserData.value.phoneNumber || ''
-    userForm.points = rawUserData.value.points || 0
+    rawUserData.value = data
 
-    localStorage.setItem('userAddress', userForm.address)
-    localStorage.setItem('userPhone', userForm.phone)
+    // --- 适配后端返回的驼峰字段 ---
+    userForm.username = data.username || ''
+    userForm.points = data.balance || 0
+
+    // 这里做个双重兼容：如果后端返回 phoneNumber 就用，否则尝试 phone_number
+    userForm.phone = data.phoneNumber || data.phone_number || ''
+
+    // 关键：你的日志里没看到 address 字段。
+    // 如果后端叫 userAddress，代码必须匹配这个名字
+    userForm.address = data.userAddress || data.user_address || ''
+
   } catch (e) {
-    ElMessage.error('Infrastructure Link Failure: Sync Error')
+    ElMessage.error('Infrastructure Sync Error')
   }
 }
 
-// 确保正确组装 payload 保存到数据库
 const updateUserInfo = async () => {
-  if (!userForm.address || !userForm.phone) return ElMessage.warning('Field validation failed')
+  if (!userForm.address || !userForm.phone) {
+    return ElMessage.warning('Required fields missing')
+  }
+
   saving.value = true
   try {
-    // 确保传输字段和数据库实体一致
+    // --- 构造 Payload：同时发送驼峰和下划线版本，确保后端必能接收到一个 ---
     const payload = {
       ...rawUserData.value,
-      defaultAddress: userForm.address,
-      phoneNumber: userForm.phone
+      // 电话
+      phoneNumber: userForm.phone,
+      phone_number: userForm.phone,
+      // 地址
+      userAddress: userForm.address,
+      user_address: userForm.address
     }
+
+    console.log('Sending Sync Payload:', payload)
 
     await request.put(`/users/${userId}`, payload)
 
-    // 更新本地缓存以防万一
-    localStorage.setItem('userAddress', userForm.address)
-    localStorage.setItem('userPhone', userForm.phone)
-
-    ElMessage.success('Fulfillment data synchronized successfully!')
-    fetchUser()
+    ElMessage.success('Fulfillment data synchronized!')
+    await fetchUser()
   } catch (e) {
     ElMessage.error('Synchronization failed')
   } finally {
@@ -142,7 +158,11 @@ const updateUserInfo = async () => {
   }
 }
 
-const handleLogout = () => { localStorage.clear(); window.location.href = '/login'; }
+const handleLogout = () => {
+  localStorage.clear();
+  window.location.href = '/login';
+}
+
 onMounted(fetchUser)
 </script>
 

@@ -34,9 +34,8 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showAdd" title="Product Registration & Strategy Preview" width="850px" destroy-on-close>
+    <el-dialog v-model="showAdd" title="Product Registration & Strategy Preview" width="850px" destroy-on-close @closed="stopScanner">
       <div class="dialog-flex-layout">
-
         <div class="preview-panel">
           <div class="panel-title">PRICE DECAY PREVIEW</div>
           <div class="chart-container">
@@ -74,7 +73,13 @@
             <el-row :gutter="20">
               <el-col :span="14">
                 <el-form-item label="Barcode">
-                  <el-input v-model="newP.barcode" placeholder="Scan or enter barcode" />
+                  <el-input v-model="newP.barcode" placeholder="Scan or enter barcode">
+                    <template #append>
+                      <el-button @click="startScanner">
+                        <el-icon><Camera /></el-icon>
+                      </el-button>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="10">
@@ -106,6 +111,11 @@
         </div>
       </div>
 
+      <div v-if="scanning" class="scanner-overlay">
+        <div id="scanner-reader"></div>
+        <el-button type="danger" @click="stopScanner" class="close-scanner">Cancel Scan</el-button>
+      </div>
+
       <template #footer>
         <el-button @click="showAdd = false">Cancel</el-button>
         <el-button type="primary" @click="submitAdd" :loading="submitLoading">Confirm Entry</el-button>
@@ -115,11 +125,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Camera } from '@element-plus/icons-vue'
+import { Html5Qrcode } from 'html5-qrcode' // 需要安裝：npm install html5-qrcode
 
 const router = useRouter()
 const products = ref([])
@@ -133,6 +144,42 @@ const newP = ref({
   normal_price: 0.00,
   discount_rates: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 })
+
+// 掃描器相關邏輯
+const scanning = ref(false)
+let html5QrCode: Html5Qrcode | null = null
+
+const startScanner = async () => {
+  scanning.value = true
+  // 給 DOM 渲染留一點時間
+  setTimeout(async () => {
+    try {
+      html5QrCode = new Html5Qrcode("scanner-reader")
+      await html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        (decodedText) => {
+          newP.value.barcode = decodedText
+          stopScanner()
+          ElMessage.success('Barcode scanned!')
+        },
+        () => { /* 掃描中忽略錯誤 */ }
+      )
+    } catch (err) {
+      ElMessage.error('Camera access denied or error: ' + err)
+      scanning.value = false
+    }
+  }, 100)
+}
+
+const stopScanner = async () => {
+  if (html5QrCode && html5QrCode.isScanning) {
+    await html5QrCode.stop()
+    await html5QrCode.clear()
+  }
+  scanning.value = false
+  html5QrCode = null
+}
 
 const getBarColor = (rate: number) => {
   if (rate > 0.8) return '#409EFF'
@@ -198,11 +245,11 @@ const handleDelete = (row: any) => {
 }
 
 const goDetail = (row: any) => {
-  // 這裡跳轉至 AdminHome 並帶上商品條碼作為查詢參數
   router.push({ name: 'AdminHome', query: { id: row.barcode } })
 }
 
 onMounted(fetchData)
+onUnmounted(stopScanner)
 </script>
 
 <style scoped>
@@ -243,6 +290,15 @@ onMounted(fetchData)
   background: #f5f7fa; padding: 5px 8px; border-radius: 4px; border: 1px solid #e4e7ed;
 }
 .hour-label { font-size: 12px; color: #606266; font-weight: bold; }
+
+/* 掃描器遮罩樣式 */
+.scanner-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); z-index: 10; display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+#scanner-reader { width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; }
+.close-scanner { margin-top: 20px; }
 
 :deep(.el-divider__text) { font-weight: bold; color: #409eff; }
 .price-tag { color: #f56c6c; font-weight: bold; }

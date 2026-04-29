@@ -1,157 +1,107 @@
 <template>
-  <div class="checkout-page">
-    <div class="checkout-header">
-      <div class="header-left">
-        <div class="nav-back" @click="$router.back()">
-          <el-icon><ArrowLeft /></el-icon>
-        </div>
-        <h2 class="page-title">Shopping Cart</h2>
-      </div>
-      <el-button
-        type="danger"
-        link
-        class="clear-action"
-        @click="handleClearCart"
-        :disabled="cartItems.length === 0"
-      >
-        <el-icon style="margin-right: 4px"><Delete /></el-icon>Clear All
-      </el-button>
-    </div>
-
-    <div class="checkout-body" v-if="cartItems.length > 0">
-      <div class="fulfillment-card">
-        <div class="fulfillment-header">
-          <span class="label">
-            <el-icon class="label-icon"><LocationInformation /></el-icon>
-            Delivery Logistics
-          </span>
-          <el-button type="primary" link @click="$router.push('/profile')">Edit Details</el-button>
-        </div>
-
-        <div class="address-content" v-if="userAddress && userAddress !== 'null'">
-          <div class="addr-main">{{ userAddress }}</div>
-          <div class="contact-sub">
-            <span class="user-tag">Recipient</span>
-            <span class="phone-num">{{ userPhone || 'No phone provided' }}</span>
+  <div class="checkout-wrapper">
+    <div class="checkout-page">
+      <div class="checkout-header">
+        <div class="header-left">
+          <div class="nav-back" @click="$router.back()">
+            <el-icon><ArrowLeft /></el-icon>
           </div>
+          <h2 class="page-title">Shopping Basket</h2>
         </div>
-        <div class="address-placeholder" v-else @click="$router.push('/profile')">
-          <div class="empty-prompt">
-            <el-icon class="pulse-icon"><WarningFilled /></el-icon>
-            <span>Set delivery address to proceed</span>
-          </div>
-        </div>
+        <el-button type="danger" link @click="handleClearCart" :disabled="cartItems.length === 0">
+          <el-icon style="margin-right: 4px"><Delete /></el-icon>Empty
+        </el-button>
       </div>
 
-      <div class="items-container">
-        <div class="section-header">
-          <h3 class="section-title">Purchase Summary</h3>
-          <span class="item-count">{{ cartItems.length }} items</span>
-        </div>
-
-        <div v-for="item in cartItems" :key="item.cartItemId"
-             class="item-tile" :class="{'is-selected': item.selected}">
-          <div class="item-check">
-            <el-checkbox v-model="item.selected" size="large" />
-          </div>
-
-          <div class="item-preview">
-            <div class="placeholder-img">
-              <el-icon :size="28"><Box /></el-icon>
+      <div class="scroll-content">
+        <div class="checkout-body" v-if="cartItems.length > 0">
+          <div class="fulfillment-card">
+            <div class="fulfillment-header">
+              <span class="label"><el-icon><Shop /></el-icon>PICKUP INFO</span>
+              <el-button type="primary" link @click="$router.push('/profile')">Edit</el-button>
             </div>
-          </div>
-
-          <div class="item-details">
-            <div class="name-row">
-              <span class="product-name">{{ item.productName }}</span>
-              <el-button type="info" link @click="deleteSingleItem(item.cartItemId)" class="mini-remove">
-                <el-icon><Close /></el-icon>
-              </el-button>
-            </div>
-
-            <div class="stock-info">
-              SKU: {{ item.barcode }} |
-              <span :class="{'low-stock': item.maxStock <= 5}">Stock: {{ item.maxStock }}</span>
-            </div>
-
-            <div class="price-qty-row">
-              <div class="price-tag">
-                <span class="currency">元</span>
-                <span class="val">{{ Number(item.pointsPrice).toFixed(2) }}</span>
+            <div class="address-content" v-if="userAddress">
+              <div class="addr-main">{{ userAddress }}</div>
+              <div class="contact-sub">
+                <span class="u-tag">Member</span>
+                <span>{{ userPhone || 'No phone' }}</span>
               </div>
+            </div>
+          </div>
 
-              <el-input-number
-                v-model="item.quantity"
-                :min="1"
-                :max="item.maxStock"
-                size="small"
-                controls-position="right"
-                @change="(val) => updateCartQuantity(item, val)"
-                class="brand-stepper"
-              />
+          <div class="items-container">
+            <div v-for="item in cartItems" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected}">
+              <div class="item-check"><el-checkbox v-model="item.selected" size="large" /></div>
+              <div class="item-preview"><el-icon :size="24"><Box /></el-icon></div>
+              <div class="item-details">
+                <div class="name-row">
+                  <span class="product-name">{{ item.productName || 'Syncing...' }}</span>
+                  <el-button type="info" link @click="deleteSingleItem(item.cartItemId)"><el-icon><Close /></el-icon></el-button>
+                </div>
+                <div class="price-qty-row">
+                  <div class="price-tag">￥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</div>
+                  <el-input-number v-model="item.quantity" :min="1" :max="item.maxStock || 99" size="small" @change="(val) => updateCartQuantity(item, val)" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="summary-tile">
-        <div class="summary-row">
-          <span class="s-label">Selected Subtotal</span>
-          <span class="s-value">元 {{ totalPrice }}</span>
-        </div>
-        <div class="summary-row">
-          <span class="s-label">Service Fee</span>
-          <span class="s-value free">WAIVED</span>
+        <div v-else class="empty-cart-view">
+          <el-empty description="Your basket is empty" :image-size="120" />
         </div>
       </div>
-    </div>
 
-    <div v-else class="empty-cart-view">
-      <el-empty description="Your basket is currently empty">
-        <el-button type="success" plain round @click="$router.push('/home')">Browse Products</el-button>
-      </el-empty>
-    </div>
-
-    <div class="sticky-checkout" v-if="cartItems.length > 0">
-      <div class="total-info">
-        <span class="total-label">Grand Total ({{ selectedItems.length }} items)</span>
-        <div class="total-price-box">
-          <span class="total-val">{{ totalPrice }}</span>
-          <span class="total-currency">元</span>
-        </div>
-      </div>
-      <el-button
-        type="success"
-        class="checkout-main-btn"
-        @click="openConfirmDialog"
-        :disabled="selectedItems.length === 0"
-      >
-        Checkout
-      </el-button>
-    </div>
-
-    <el-dialog v-model="confirmVisible" title="Confirm Payment" width="90%" align-center class="confirm-dialog">
-      <div class="confirm-box">
-        <div class="confirm-scroll-area">
-          <div v-for="item in selectedItems" :key="item.cartItemId" class="confirm-item">
-            <span class="c-name">{{ item.productName }} <small>x{{ item.quantity }}</small></span>
-            <span class="c-price">{{ (item.pointsPrice * item.quantity).toFixed(2) }} 元</span>
+      <div class="sticky-footer" v-if="cartItems.length > 0">
+        <div class="total-section">
+          <span class="total-label">Subtotal</span>
+          <div class="total-amount-box">
+            <span class="currency">¥</span>
+            <span class="value">{{ totalPrice }}</span>
           </div>
         </div>
-        <el-divider border-style="dashed" />
-        <div class="confirm-total">
-          <span>Total Deduction:</span>
-          <span class="total-highlight">{{ totalPrice }} 元</span>
+        <el-button
+          type="success"
+          class="pay-now-btn"
+          @click="openConfirmDialog"
+          :disabled="selectedItems.length === 0"
+        >
+          Pay Now
+        </el-button>
+      </div>
+    </div>
+
+    <el-dialog v-model="confirmVisible" width="400px" align-center class="receipt-dialog" :show-close="false" append-to-body>
+      <div class="receipt-container">
+        <div class="receipt-zigzag"></div>
+        <div class="receipt-header">
+          <div class="brand-logo">7-ELEVEN</div>
+          <p class="receipt-title">ORDER PREVIEW</p>
         </div>
-        <div class="confirm-address-box">
-          <div class="c-title">Delivery To:</div>
-          <div class="c-desc">{{ userAddress }}</div>
+        <div class="receipt-info">
+          <div class="r-row"><span>Customer:</span><span>{{ rawUser.userName || 'Member' }}</span></div>
+          <div class="r-row"><span>Phone:</span><span>{{ userPhone }}</span></div>
+          <div class="r-row"><span>Pickup:</span><span class="r-addr">{{ userAddress }}</span></div>
         </div>
+        <div class="r-divider"></div>
+        <div class="r-items">
+          <div v-for="item in selectedItems" :key="item.productId" class="r-item">
+            <span class="r-name">{{ item.productName }}</span>
+            <span class="r-qty">x{{ item.quantity }}</span>
+            <span class="r-price">¥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</span>
+          </div>
+        </div>
+        <div class="r-divider"></div>
+        <div class="r-total">
+          <span>GRAND TOTAL</span>
+          <span class="r-amt">¥{{ totalPrice }}</span>
+        </div>
+        <div class="barcode-area">|| ||| || ||| |||</div>
       </div>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="confirmVisible = false" round>Cancel</el-button>
-          <el-button type="success" @click="executePayment" round :loading="checkingOut">Confirm & Pay</el-button>
+        <div class="dialog-actions">
+          <el-button @click="confirmVisible = false" style="flex:1">Cancel</el-button>
+          <el-button type="success" @click="executePayment" :loading="checkingOut" style="flex:2; background:#008163 !important; border:none;">Confirm & Pay</el-button>
         </div>
       </template>
     </el-dialog>
@@ -160,7 +110,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ArrowLeft, Delete, LocationInformation, WarningFilled, Box, Close } from '@element-plus/icons-vue'
+import { ArrowLeft, Delete, Shop, Box, Close } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -169,176 +119,144 @@ const router = useRouter()
 const cartItems = ref<any[]>([])
 const userAddress = ref('')
 const userPhone = ref('')
+const userBalance = ref(0)
+const rawUser = ref<any>({})
 const confirmVisible = ref(false)
 const checkingOut = ref(false)
 
 const getUserId = () => localStorage.getItem('userId')
+const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
+const totalPrice = computed(() => selectedItems.value.reduce((acc, i) => acc + (i.pointsPrice * i.quantity), 0).toFixed(2))
 
-onMounted(async () => {
+const initData = async () => {
   const uid = getUserId()
   if (!uid) return router.push('/login')
-  fetchUserProfile(uid)
-  fetchDatabaseCart(uid)
-})
-
-const fetchUserProfile = async (uid: string) => {
   try {
-    const res: any = await request.get(`/users/${uid}`)
-    userAddress.value = res.data?.defaultAddress || ''
-    userPhone.value = res.data?.phoneNumber || ''
-  } catch (e) { console.error(e) }
-}
+    const userRes: any = await request.get(`/users/${uid}`)
+    const userData = userRes.data || userRes
+    rawUser.value = userData
+    userAddress.value = userData.userAddress || ''
+    userPhone.value = userData.phone_number || userData.phoneNumber || ''
+    userBalance.value = Number(userData.balance || 0)
 
-const fetchDatabaseCart = async (uid: string) => {
-  try {
     const cartRes: any = await request.get(`/cart/user/${uid}`)
-    const rawCartItems = cartRes.data || cartRes || []
+    const rawItems = cartRes.data || cartRes || []
 
-    const enrichedItems = await Promise.all(rawCartItems.map(async (item: any) => {
+    cartItems.value = await Promise.all(rawItems.map(async (item: any) => {
+      const pId = item.productId || item.product_id
       try {
-        const expRes: any = await request.get(`/expiring-products/${item.productId}`)
-        const expData = expRes.data || expRes
-        const stdRes: any = await request.get(`/products/${expData.barcode}`)
-        const stdData = stdRes.data || stdRes
-
-        return {
-          ...item,
-          barcode: expData.barcode,
-          productName: stdData.productName || 'Unknown Product',
-          pointsPrice: Number(stdData.normalPrice || 0),
-          maxStock: Number(expData.remainingStock || 0),
-          selected: true
-        }
-      } catch (err) {
-        return { ...item, productName: 'Item Info Missing', pointsPrice: 0, maxStock: 0, selected: false }
+        const exp: any = (await request.get(`/expiring-products/${pId}`)).data || (await request.get(`/expiring-products/${pId}`))
+        const std: any = (await request.get(`/products/${exp.barcode}`)).data || (await request.get(`/products/${exp.barcode}`))
+        return { ...item, productId: pId, productName: std.productName, pointsPrice: Number(std.normalPrice), maxStock: Number(exp.remainingStock), selected: true }
+      } catch {
+        return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false }
       }
     }))
-    cartItems.value = enrichedItems
-  } catch (e) {
-    ElMessage.error('Cart sync failed')
-  }
+  } catch (e) { ElMessage.error('Data Sync Failed') }
 }
 
-const updateCartQuantity = async (item: any, qty: number) => {
-  await request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
+onMounted(initData)
+
+const openConfirmDialog = () => {
+  if (!userAddress.value) return ElMessage.warning('Set pickup address in profile first')
+  confirmVisible.value = true
 }
+
+const updateCartQuantity = (item: any, qty: number) => request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
 
 const deleteSingleItem = async (id: number) => {
   await request.delete(`/cart/${id}`)
   cartItems.value = cartItems.value.filter(i => i.cartItemId !== id)
-  ElMessage.success('Removed from basket')
 }
 
 const handleClearCart = async () => {
   try {
-    await ElMessageBox.confirm('Clear all items?', 'Warning', { type: 'warning', roundButton: true })
+    await ElMessageBox.confirm('Clear all items?')
     await request.delete(`/cart/user/${getUserId()}`)
     cartItems.value = []
   } catch (e) {}
 }
 
-const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
-const totalPrice = computed(() => {
-  return selectedItems.value.reduce((acc, i) => acc + (i.pointsPrice * i.quantity), 0).toFixed(2)
-})
-
-const openConfirmDialog = () => {
-  if (!userAddress.value || userAddress.value === 'null') {
-    return ElMessage.warning('Please set a delivery address first')
-  }
-  confirmVisible.value = true
-}
-
 const executePayment = async () => {
   checkingOut.value = true
+  const uid = getUserId()
+  const storeId = localStorage.getItem('lastStoreId') || '1'
+
   try {
-    // 這裡模擬支付流程，支付後清空購物車
-    await request.delete(`/cart/user/${getUserId()}`)
-    ElMessage.success('Order Success!')
-    router.push('/order-status')
-  } catch (e) {
-    ElMessage.error('Payment failed')
+    /**
+     * 对齐后端接口: OrderController 中的 @PostMapping("/checkout")
+     * 路径: /api/orders/checkout (request 会自动补全 /api)
+     */
+    const res: any = await request.post('/orders/checkout', {
+      userId: Number(uid),
+      storeId: Number(storeId)
+    })
+
+    // 后端返回 String，检查是否包含“失败”
+    if (typeof res === 'string' && res.includes('失败')) {
+      throw new Error(res)
+    }
+
+    ElMessage.success('Order Successful!')
+    confirmVisible.value = false
+    router.push('/order-status') // 跳转到订单列表查看提货码
+  } catch (e: any) {
+    ElMessage.error(e.message || 'Payment logic error')
   } finally {
     checkingOut.value = false
-    confirmVisible.value = false
   }
 }
 </script>
 
 <style scoped>
-.checkout-page { background: #f8fafc; min-height: 100vh; padding-bottom: 110px; }
+.checkout-wrapper { height: 100vh; width: 100%; overflow: hidden; position: relative; }
+.checkout-page { height: 100%; display: flex; flex-direction: column; background: #f6f8fa; position: relative; }
 
-/* Header 樣式 */
-.checkout-header { background: #fff; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; position: sticky; top: 0; z-index: 10; }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.nav-back { cursor: pointer; display: flex; align-items: center; color: #64748b; font-size: 20px; }
-.page-title { font-size: 18px; font-weight: 800; color: #1e293b; margin: 0; }
+/* Header */
+.checkout-header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+.page-title { font-size: 18px; font-weight: 800; color: #1e293b; margin:0; }
 
-/* 物流卡片 */
-.fulfillment-card { background: #fff; border-radius: 16px; margin: 16px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-.fulfillment-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
-.label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #64748b; }
-.addr-main { font-weight: 800; font-size: 16px; color: #1e293b; margin-bottom: 6px; }
-.user-tag { background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 11px; color: #475569; margin-right: 8px; font-weight: 700; }
-.phone-num { font-size: 13px; color: #64748b; }
+/* Scroll Area */
+.scroll-content { flex: 1; overflow-y: auto; padding-bottom: 100px; }
 
-.empty-prompt { display: flex; align-items: center; gap: 8px; color: #ef4444; font-weight: 700; font-size: 14px; }
-.pulse-icon { animation: pulse 2s infinite; }
+/* Cards */
+.fulfillment-card { background: #fff; margin: 15px; padding: 18px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+.label { color: #008163; font-weight: 800; font-size: 11px; display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
+.addr-main { font-weight: 800; color: #1e293b; font-size: 15px; }
+.u-tag { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; font-size: 10px; color: #64748b; margin-right: 5px; }
 
-/* 商品清單 */
-.section-header { margin: 20px 16px 12px; display: flex; justify-content: space-between; align-items: baseline; }
-.section-title { font-size: 16px; font-weight: 800; color: #1e293b; margin: 0; }
-.item-count { font-size: 12px; color: #94a3b8; font-weight: 600; }
+.item-tile { background: #fff; margin: 0 15px 12px; padding: 15px; border-radius: 16px; display: flex; gap: 12px; align-items: center; border: 2px solid transparent; transition: 0.3s; }
+.item-tile.is-selected { border-color: #008163; background: #f0fdf9; }
+.product-name { font-weight: 800; font-size: 14px; color: #1e293b; }
+.price-tag { color: #EE7203; font-weight: 900; font-size: 18px; }
 
-.item-tile { background: #fff; border-radius: 16px; margin: 0 16px 12px; padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid transparent; transition: all 0.3s ease; }
-.item-tile.is-selected { border-color: #10b981; background: #f0fdf4; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.05); }
-
-.placeholder-img { width: 68px; height: 68px; background: #f1f5f9; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #cbd5e1; }
-.item-details { flex: 1; min-width: 0; }
-.product-name { font-weight: 800; font-size: 15px; color: #1e293b; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stock-info { font-size: 11px; color: #94a3b8; margin: 4px 0 8px; font-weight: 600; }
-.low-stock { color: #ef4444; }
-
-.price-qty-row { display: flex; justify-content: space-between; align-items: center; }
-.price-tag { color: #f59e0b; font-weight: 900; font-size: 18px; }
-.currency { font-size: 12px; margin-right: 2px; }
-
-/* 費用彙總 */
-.summary-tile { background: #fff; border-radius: 16px; margin: 16px; padding: 16px; }
-.summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
-.s-label { color: #64748b; font-weight: 600; }
-.s-value { color: #1e293b; font-weight: 800; }
-.free { color: #10b981; }
-
-/* 底部按鈕欄 */
-.sticky-checkout { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; padding: 15px 20px 35px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f1f5f9; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 100; }
-.total-label { font-size: 12px; color: #94a3b8; font-weight: 700; display: block; }
-.total-price-box { display: flex; align-items: baseline; gap: 4px; color: #f59e0b; }
-.total-val { font-size: 28px; font-weight: 900; }
-.total-currency { font-size: 14px; font-weight: 800; }
-
-.checkout-main-btn { height: 50px; padding: 0 40px; border-radius: 14px; font-weight: 800; font-size: 16px; background: #007934 !important; border: none; box-shadow: 0 4px 12px rgba(0, 121, 52, 0.2); transition: transform 0.2s; }
-.checkout-main-btn:active { transform: scale(0.96); }
-
-/* 確認彈窗 */
-.confirm-item { display: flex; justify-content: space-between; padding: 10px 0; font-weight: 700; }
-.c-name small { color: #94a3b8; margin-left: 8px; }
-.total-highlight { font-size: 22px; font-weight: 900; color: #f59e0b; }
-.confirm-address-box { background: #f8fafc; padding: 12px; border-radius: 12px; margin-top: 15px; }
-.c-title { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 800; }
-.c-desc { font-size: 13px; color: #1e293b; font-weight: 700; margin-top: 4px; }
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
+/* Bottom Bar - Absolute fixed inside page to avoid sidebar overlap */
+.sticky-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 85px;
+  background: #fff;
+  padding: 0 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+  border-top: 1px solid #eee;
+  z-index: 100;
 }
+.total-amount-box { color: #EE7203; display: flex; align-items: baseline; }
+.value { font-size: 28px; font-weight: 900; }
+.pay-now-btn { height: 50px; padding: 0 35px; border-radius: 25px; font-weight: 800; background: #008163 !important; border:none; }
 
-:deep(.el-input-number.brand-stepper) {
-  width: 100px;
-}
-:deep(.brand-stepper .el-input__wrapper) {
-  border-radius: 8px;
-  background: #f8fafc;
-}
+/* Receipt Styling */
+.receipt-container { background: #fff; padding: 20px; position: relative; }
+.receipt-zigzag { position: absolute; top: -10px; left: 0; width: 100%; height: 10px; background: linear-gradient(-135deg, transparent 5px, #fff 0), linear-gradient(135deg, transparent 5px, #fff 0); background-size: 10px 10px; }
+.brand-logo { color: #008163; font-weight: 900; font-size: 24px; text-align: center; }
+.r-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+.r-divider { border-top: 1px dashed #ccc; margin: 15px 0; }
+.r-item { display: flex; justify-content: space-between; font-size: 13px; font-family: monospace; }
+.r-amt { font-size: 24px; color: #EE7203; font-weight: 900; }
+.barcode-area { text-align: center; font-size: 20px; letter-spacing: 5px; opacity: 0.2; margin-top: 20px; }
 </style>
