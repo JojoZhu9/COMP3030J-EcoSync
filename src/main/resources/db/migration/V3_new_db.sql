@@ -1,10 +1,7 @@
-CREATE DATABASE IF NOT EXISTS 711ex DEFAULT CHARACTER SET utf8mb4;
-USE 711ex;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS shopping_cart;
 DROP TABLE IF EXISTS expiring_products;
-DROP TABLE IF EXISTS pricing_rules;
 DROP TABLE IF EXISTS standard_products;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS stores;
@@ -32,6 +29,7 @@ CREATE TABLE users (
                        store_id INT DEFAULT NULL COMMENT '员工关联门店ID',
                        balance DECIMAL(10, 2) DEFAULT 0.00 COMMENT '账户余额（真实货币）',
                        phone_number VARCHAR(20) COMMENT '联系电话',
+                       user_address VARCHAR(50) COMMENT '用户地址',
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP(),
                        FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
