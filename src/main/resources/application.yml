@@ -4,13 +4,13 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3307/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
     username: root
-    password: ecosync123
+    password: L.L.Lht20050828
   
   # Flyway 数据库版本管理：自动执行 src/main/resources/db/migration 下的迁移脚本
   flyway:
-    enabled: true
+    enabled: false
     locations: classpath:db/migration
     baseline-on-migrate: true   # 库里已有老表时，不会直接报错，而是先打 baseline 再增量迁移
     baseline-version: 0         # 从 0 开始，让 V1/V2 都能正常被应用到全新库
