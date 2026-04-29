@@ -1,6 +1,8 @@
 package com.example.bibilabo.service;
 
 import com.example.bibilabo.entity.Order;
+import com.example.bibilabo.entity.OrderVO;
+
 import java.util.List;
 
 public interface OrderService {
@@ -10,4 +12,5 @@ public interface OrderService {
     String updateOrderStatus(Integer orderId, String status);
     // 新增：店员扫码核销
     String confirmPickup(String pickupCode);
+    OrderVO getOrderDetails(Integer orderId);
 }

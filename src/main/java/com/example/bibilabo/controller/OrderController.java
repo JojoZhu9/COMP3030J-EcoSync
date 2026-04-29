@@ -1,6 +1,7 @@
 package com.example.bibilabo.controller;
 
 import com.example.bibilabo.entity.Order;
+import com.example.bibilabo.entity.OrderVO;
 import com.example.bibilabo.service.OrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -42,5 +43,11 @@ public class OrderController {
     @Operation(summary = "查询用户历史订单")
     public List<Order> getUserOrders(@Parameter(description = "用户ID") @PathVariable("userId") Integer userId) {
         return orderService.getUserOrders(userId);
+    }
+
+    @GetMapping("/{orderId}/details")
+    @Operation(summary = "获取订单详情", description = "返回订单基本信息及包含的所有商品明细")
+    public OrderVO getOrderDetails(@PathVariable("orderId") Integer orderId) {
+        return orderService.getOrderDetails(orderId);
     }
 }

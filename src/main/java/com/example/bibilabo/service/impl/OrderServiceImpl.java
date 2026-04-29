@@ -125,4 +125,32 @@ public class OrderServiceImpl implements OrderService {
         }
         return "无效的自提码或该订单已核销";
     }
+
+    @Override
+    public OrderVO getOrderDetails(Integer orderId) {
+        // 1. 查询订单主表信息
+        Order order = orderMapper.findById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        // 2. 查询该订单关联的所有明细信息
+        List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
+
+        // 3. 组装成 OrderVO
+        OrderVO vo = new OrderVO();
+        // 将 order 的属性复制给 vo (也可以手动 set)
+        vo.setOrderId(order.getOrderId());
+        vo.setUserId(order.getUserId());
+        vo.setStoreId(order.getStoreId());
+        vo.setTotalAmount(order.getTotalAmount());
+        vo.setPickupCode(order.getPickupCode());
+        vo.setStatus(order.getStatus());
+        vo.setCreatedAt(order.getCreatedAt());
+        vo.setCompletedAt(order.getCompletedAt());
+
+        vo.setItems(items); // 塞入商品明细
+
+        return vo;
+    }
 }
