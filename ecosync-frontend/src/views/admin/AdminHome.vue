@@ -16,9 +16,6 @@
             <span class="header-title">Strategy Configuration: <span class="highlight-name">{{ prod.productName }}</span></span>
           </div>
         </template>
-        <template #extra>
-          <el-button color="#007934" plain round icon="Refresh" @click="fetchDetail" class="refresh-btn">Sync Data</el-button>
-        </template>
       </el-page-header>
 
       <el-row :gutter="24" class="mt-20">
@@ -135,7 +132,7 @@ import { ref, onMounted, reactive, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Refresh, Document, TrendCharts, Checked, View } from '@element-plus/icons-vue'
+import { ArrowLeft, Document, TrendCharts, Checked, View } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const route = useRoute()
@@ -256,13 +253,13 @@ onUnmounted(() => {
 .pc-staff-layout { background: #f9fafb; min-height: 100vh; padding: 24px; }
 .content-wrapper { max-width: 1400px; margin: 0 auto; }
 
-/* Brand Stripe */
+/* 品牌條飾 */
 .brand-top-stripe {
   height: 6px; width: 100%; position: fixed; top: 0; left: 0; z-index: 2000;
   background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%);
 }
 
-/* Header Styling */
+/* 頁頭樣式 */
 .pc-header {
   background: white; padding: 20px 30px; border-radius: 12px; margin-bottom: 24px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -272,15 +269,16 @@ onUnmounted(() => {
 .divider { color: #E5E7EB; font-weight: 300; }
 .header-title { font-weight: 700; color: #374151; font-size: 16px; }
 .highlight-name { color: var(--711-green); }
+
 .c-green { color: #007934; }
 .c-red { color: #e2231a; }
 .c-orange { color: #ff7900; }
 
-/* Card Universal */
+/* 卡片通用樣式 */
 .pc-card { border-radius: 16px; border: 1px solid #E5E7EB; margin-bottom: 24px; }
 .card-header { display: flex; align-items: center; gap: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; font-size: 14px; }
 
-/* Digital Label (Left Column) */
+/* 左側：電子標籤 (Digital Label) */
 .digital-label {
   background: #fff; padding: 24px; border: 2px solid #111827; border-radius: 4px;
   box-shadow: 4px 4px 0px #111827;
@@ -298,7 +296,7 @@ onUnmounted(() => {
 .amount { font-size: 42px; font-weight: 900; line-height: 1; }
 .label-footer { margin-top: 25px; font-size: 10px; color: #9CA3AF; text-transform: uppercase; }
 
-/* Discount Section (Right Column) */
+/* 右側：圖表與網格 */
 .chart-section { height: 300px; margin-bottom: 20px; }
 .discount-chart-container { width: 100%; height: 100%; }
 .divider-text { font-size: 12px; font-weight: 800; color: #9CA3AF; letter-spacing: 2px; }
@@ -317,7 +315,7 @@ onUnmounted(() => {
   font-weight: 800; font-size: 12px; color: #374151;
 }
 
-/* Risk Levels */
+/* 风险等級顏色 */
 .risk-critical { border-left: 4px solid #e2231a; }
 .risk-critical .hour-badge { background: #fee2e2; color: #e2231a; }
 .risk-warning { border-left: 4px solid #ff7900; }
@@ -325,7 +323,7 @@ onUnmounted(() => {
 .risk-stable { border-left: 4px solid #007934; }
 .risk-stable .hour-badge { background: #dcfce7; color: #007934; }
 
-/* Promo Preview (Yellow Tag) */
+/* 預覽黃色標籤 */
 .promo-preview-box {
   margin-top: 30px; border: 1px solid #FDE68A; border-radius: 12px; overflow: hidden;
 }
@@ -347,7 +345,7 @@ onUnmounted(() => {
 .control-hint { font-size: 13px; font-weight: 700; color: #92400E; margin-bottom: 10px; }
 .rate-indicator { margin-top: 15px; font-size: 14px; font-weight: 800; color: #4B5563; }
 
-/* Action Button */
+/* 操作按鈕 */
 .save-strategy-btn {
   width: 100%; height: 56px; border-radius: 12px; font-size: 18px; font-weight: 900;
   background: #007934 !important; border: none; margin-top: 30px;
