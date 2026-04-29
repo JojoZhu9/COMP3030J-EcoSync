@@ -17,17 +17,18 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE username = #{username}")
     User findByUsername(String username);
 
-    @Insert("INSERT INTO users(username, password_hash, role, status, store_id, balance, phone_number) " +
-            "VALUES(#{username}, #{passwordHash}, #{role}, #{status}, #{storeId}, #{balance}, #{phoneNumber})")
+    // 🔥 修改：加入 user_address
+    @Insert("INSERT INTO users(username, password_hash, role, status, store_id, balance, phone_number, user_address) " +
+            "VALUES(#{username}, #{passwordHash}, #{role}, #{status}, #{storeId}, #{balance}, #{phoneNumber}, #{userAddress})")
     @Options(useGeneratedKeys = true, keyProperty = "userId")
     int insert(User user);
 
+    // 🔥 修改：加入 user_address
     @Update("UPDATE users SET password_hash = #{passwordHash}, role = #{role}, status = #{status}, " +
-            "store_id = #{storeId}, balance = #{balance}, phone_number = #{phoneNumber} " +
+            "store_id = #{storeId}, balance = #{balance}, phone_number = #{phoneNumber}, user_address = #{userAddress} " +
             "WHERE user_id = #{userId}")
     int update(User user);
 
-    // 🔥 核心逻辑：扣减余额（替代了以前的积分扣减）
     @Update("UPDATE users SET balance = balance - #{amount} WHERE user_id = #{userId} AND balance >= #{amount}")
     int decreaseBalance(@Param("userId") Integer userId, @Param("amount") BigDecimal amount);
 

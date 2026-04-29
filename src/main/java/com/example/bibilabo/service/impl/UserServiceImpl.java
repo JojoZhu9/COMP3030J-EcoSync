@@ -23,36 +23,29 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("用户不存在");
         }
 
-        // 使用 MD5 加密前端传来的明文密码
         String inputMd5Password = DigestUtils.md5DigestAsHex(password.getBytes());
 
-        // 拿加密后的输入密码，和数据库里存的密文进行比对
         if (!user.getPasswordHash().equals(inputMd5Password)) {
             throw new RuntimeException("密码错误");
         }
 
-        // 校验通过，检查账号是否被封禁
         if ("BANNED".equals(user.getStatus())) {
             throw new RuntimeException("该账户已被封禁，请联系管理员");
         }
 
-        // 密码正确且状态正常，生成并返回 JWT Token
         return JwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole());
     }
 
     @Override
     public String createUser(User user) {
-        // 校验用户名是否已存在
         if (userMapper.findByUsername(user.getUsername()) != null) {
             throw new RuntimeException("用户名已存在");
         }
 
-        // 拦截明文密码，进行 MD5 加密入库
         String rawPassword = user.getPasswordHash();
         String md5Password = DigestUtils.md5DigestAsHex(rawPassword.getBytes());
         user.setPasswordHash(md5Password);
 
-        // 设置默认角色和状态
         if (user.getRole() == null) {
             user.setRole("CONSUMER");
         }
@@ -79,8 +72,24 @@ public class UserServiceImpl implements UserService {
         return userMapper.findByUsername(username);
     }
 
+    // 🔥 核心漏洞修复：安全地更新用户信息（包括新加的 userAddress）
     @Override
     public String updateUser(User user) {
+        User existingUser = userMapper.findById(user.getUserId());
+        if (existingUser == null) {
+            throw new RuntimeException("要更新的用户不存在");
+        }
+
+        // 检查前端是否传了新密码
+        if (user.getPasswordHash() != null && !user.getPasswordHash().trim().isEmpty()) {
+            // 前端传了新密码，必须 MD5 加密
+            String md5Password = DigestUtils.md5DigestAsHex(user.getPasswordHash().getBytes());
+            user.setPasswordHash(md5Password);
+        } else {
+            // 前端没传新密码，沿用数据库里的旧密文
+            user.setPasswordHash(existingUser.getPasswordHash());
+        }
+
         userMapper.update(user);
         return "用户更新成功";
     }
