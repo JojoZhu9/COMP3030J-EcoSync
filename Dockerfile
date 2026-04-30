@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # ============ Stage 1: Build ============
 FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /build
@@ -21,10 +22,12 @@ EOF
 
 COPY pom.xml mvnw ./
 COPY .mvn .mvn
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+RUN --mount=type=cache,target=/root/.m2 \
+    chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src src
-RUN ./mvnw package -DskipTests -B
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw package -DskipTests -B
 
 # ============ Stage 2: Runtime ============
 FROM eclipse-temurin:17-jre
