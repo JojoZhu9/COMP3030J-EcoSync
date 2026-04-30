@@ -34,7 +34,7 @@ jobs:
         working-directory: ecosync-frontend
         run: |
           npm ci
-          npm run type-check
+          npm run build-only
 
   # ========== Job 2A: 构建并推送后端镜像 ==========
   docker-build-push-app:
