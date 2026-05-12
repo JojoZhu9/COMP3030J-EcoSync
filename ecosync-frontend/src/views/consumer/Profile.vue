@@ -19,11 +19,18 @@
     </div>
 
     <div class="wallet-card">
-      <div class="wallet-left">
-        <span class="wallet-label">Available Balance</span>
-        <div class="points-display">
-          <span class="points-unit">¥</span>
-          <span class="points-num">{{ userForm.points }}</span>
+      <div class="wallet-content">
+        <div class="wallet-left">
+          <span class="wallet-label">Available Balance</span>
+          <div class="points-display">
+            <span class="points-unit">¥</span>
+            <span class="points-num">{{ userForm.points }}</span>
+          </div>
+        </div>
+        <div class="wallet-right">
+          <el-button type="warning" plain round size="small" @click="handleRecharge">
+            Top Up
+          </el-button>
         </div>
       </div>
     </div>
@@ -66,16 +73,6 @@
         </el-form>
       </el-card>
 
-      <div class="system-section">
-        <div class="action-item logout" @click="handleLogout">
-          <div class="action-left">
-            <el-icon><SwitchButton /></el-icon>
-            <span>Terminate Session</span>
-          </div>
-          <el-icon><ArrowRight /></el-icon>
-        </div>
-      </div>
-
       <p class="app-version">Version 2.4.0-Stable | 7-Eco Framework</p>
     </div>
   </div>
@@ -83,9 +80,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { MapLocation, Location, Phone, SwitchButton, ArrowRight } from '@element-plus/icons-vue'
+import { MapLocation, Location, Phone } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const userId = localStorage.getItem('userId') || '12'
 const saving = ref(false)
@@ -105,14 +102,47 @@ const fetchUser = async () => {
 
     rawUserData.value = data
     userForm.username = data.username || ''
-    // 这里的 points 实际上承载的是余额 balance 数据
     userForm.points = data.balance || 0
     userForm.phone = data.phoneNumber || data.phone_number || ''
     userForm.address = data.userAddress || data.user_address || ''
-
   } catch (e) {
     ElMessage.error('Infrastructure Sync Error')
   }
+}
+
+/**
+ * 自定义充值逻辑：同步至数据库
+ */
+const handleRecharge = () => {
+  ElMessageBox.prompt('Please enter recharge amount (¥)', 'Balance Top-up', {
+    confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
+    inputPattern: /^\d+(\.\d{1,2})?$/,
+    inputErrorMessage: 'Please enter a valid amount',
+    buttonSize: 'small'
+  }).then(async ({ value }) => {
+    try {
+      const amount = parseFloat(value)
+      if (isNaN(amount) || amount <= 0) return
+
+      // 计算新余额
+      const newBalance = Number(userForm.points) + amount
+
+      // 构建同步 Payload
+      const payload = {
+        ...rawUserData.value,
+        balance: newBalance
+      }
+
+      // 同步到数据库
+      await request.put(`/users/${userId}`, payload)
+
+      ElMessage.success(`Successfully recharged ¥${amount.toFixed(2)}`)
+      await fetchUser() // 刷新本地数据
+    } catch (e) {
+      ElMessage.error('Recharge failed. System sync error.')
+    }
+  }).catch(() => {})
 }
 
 const updateUserInfo = async () => {
@@ -125,9 +155,7 @@ const updateUserInfo = async () => {
     const payload = {
       ...rawUserData.value,
       phoneNumber: userForm.phone,
-      phone_number: userForm.phone,
       userAddress: userForm.address,
-      user_address: userForm.address
     }
 
     await request.put(`/users/${userId}`, payload)
@@ -138,11 +166,6 @@ const updateUserInfo = async () => {
   } finally {
     saving.value = false
   }
-}
-
-const handleLogout = () => {
-  localStorage.clear();
-  window.location.href = '/login';
 }
 
 onMounted(fetchUser)
@@ -173,6 +196,8 @@ onMounted(fetchUser)
   position: relative;
   z-index: 2;
 }
+/* 钱包布局调整 */
+.wallet-content { display: flex; justify-content: space-between; align-items: center; }
 .wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 .points-display { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; }
 .points-num { font-size: 36px; font-weight: 900; color: #ff7900; line-height: 1; }
@@ -184,12 +209,6 @@ onMounted(fetchUser)
 
 .custom-form :deep(.el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 8px !important; }
 .commit-btn { width: 100%; height: 48px; border-radius: 12px; font-weight: 800; background-color: #007934 !important; border: none; box-shadow: 0 8px 16px rgba(0, 121, 52, 0.2); margin-top: 10px; }
-
-.system-section { margin-top: 24px; }
-.action-item { background: white; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #f1f5f9; transition: all 0.2s; }
-.action-item:active { transform: scale(0.98); background: #f8fafc; }
-.action-left { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px; }
-.logout { color: #ef4444; }
 
 .app-version { text-align: center; font-size: 10px; color: #cbd5e1; font-weight: 700; margin-top: 30px; text-transform: uppercase; letter-spacing: 1px; }
 </style>
