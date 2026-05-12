@@ -1,126 +1,148 @@
 <template>
   <div class="pc-layout">
-    <div class="brand-header-stripe"></div>
+    <div class="brand-top-stripe"></div>
 
-    <template v-if="['login', 'landing'].includes(route.name as string)">
+    <template v-if="route.name === 'login'">
       <router-view />
     </template>
 
     <template v-else>
-      <div class="main-wrapper">
-        <aside class="side-bar" :class="roleClass">
-          <div class="logo-area">
-            <div class="brand-logo">
-              <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
+      <header class="top-navbar" :class="roleClass">
+        <div class="nav-left">
+          <div class="brand-logo" @click="go('/')">
+            <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
+          </div>
+          <span class="logo-text divider">|</span>
+          <span class="logo-text">Intelligent Near-Expiry</span>
+          <el-tag v-if="isLogged" effect="dark" :type="currentRole === 'ADMIN' ? 'danger' : 'success'" round size="small" class="role-badge">
+            {{ roleTitle }}
+          </el-tag>
+        </div>
+
+        <nav class="nav-menu">
+          <div class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Introduction</div>
+
+          <template v-if="currentRole === 'ADMIN'">
+            <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">Accounts</div>
+            <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">Inventory</div>
+            <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">Analytics</div>
+          </template>
+
+          <template v-else-if="currentRole === 'EMPLOYEE'">
+            <div class="menu-item" :class="{ active: route.path.includes('staff/home') }" @click="go('/staff/home')">Workspace</div>
+          </template>
+
+          <template v-else>
+            <template v-if="isLogged">
+              <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">Store Home</div>
+              <div class="menu-item" :class="{ active: route.path === '/category' }" @click="go('/category')">Categories</div>
+              <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">Cart</div>
+              <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">Orders</div>
+            </template>
+          </template>
+        </nav>
+
+        <div class="nav-right">
+          <el-button v-if="!isLogged" class="login-nav-btn" type="success" round @click="go('/login')">Log In</el-button>
+
+          <template v-else>
+            <div class="menu-item profile-icon" :class="{ active: route.path.includes('profile') }" @click="goProfile">
+              <el-icon><User /></el-icon>
             </div>
-            <div class="platform-name">SMARTCHAIN RETAIL TECH</div>
-            <el-tag effect="dark" :type="currentRole === 'ADMIN' ? 'danger' : 'success'" round size="small" class="role-badge">
-              {{ roleTitle }}
-            </el-tag>
-          </div>
-
-          <nav class="nav-menu">
-            <template v-if="currentRole === 'ADMIN'">
-              <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">
-                <el-icon><UserFilled /></el-icon> <span>Account Management</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">
-                <el-icon><Box /></el-icon> <span>Inventory Management</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">
-                <el-icon><TrendCharts /></el-icon> <span>Dashboard</span>
-              </div>
-            </template>
-
-            <template v-else-if="currentRole === 'EMPLOYEE'">
-              <div class="menu-item" :class="{ active: route.path.includes('staff/home') }" @click="go('/staff/home')">
-                <el-icon><HomeFilled /></el-icon> <span>Staff Workspace</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path === '/staff/profile' }" @click="go('/staff/profile')">
-                <el-icon><User /></el-icon> <span>Profile</span>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">
-                <el-icon><HomeFilled /></el-icon> <span>Store Home</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">
-                <el-icon><ShoppingCart /></el-icon> <span>Shopping Cart</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">
-                <el-icon><List /></el-icon> <span>My Orders</span>
-              </div>
-              <div class="menu-item" :class="{ active: route.path === '/profile' }" @click="go('/profile')">
-                <el-icon><User /></el-icon> <span>Profile</span>
-              </div>
-            </template>
-          </nav>
-
-          <div class="logout-footer" @click="handleLogout">
-            <div class="logout-inner">
-              <el-icon><SwitchButton /></el-icon> <span>Logout</span>
+            <div class="logout-btn" @click="handleLogout" title="Logout">
+              <el-icon><SwitchButton /></el-icon>
             </div>
-          </div>
-        </aside>
+          </template>
+        </div>
+      </header>
 
-        <main class="content-area">
-          <div class="content-inner">
-            <router-view />
-          </div>
-        </main>
-      </div>
+      <main class="content-area">
+        <div :class="{ 'content-inner': route.path !== '/' }">
+          <router-view />
+        </div>
+      </main>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeFilled, UserFilled, Box, List, SwitchButton, TrendCharts, ShoppingCart, User } from '@element-plus/icons-vue'
+import { SwitchButton, User } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
+const isLogged = ref(false)
+const currentRole = ref<string | null>(null)
 
-const getCurrentUserRole = () => {
+const syncStatus = () => {
+  const token = localStorage.getItem('token')
+  isLogged.value = !!(token && token !== 'null' && token !== 'undefined')
   const role = localStorage.getItem('role')
-  return role ? role.toUpperCase() : null
+  currentRole.value = role ? role.toUpperCase() : null
 }
 
-const currentRole = ref(getCurrentUserRole())
 const roleClass = computed(() => currentRole.value === 'ADMIN' ? 'bg-admin' : 'bg-consumer')
 const roleTitle = computed(() => {
   if (currentRole.value === 'ADMIN') return 'Admin Panel'
   if (currentRole.value === 'EMPLOYEE') return 'Staff Panel'
-  return 'Store'
+  return 'Customer'
 })
 
-const sync = () => { currentRole.value = getCurrentUserRole() }
-onMounted(sync)
-watch(() => route.path, sync)
+onMounted(() => {
+  syncStatus()
+  window.addEventListener('auth-change', syncStatus)
+})
+onUnmounted(() => window.removeEventListener('auth-change', syncStatus))
 
 const go = (p: string) => router.push(p)
+const goProfile = () => go(currentRole.value === 'EMPLOYEE' ? '/staff/profile' : '/profile')
+
 const handleLogout = () => {
   localStorage.clear()
+  window.dispatchEvent(new Event('auth-change'))
   router.push('/login')
 }
 </script>
 
 <style>
-/* 保持原樣式不變 */
-:root { --711-green: #007934; --711-red: #e2231a; --711-orange: #ff7900; --sidebar-width: 260px; }
-body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-.brand-header-stripe { height: 6px; width: 100%; background: linear-gradient(to right, var(--711-orange) 33%, var(--711-green) 33%, var(--711-green) 66%, var(--711-red) 66%); position: fixed; top: 0; z-index: 2000; }
-.main-wrapper { display: flex; height: 100vh; padding-top: 6px; }
-.side-bar { width: var(--sidebar-width); display: flex; flex-direction: column; background: #fff; border-right: 1px solid #f0f0f0; }
-.bg-admin { background: #002d14; color: white; }
-.logo-area { padding: 30px 20px; text-align: center; }
-.brand-logo { font-size: 28px; font-weight: 900; font-style: italic; }
+:root { --711-green: #007934; --711-red: #e2231a; --711-orange: #ff7900; --navbar-height: 70px; }
+body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f8f9fa; }
 .c-orange { color: var(--711-orange); } .c-red { color: var(--711-red); } .c-green { color: var(--711-green); }
-.nav-menu { flex: 1; padding: 10px; }
-.menu-item { padding: 12px 20px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: 0.3s; }
+
+.brand-top-stripe { height: 6px; width: 100%; background: linear-gradient(to right, #ff7900 33.33%, #007934 33.33%, #007934 66.66%, #e2231a 66.66%); position: fixed; top: 0; z-index: 2000; }
+
+.top-navbar { display: flex; align-items: center; justify-content: space-between; height: var(--navbar-height); background: rgba(255,255,255,0.95); backdrop-filter: blur(15px); padding: 0 40px; position: sticky; top: 6px; z-index: 1000; border-bottom: 1px solid #eaeaea; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.bg-admin { background: #002d14; color: white; border-bottom: none; }
+.bg-admin .c-green, .bg-admin .c-red, .bg-admin .c-orange { color: white; }
+
+.nav-left { display: flex; align-items: center; gap: 15px; cursor: pointer; }
+.brand-logo { font-size: 26px; font-weight: 900; font-style: italic; }
+.logo-text { font-size: 14px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.divider { margin: 0 5px; color: #eee; }
+.bg-admin .logo-text { color: #a0aec0; }
+.role-badge { margin-left: 10px; }
+
+/* ======== 修改这里：向左对齐并加一点左边距 ======== */
+.nav-menu { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-start; margin-left: 40px; }
+/* ================================================ */
+
+.menu-item { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: 0.3s; color: #475569; font-size: 15px; }
+.bg-admin .menu-item { color: #cbd5e1; }
+
+.menu-item:hover { background: rgba(0, 121, 52, 0.1); color: var(--711-green); }
+.bg-admin .menu-item:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+
 .menu-item.active { background: var(--711-green); color: #fff; }
-.bg-admin .menu-item.active { background: var(--711-orange); }
-.logout-footer { padding: 20px; border-top: 1px solid #eee; cursor: pointer; color: var(--711-red); font-weight: bold; }
-.content-area { flex: 1; background: #f8f9fa; overflow-y: auto; }
+.bg-admin .menu-item.active { background: var(--711-orange); color: white; }
+
+.nav-right { display: flex; align-items: center; gap: 10px; }
+.login-nav-btn { background-color: #007934 !important; border: none; font-weight: bold; padding: 18px 25px; box-shadow: 0 4px 10px rgba(0, 121, 52, 0.2); }
+.profile-icon { font-size: 18px; padding: 8px; display: flex; align-items: center; justify-content: center; }
+.logout-btn { color: var(--711-red); font-size: 22px; cursor: pointer; padding: 8px; transition: 0.2s; display: flex; align-items: center; }
+.logout-btn:hover { transform: scale(1.1); }
+
+.content-area { min-height: calc(100vh - var(--navbar-height) - 6px); }
+/* 有内容内边距的页面 */
+.content-inner { max-width: 1400px; margin: 0 auto; padding: 20px; }
 </style>

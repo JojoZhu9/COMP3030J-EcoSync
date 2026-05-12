@@ -6,8 +6,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ecosync123}
       MYSQL_DATABASE: 711ex
-    expose:
-      - "3306"
+    ports:
+      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

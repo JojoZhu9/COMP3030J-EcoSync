@@ -1,20 +1,5 @@
 <template>
   <div class="landing-container">
-    <div class="brand-top-stripe"></div>
-
-    <header class="navbar">
-      <div class="logo">
-        <div class="brand-logo-mock">
-          <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
-        </div>
-        <span class="logo-text divider">|</span>
-        <span class="logo-text">Intelligent Near-Expiry Sales Platform</span>
-      </div>
-      <div class="nav-actions">
-        <el-button type="success" class="login-nav-btn" round @click="goLogin">Staff / User Login</el-button>
-      </div>
-    </header>
-
     <section class="hero-section">
       <div class="hero-bg-pattern"></div>
       <div class="hero-content">
@@ -105,6 +90,15 @@
         <div class="footer-divider"></div>
         <p class="copyright">© 2026 Developed by <strong>Group 8: Bibilabo</strong>. All Rights Reserved.</p>
         <p class="disclaimer">Custom-developed for 7-ELEVEn stores by Team Bibilabo.</p>
+        <div class="disclaimer">
+          <p>
+            We are an innovative development team dedicated to leveraging smart retail technology to solve urban challenges.
+            Our project is deeply committed to <strong>United Nations Sustainable Development Goal 12 (SDG 12): Responsible Consumption and Production</strong>.
+          </p>
+          <p>
+            By implementing dynamic near-expiry product tracking and automated discounting, we aim to minimize food waste and promote a circular economy within the 7-ELEVEn retail ecosystem.
+          </p>
+        </div>
       </div>
     </footer>
   </div>
@@ -121,6 +115,7 @@ const goLogin = () => router.push('/login')
 </script>
 
 <style scoped>
+/* 原汁原味保留你所有的CSS样式 */
 :root {
   --711-green: #007934;
   --711-red: #e2231a;
@@ -133,7 +128,6 @@ const goLogin = () => router.push('/login')
   background: #ffffff;
 }
 
-/* Brand Colors */
 .c-green { color: #007934; }
 .c-red { color: #e2231a; }
 .c-orange { color: #ff7900; }
@@ -141,45 +135,6 @@ const goLogin = () => router.push('/login')
 .bg-green { background: #007934; }
 .bg-red { background: #e2231a; }
 .bg-orange { background: #ff7900; }
-
-/* Brand Top Stripe */
-.brand-top-stripe {
-  height: 6px;
-  width: 100%;
-  background: linear-gradient(to right,
-  #ff7900 0%, #ff7900 33.33%,
-  #007934 33.33%, #007934 66.66%,
-  #e2231a 66.66%, #e2231a 100%);
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 2000;
-}
-
-/* Navbar */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 60px;
-  background: rgba(255,255,255,0.9);
-  position: sticky;
-  top: 6px;
-  z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-  backdrop-filter: blur(15px);
-}
-.brand-logo-mock { font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: -1.5px; }
-.logo-text { font-size: 15px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-.divider { margin: 0 5px; color: #eee; }
-
-.login-nav-btn {
-  background-color: #007934 !important;
-  border: none;
-  font-weight: bold;
-  padding: 10px 25px;
-  box-shadow: 0 4px 10px rgba(0, 121, 52, 0.2);
-}
 
 /* Hero Section */
 .hero-section {
@@ -270,6 +225,18 @@ const goLogin = () => router.push('/login')
   font-size: 18px;
   box-shadow: 0 10px 25px rgba(255, 121, 0, 0.4);
 }
+.about-section {
+  padding: 60px 20px;
+  background-color: #111; /* 黑色背景，衔接原本底部的黑色区域 */
+  color: #fff;
+  text-align: center;
+}
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+.about-content h2 { color: #007934; margin-bottom: 20px; }
+.about-content p { line-height: 1.8; color: #ccc; }
 
 /* Footer */
 .footer { background: #0a0a0a; color: #9ca3af; padding: 80px 20px; text-align: center; }
@@ -280,8 +247,6 @@ const goLogin = () => router.push('/login')
 .disclaimer { font-size: 12px; opacity: 0.5; }
 
 @media (max-width: 768px) {
-  .navbar { padding: 15px 25px; }
-  .logo-text { display: none; }
   .hero-title { font-size: 42px; }
   .hero-actions { flex-direction: column; gap: 15px; }
   .features-section { padding: 80px 25px; }

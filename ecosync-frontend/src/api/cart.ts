@@ -14,11 +14,11 @@ export const cartApi = {
     data
   }),
 
-  // 修改数量
+  // 修改数量 (适配了后端使用 URL 参数 @RequestParam 接收数量的要求)
   updateQuantity: (cartItemId: number, quantity: number) => request({
     url: `/cart/${cartItemId}`,
     method: 'put',
-    params: { quantity } // 注意后端用的是 @RequestParam
+    params: { quantity }
   }),
 
   // 删除单项

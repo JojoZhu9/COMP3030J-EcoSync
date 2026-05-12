@@ -127,14 +127,22 @@ const parseJwt = (token: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.username || !form.password) return ElMessage.warning('請填寫完整信息')
+  if (!form.username || !form.password) {
+    return ElMessage.warning({
+      message: 'Please fill in all fields',
+      duration: 1500
+    })
+  }
   loading.value = true
 
   try {
     if (isRegister.value) {
       if (form.password !== form.rePassword) {
         loading.value = false
-        return ElMessage.error('兩次輸入的密碼不一致')
+        return ElMessage.error({
+          message: 'Passwords do not match',
+          duration: 1500
+        })
       }
 
       const registerPayload = {
@@ -149,10 +157,16 @@ const handleSubmit = async () => {
       const resMsg = String(res)
 
       if (resMsg.includes('成功') || resMsg.toLowerCase().includes('ok')) {
-        ElMessage.success('註冊成功！')
+        ElMessage.success({
+          message: 'Registration Successful!',
+          duration: 1500
+        })
         isRegister.value = false
       } else {
-        ElMessage.error(resMsg || '註冊失敗')
+        ElMessage.error({
+          message: resMsg || 'Registration Failed',
+          duration: 1500
+        })
       }
 
     } else {
@@ -169,37 +183,46 @@ const handleSubmit = async () => {
 
         if (token) {
           const payload = parseJwt(token)
-          if (!payload) throw new Error('解析令牌失敗')
+          if (!payload) throw new Error('Failed to parse Token')
 
-          // --- 關鍵修復：存入數據用於 Profile 頁面 ---
           localStorage.setItem('token', token)
           localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
           localStorage.setItem('username', payload.username || form.username)
 
-          // 🌟 這裡非常重要：從 JWT 中提取 userId 並存入 localStorage
-          // 這裡兼容了 payload.userId 或 payload.id 兩種命名方式
           const userId = payload.userId || payload.id
-          if (userId) {
-            localStorage.setItem('userId', String(userId))
-          }
+          if (userId) localStorage.setItem('userId', String(userId))
 
-          ElMessage.success('登錄成功')
+          window.dispatchEvent(new Event('auth-change'))
+
+          ElMessage.success({
+            message: 'Login Successful',
+            duration: 1500
+          })
+
           const finalRole = (payload.role || 'CONSUMER').toUpperCase()
-
           if (finalRole === 'ADMIN') router.push('/admin/accounts')
           else if (finalRole === 'EMPLOYEE') router.push('/staff/home')
           else router.push('/home')
         } else {
-          ElMessage.error('無法取得 Token')
+          ElMessage.error({
+            message: 'Unable to retrieve Token',
+            duration: 1500
+          })
         }
       } else {
-        ElMessage.error(resStr.replace('登录失败: ', '') || '登錄失敗')
+        ElMessage.error({
+          message: 'Login Failed: Invalid username or password',
+          duration: 1500
+        })
       }
     }
   } catch (error: any) {
     console.error('Error:', error)
     const backendError = error.response?.data
-    ElMessage.error(typeof backendError === 'string' ? backendError : '伺服器業務處理異常')
+    ElMessage.error({
+      message: typeof backendError === 'string' ? backendError : 'System Error: Please try again later',
+      duration: 1500
+    })
   } finally {
     loading.value = false
   }
