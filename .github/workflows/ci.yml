@@ -60,6 +60,10 @@ jobs:
         working-directory: ecosync-frontend
         run: npm run build-only
 
+      - name: Run Vitest
+        working-directory: ecosync-frontend
+        run: npx vitest run --reporter=verbose
+
   # ========== Job 3: 带 MySQL 的集成测试 ==========
   test:
     name: Integration Test
