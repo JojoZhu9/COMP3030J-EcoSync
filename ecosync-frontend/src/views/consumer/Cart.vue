@@ -32,7 +32,9 @@
           <div class="items-container">
             <div v-for="item in cartItems" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected}">
               <div class="item-check"><el-checkbox v-model="item.selected" size="large" /></div>
-              <div class="item-preview"><el-icon :size="24"><Box /></el-icon></div>
+              <div class="item-preview">
+                <el-icon :size="24"><Box /></el-icon>
+              </div>
               <div class="item-details">
                 <div class="name-row">
                   <span class="product-name">{{ item.productName || 'Syncing...' }}</span>
@@ -40,7 +42,16 @@
                 </div>
                 <div class="price-qty-row">
                   <div class="price-tag">￥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</div>
-                  <el-input-number v-model="item.quantity" :min="1" :max="item.maxStock || 99" size="small" @change="(val) => updateCartQuantity(item, val)" />
+                  <el-input-number
+                    v-model="item.quantity"
+                    :min="0"
+                    :max="item.maxStock || 1"
+                    size="small"
+                    @change="(val) => updateCartQuantity(item, val)"
+                  />
+                </div>
+                <div v-if="item.maxStock <= 5" style="font-size: 10px; color: #ef4444; margin-top: 4px;">
+                  Only {{ item.maxStock }} units left!
                 </div>
               </div>
             </div>
@@ -145,9 +156,20 @@ const initData = async () => {
     cartItems.value = await Promise.all(rawItems.map(async (item: any) => {
       const pId = item.productId || item.product_id
       try {
-        const exp: any = (await request.get(`/expiring-products/${pId}`)).data || (await request.get(`/expiring-products/${pId}`))
-        const std: any = (await request.get(`/products/${exp.barcode}`)).data || (await request.get(`/products/${exp.barcode}`))
-        return { ...item, productId: pId, productName: std.productName, pointsPrice: Number(std.normalPrice), maxStock: Number(exp.remainingStock), selected: true }
+        const expRes: any = await request.get(`/expiring-products/${pId}`)
+        const exp = expRes.data || expRes
+        const stdRes: any = await request.get(`/products/${exp.barcode}`)
+        const std = stdRes.data || stdRes
+
+        return {
+          ...item,
+          productId: pId,
+          barcode: exp.barcode,
+          productName: std.productName,
+          pointsPrice: Number(std.normalPrice),
+          maxStock: Number(exp.remainingStock),
+          selected: true
+        }
       } catch {
         return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false }
       }
@@ -162,11 +184,35 @@ const openConfirmDialog = () => {
   confirmVisible.value = true
 }
 
-const updateCartQuantity = (item: any, qty: number) => request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
+const updateCartQuantity = async (item: any, qty: number) => {
+  // 修改点：如果数量被减到 0，执行删除逻辑
+  if (qty <= 0) {
+    await deleteSingleItem(item.cartItemId)
+    return
+  }
+
+  try {
+    await request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
+    const expRes: any = await request.get(`/expiring-products/${item.productId}`)
+    const exp = expRes.data || expRes
+    item.maxStock = Number(exp.remainingStock)
+
+    if (qty > item.maxStock) {
+      item.quantity = item.maxStock
+      await request.put(`/cart/${item.cartItemId}?quantity=${item.maxStock}`)
+      ElMessage.warning('Quantity adjusted due to stock changes')
+    }
+  } catch (e) {
+    ElMessage.error('Update Failed')
+  }
+}
 
 const deleteSingleItem = async (id: number) => {
-  await request.delete(`/cart/${id}`)
-  cartItems.value = cartItems.value.filter(i => i.cartItemId !== id)
+  try {
+    await request.delete(`/cart/${id}`)
+    cartItems.value = cartItems.value.filter(i => i.cartItemId !== id)
+    updateLocalStorageCart()
+  } catch (e) { ElMessage.error('Delete Failed') }
 }
 
 const handleClearCart = async () => {
@@ -174,7 +220,18 @@ const handleClearCart = async () => {
     await ElMessageBox.confirm('Clear all items?')
     await request.delete(`/cart/user/${getUserId()}`)
     cartItems.value = []
+    updateLocalStorageCart()
   } catch (e) {}
+}
+
+const updateLocalStorageCart = () => {
+  const simplified = cartItems.value.map(i => ({
+    productId: i.productId,
+    productName: i.productName,
+    pointsPrice: i.pointsPrice,
+    quantity: i.quantity
+  }))
+  localStorage.setItem('cart', JSON.stringify(simplified))
 }
 
 const executePayment = async () => {
@@ -183,23 +240,19 @@ const executePayment = async () => {
   const storeId = localStorage.getItem('lastStoreId') || '1'
 
   try {
-    /**
-     * 对齐后端接口: OrderController 中的 @PostMapping("/checkout")
-     * 路径: /api/orders/checkout (request 会自动补全 /api)
-     */
     const res: any = await request.post('/orders/checkout', {
       userId: Number(uid),
       storeId: Number(storeId)
     })
 
-    // 后端返回 String，检查是否包含“失败”
     if (typeof res === 'string' && res.includes('失败')) {
       throw new Error(res)
     }
 
+    localStorage.setItem('cart', '[]')
     ElMessage.success('Order Successful!')
     confirmVisible.value = false
-    router.push('/order-status') // 跳转到订单列表查看提货码
+    router.push('/order-status')
   } catch (e: any) {
     ElMessage.error(e.message || 'Payment logic error')
   } finally {
@@ -212,14 +265,11 @@ const executePayment = async () => {
 .checkout-wrapper { height: 100vh; width: 100%; overflow: hidden; position: relative; }
 .checkout-page { height: 100%; display: flex; flex-direction: column; background: #f6f8fa; position: relative; }
 
-/* Header */
 .checkout-header { background: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
 .page-title { font-size: 18px; font-weight: 800; color: #1e293b; margin:0; }
 
-/* Scroll Area */
 .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 100px; }
 
-/* Cards */
 .fulfillment-card { background: #fff; margin: 15px; padding: 18px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
 .label { color: #008163; font-weight: 800; font-size: 11px; display: flex; align-items: center; gap: 5px; margin-bottom: 10px; }
 .addr-main { font-weight: 800; color: #1e293b; font-size: 15px; }
@@ -230,7 +280,6 @@ const executePayment = async () => {
 .product-name { font-weight: 800; font-size: 14px; color: #1e293b; }
 .price-tag { color: #EE7203; font-weight: 900; font-size: 18px; }
 
-/* Bottom Bar - Absolute fixed inside page to avoid sidebar overlap */
 .sticky-footer {
   position: absolute;
   bottom: 0;
@@ -250,7 +299,6 @@ const executePayment = async () => {
 .value { font-size: 28px; font-weight: 900; }
 .pay-now-btn { height: 50px; padding: 0 35px; border-radius: 25px; font-weight: 800; background: #008163 !important; border:none; }
 
-/* Receipt Styling */
 .receipt-container { background: #fff; padding: 20px; position: relative; }
 .receipt-zigzag { position: absolute; top: -10px; left: 0; width: 100%; height: 10px; background: linear-gradient(-135deg, transparent 5px, #fff 0), linear-gradient(135deg, transparent 5px, #fff 0); background-size: 10px 10px; }
 .brand-logo { color: #008163; font-weight: 900; font-size: 24px; text-align: center; }

@@ -127,14 +127,14 @@ const parseJwt = (token: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.username || !form.password) return ElMessage.warning('請填寫完整信息')
+  if (!form.username || !form.password) return ElMessage.warning('Please fill in all required fields')
   loading.value = true
 
   try {
     if (isRegister.value) {
       if (form.password !== form.rePassword) {
         loading.value = false
-        return ElMessage.error('兩次輸入的密碼不一致')
+        return ElMessage.error('Passwords do not match')
       }
 
       const registerPayload = {
@@ -148,11 +148,12 @@ const handleSubmit = async () => {
       const res = await registerApi(registerPayload)
       const resMsg = String(res)
 
-      if (resMsg.includes('成功') || resMsg.toLowerCase().includes('ok')) {
-        ElMessage.success('註冊成功！')
+      // Checking for success in response (Backend usually returns "成功" or "OK")
+      if (resMsg.includes('成功') || resMsg.toLowerCase().includes('ok') || resMsg.includes('Success')) {
+        ElMessage.success('Registration successful!')
         isRegister.value = false
       } else {
-        ElMessage.error(resMsg || '註冊失敗')
+        ElMessage.error(resMsg || 'Registration failed')
       }
 
     } else {
@@ -163,43 +164,42 @@ const handleSubmit = async () => {
 
       const resStr = String(res)
 
-      if (resStr.includes('成功')) {
-        const tokenMatch = resStr.match(/Token[:：]\s*([^,，\s"}]+)/)
+      if (resStr.includes('成功') || resStr.toLowerCase().includes('success')) {
+        const tokenMatch = resStr.match(/Token[:：]\s*([^,做\s"}]+)/)
         const token = tokenMatch ? tokenMatch[1].trim() : null
 
         if (token) {
           const payload = parseJwt(token)
-          if (!payload) throw new Error('解析令牌失敗')
+          if (!payload) throw new Error('Failed to parse token')
 
-          // --- 關鍵修復：存入數據用於 Profile 頁面 ---
           localStorage.setItem('token', token)
           localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
           localStorage.setItem('username', payload.username || form.username)
 
-          // 🌟 這裡非常重要：從 JWT 中提取 userId 並存入 localStorage
-          // 這裡兼容了 payload.userId 或 payload.id 兩種命名方式
           const userId = payload.userId || payload.id
           if (userId) {
             localStorage.setItem('userId', String(userId))
           }
 
-          ElMessage.success('登錄成功')
+          ElMessage.success('Login successful')
           const finalRole = (payload.role || 'CONSUMER').toUpperCase()
 
           if (finalRole === 'ADMIN') router.push('/admin/accounts')
           else if (finalRole === 'EMPLOYEE') router.push('/staff/home')
           else router.push('/home')
         } else {
-          ElMessage.error('無法取得 Token')
+          ElMessage.error('Access token not found')
         }
       } else {
-        ElMessage.error(resStr.replace('登录失败: ', '') || '登錄失敗')
+        // Cleaning up potential Chinese prefix from backend error message
+        const cleanMsg = resStr.replace('登录失败: ', '').replace('登录失败', 'Login failed')
+        ElMessage.error(cleanMsg || 'Login failed')
       }
     }
   } catch (error: any) {
     console.error('Error:', error)
     const backendError = error.response?.data
-    ElMessage.error(typeof backendError === 'string' ? backendError : '伺服器業務處理異常')
+    ElMessage.error(typeof backendError === 'string' ? backendError : 'Internal server error')
   } finally {
     loading.value = false
   }
@@ -216,6 +216,8 @@ const handleSubmit = async () => {
 .brand-logo { font-size: 48px; font-weight: 900; font-style: italic; margin-bottom: 20px; }
 .c-orange { color: #ff7900; } .c-red { color: #e2231a; } .c-green { color: #007934; }
 .form-side { flex: 1; background: white; padding: 40px 60px; display: flex; flex-direction: column; justify-content: center; }
+.platform-name { font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; text-align: center; }
+.slogan { font-size: 12px; opacity: 0.8; text-align: center; }
 .title-underline { width: 40px; height: 4px; background: #007934; margin: 15px 0 25px; }
 .submit-btn { width: 100%; height: 48px; background-color: #007934 !important; border: none; font-weight: bold; margin-top: 10px; }
 .switch-mode { margin-top: 25px; text-align: center; font-size: 14px; }
