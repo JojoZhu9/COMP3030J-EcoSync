@@ -16,6 +16,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @Override
     public String login(String username, String password) {
         User user = userMapper.findByUsername(username);
@@ -33,7 +36,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("该账户已被封禁，请联系管理员");
         }
 
-        return JwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole());
+        return jwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole());
     }
 
     @Override

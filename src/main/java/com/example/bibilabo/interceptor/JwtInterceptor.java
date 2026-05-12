@@ -4,11 +4,15 @@ import com.example.bibilabo.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
+
+    @Autowired
+    private JwtUtils jwtUtils;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -28,7 +32,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         // 2. 提取并验证 Token
         String token = authHeader.substring(7);
         try {
-            Claims claims = JwtUtils.parseToken(token);
+            Claims claims = jwtUtils.parseToken(token);
 
             // 3. 将解析出的用户信息存入 request 属性中，方便后续 Controller 使用
             request.setAttribute("currentUserId", claims.get("userId"));
