@@ -196,6 +196,101 @@ docker compose up -d
 
 ---
 
+## 测试
+
+### 后端测试
+
+后端测试分为两类：**单元测试**（Mockito，无需数据库）和**集成测试**（Spring Boot Test + 真实 MySQL）。
+
+#### 运行全部后端测试
+
+需要先启动 MySQL（Docker 方式即可）：
+
+```powershell
+# 1. 确保 MySQL 容器运行中
+docker compose up -d mysql
+
+# 2. 运行全部测试（指定数据库连接）
+$env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3307/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+$env:SPRING_DATASOURCE_USERNAME="root"
+$env:SPRING_DATASOURCE_PASSWORD="ecosync123"
+.\mvnw.cmd test -B -Dspring.profiles.active=test
+```
+
+#### 仅运行单元测试（不需要 MySQL）
+
+```powershell
+.\mvnw.cmd test -B -Dtest="JwtUtilsTest,UserServiceImplTest,ShoppingCartServiceImplTest,OrderServiceImplTest"
+```
+
+#### 仅运行集成测试
+
+```powershell
+# 需要 MySQL 运行中
+$env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3307/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
+$env:SPRING_DATASOURCE_USERNAME="root"
+$env:SPRING_DATASOURCE_PASSWORD="ecosync123"
+.\mvnw.cmd test -B -Dtest="AuthRbacIntegrationTest,UserControllerIntegrationTest,OrderControllerIntegrationTest" -Dspring.profiles.active=test
+```
+
+#### 查看后端测试结果
+
+控制台输出会直接显示通过/失败的汇总。如需查看详细报告：
+
+```powershell
+# Surefire XML 报告（CI 可解析）
+cat target\surefire-reports\*.txt
+```
+
+#### 后端测试覆盖范围
+
+| 测试类 | 类型 | 测试数 | 覆盖重点 |
+|--------|------|--------|---------|
+| `JwtUtilsTest` | 单元 | 4 | Token 生成/解析/过期/密钥不匹配 |
+| `UserServiceImplTest` | 单元 | 7 | 登录/注册/密码加密/封禁用户 |
+| `ShoppingCartServiceImplTest` | 单元 | 6 | 加购/合并数量/删除 |
+| `OrderServiceImplTest` | 单元 | 15 | 折扣计算/库存/余额/核销 |
+| `AuthRbacIntegrationTest` | 集成 | 8 | 401/403 权限/OPTIONS 预检/免认证路径 |
+| `UserControllerIntegrationTest` | 集成 | 6 | 登录/注册/用户查询 API |
+| `OrderControllerIntegrationTest` | 集成 | 6 | 下单/核销/订单查询 API |
+
+### 前端测试
+
+使用 Vitest 进行 API 层单元测试。
+
+#### 运行前端测试
+
+```powershell
+cd ecosync-frontend
+npx vitest run --reporter=verbose
+```
+
+也可以在开发时持续监听：
+
+```powershell
+cd ecosync-frontend
+npx vitest
+```
+
+#### 前端测试覆盖范围
+
+| 测试文件 | 测试数 | 覆盖重点 |
+|----------|--------|---------|
+| `src/api/__tests__/user.test.ts` | 4 | 登录/注册/查询用户 API |
+| `src/api/__tests__/cart.test.ts` | 5 | 购物车增删改查 API |
+| `src/api/__tests__/product.test.ts` | 4 | 临期商品/标准商品 API |
+
+### CI 自动运行
+
+推送到 main 分支或提 PR 时，GitHub Actions 会自动：
+
+1. **后端**：`mvn test`（含 MySQL service container）
+2. **前端**：`npx vitest run`（在 frontend-build job 中）
+
+查看 CI 结果：GitHub 仓库 → Actions 选项卡 → 对应 workflow run。
+
+---
+
 ## 数据库版本管理（Flyway）
 
 - 迁移脚本目录：`src/main/resources/db/migration/`
@@ -221,11 +316,11 @@ docker compose up -d
 
 | 用户名 | 密码 | 状态 | 说明 |
 |---|---|---|---|
-| `admin_super` | `hash_admin_123` | NORMAL | 系统超级管理员，不关联门店 |
+| `admin_super` | `1` | NORMAL | 系统超级管理员，不关联门店 |
 
 ### EMPLOYEE（门店员工，10 个，密码统一）
 
-所有员工密码均为：**`hash_emp_123`**
+所有员工密码均为：**`1`**
 
 | 用户名 | 关联门店 ID | 门店名 | 所在城市 |
 |---|---|---|---|
@@ -242,7 +337,7 @@ docker compose up -d
 
 ### CONSUMER（消费者，5 个，密码统一）
 
-所有消费者密码均为：**`hash_usr_123`**
+所有消费者密码均为：**`1`**
 
 | 用户名 | 状态 | 账户余额 (¥) | 备注 |
 |---|---|---|---|

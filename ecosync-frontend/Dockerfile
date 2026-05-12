@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # ============ Stage 1: Build Vue SPA ============
 FROM node:22-alpine AS builder
 WORKDIR /build
@@ -5,7 +6,7 @@ WORKDIR /build
 RUN npm config set registry https://registry.npmmirror.com
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY . .
 RUN npm run build-only

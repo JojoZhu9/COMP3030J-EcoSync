@@ -1,6 +1,10 @@
 server:
   port: 8080 # 部署端口
 
+jwt:
+  secret: RWNvU3luY1N1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb24yMDI2
+  expiration: 86400000  # 24小时，单位毫秒
+
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
