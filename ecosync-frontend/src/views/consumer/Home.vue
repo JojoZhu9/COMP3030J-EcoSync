@@ -64,7 +64,10 @@
                   <div class="price-box">
                     <div class="points-price">
                       <span class="unit">¥</span>
-                      <span class="num">{{ Number(prod.normalPrice || 0).toFixed(2) }}</span>
+                      <span class="num">{{ (prod.discountedPrice ?? prod.normalPrice ?? 0).toFixed(2) }}</span>
+                    </div>
+                    <div v-if="prod.discountedPrice && prod.discountedPrice < prod.normalPrice" class="card-original-price">
+                      ¥{{ Number(prod.normalPrice).toFixed(2) }}
                     </div>
                   </div>
 
@@ -119,8 +122,8 @@
           <div class="info-header">
             <h2 class="p-name">{{ currentProduct.productName }}</h2>
             <div class="p-price-row">
-              <span class="p-price">¥{{ Number(currentProduct.normalPrice || 0).toFixed(2) }}</span>
-              <span class="p-original">¥{{ (Number(currentProduct.normalPrice || 0) * 1.5).toFixed(2) }}</span>
+              <span class="p-price">¥{{ (currentProduct.discountedPrice ?? currentProduct.normalPrice ?? 0).toFixed(2) }}</span>
+              <span v-if="currentProduct.discountedPrice && currentProduct.discountedPrice < currentProduct.normalPrice" class="p-original">¥{{ Number(currentProduct.normalPrice).toFixed(2) }}</span>
             </div>
           </div>
 
@@ -190,20 +193,27 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 
-// --- 图片路径拼接函数 ---
-// 这里硬编码后端地址，因为浏览器能直接打开这个地址，说明它是通的。
 const getImageUrl = (barcode: string) => {
   if (!barcode) return '';
-  return `http://localhost:8080/uploads/products/${barcode}.jpg`;
+  return `/uploads/products/${barcode}.jpg`;
+}
+
+const getDiscountRate = (expirationTime: string, discountRatesStr: string): number => {
+  try {
+    const rates: number[] = JSON.parse(discountRatesStr)
+    if (!Array.isArray(rates) || rates.length === 0) return 1.0
+    const hoursLeft = (new Date(expirationTime).getTime() - Date.now()) / (1000 * 60 * 60)
+    const index = Math.min(Math.max(0, 12 - Math.ceil(hoursLeft)), rates.length - 1)
+    return Number(rates[index]) || 1.0
+  } catch { return 1.0 }
 }
 
 const getRemaining = (prod: any) => Number(prod.remainingStock || prod.stock || 0)
 
+// 修改：判断逻辑改为只依赖当前的数值
 const isAtLimit = (prod: any) => {
   if (!prod) return false
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-  const inCart = cart.find((i: any) => i.productId === prod.productId)
-  return inCart && inCart.quantity >= getRemaining(prod)
+  return getRemaining(prod) <= 0
 }
 
 const fetchStores = async () => {
@@ -228,11 +238,14 @@ const fetchProducts = async () => {
       try {
         const std = await standardApi.getByBarcode(item.barcode) as any
         const stdData = std.data || std
+        const normalPrice = Number(stdData.normalPrice || 0)
+        const rate = getDiscountRate(item.expirationTime, stdData.discountRates || '[]')
         return {
           ...item,
           barcode: item.barcode,
           productName: stdData.productName || `SKU:${item.barcode}`,
-          normalPrice: Number(stdData.normalPrice || 0)
+          normalPrice,
+          discountedPrice: +(normalPrice * rate).toFixed(2)
         }
       } catch { return item }
     }))
@@ -244,12 +257,9 @@ const fetchProducts = async () => {
 const addToCart = async (prod: any) => {
   const userId = localStorage.getItem('userId') || '4'
   const maxStock = getRemaining(prod)
-  let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
-  const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
-  const currentQty = existingIndex > -1 ? localCart[existingIndex].quantity : 0
 
-  if (currentQty + 1 > maxStock) {
-    return ElMessage.warning({ message: `Limit reached! Only ${maxStock} available.`, plain: true })
+  if (maxStock <= 0) {
+    return ElMessage.warning({ message: `Out of stock!`, plain: true })
   }
 
   try {
@@ -259,8 +269,19 @@ const addToCart = async (prod: any) => {
       quantity: 1
     })
 
+    // --- 实时刷新核心修改点 ---
+    // 直接修改 productList 数组中该对象的数值，Vue 会自动触发界面刷新
+    const target = productList.value.find(p => p.productId === prod.productId)
+    if (target) {
+      if (target.remainingStock !== undefined) target.remainingStock--
+      else if (target.stock !== undefined) target.stock--
+    }
+
+    // 同步更新 LocalStorage (保持原有逻辑)
+    let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
     if (existingIndex > -1) { localCart[existingIndex].quantity += 1 }
-    else { localCart.push({ productId: prod.productId, productName: prod.productName, pointsPrice: prod.normalPrice, quantity: 1 }) }
+    else { localCart.push({ productId: prod.productId, productName: prod.productName, pointsPrice: prod.discountedPrice ?? prod.normalPrice, quantity: 1 }) }
 
     localStorage.setItem('cart', JSON.stringify(localCart))
     ElMessage.success(`${prod.productName} added!`)
@@ -275,7 +296,10 @@ const showDetail = (prod: any) => {
 const handleDetailBuy = () => {
   if (currentProduct.value) {
     addToCart(currentProduct.value);
-    detailVisible.value = false;
+    // 如果买完没货了，关闭弹窗
+    if (getRemaining(currentProduct.value) <= 0) {
+      detailVisible.value = false;
+    }
   }
 }
 
@@ -288,7 +312,7 @@ onMounted(fetchStores)
 </script>
 
 <style scoped>
-/* 保持原有样式 */
+/* 保持原有样式，未做任何改动 */
 .floating-img {
   width: 160px;
   height: 160px;
@@ -342,9 +366,10 @@ onMounted(fetchStores)
 
 .content { padding: 16px; }
 .name { font-weight: 800; font-size: 15px; color: #1e293b; height: 40px; display: block; overflow: hidden; }
-.points-price { color: #ee7203; font-weight: 900; margin: 12px 0; }
+.points-price { color: #ee7203; font-weight: 900; margin: 8px 0 0; }
 .points-price .num { font-size: 24px; }
 .points-price .unit { font-size: 18px; margin-right: 2px; }
+.card-original-price { text-decoration: line-through; color: #94a3b8; font-size: 12px; margin-bottom: 4px; }
 
 .add-btn { width: 100%; height: 44px; font-weight: 800; border: none; }
 .add-btn.el-button--success { background: #008163 !important; }

@@ -30,11 +30,12 @@ class ExpiringProductControllerIntegrationTest {
 
     @Test
     void getAllProducts_returnsList() throws Exception {
+        // V2 seed (10) + V5 seed (400) = 410 total expiring products
         mockMvc.perform(get("/api/expiring-products")
                         .header("Authorization", "Bearer " + employeeToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(10));
+                .andExpect(jsonPath("$.length()").value(410));
     }
 
     @Test
@@ -48,23 +49,23 @@ class ExpiringProductControllerIntegrationTest {
     }
 
     @Test
-    void getAvailableByStore_store1_returns2Products() throws Exception {
-        // Store 1 has products 1 and 2, both AVAILABLE
+    void getAvailableByStore_store1_returnsProducts() throws Exception {
+        // Store 1: V2 has 2 AVAILABLE + V5 has 29 AVAILABLE = 31 total
         mockMvc.perform(get("/api/expiring-products/store/1")
                         .header("Authorization", "Bearer " + employeeToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.length()").value(31));
     }
 
     @Test
-    void getAvailableByStore_store3_returnsEmpty() throws Exception {
-        // Store 3 has product 4 which is SOLD_OUT
+    void getAvailableByStore_store3_returnsProducts() throws Exception {
+        // Store 3: V2 has 0 AVAILABLE (product 4 is SOLD_OUT) + V5 has 28 AVAILABLE = 28 total
         mockMvc.perform(get("/api/expiring-products/store/3")
                         .header("Authorization", "Bearer " + employeeToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.length()").value(28));
     }
 
     @Test
