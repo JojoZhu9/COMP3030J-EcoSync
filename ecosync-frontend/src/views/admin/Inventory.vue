@@ -15,6 +15,19 @@
 
       <el-table :data="products" v-loading="loading" stripe border>
         <el-table-column prop="barcode" label="Barcode" width="150" />
+        <el-table-column label="Image" width="100">
+          <template #default="{ row }">
+            <el-image
+              style="width: 50px; height: 50px; border-radius: 4px; background: #f5f7fa"
+              :src="`/uploads/products/${row.barcode}.jpg`"
+              fit="cover"
+            >
+              <template #error>
+                <div class="image-slot-error">No Pic</div>
+              </template>
+            </el-image>
+          </template>
+        </el-table-column>
         <el-table-column label="Product Name">
           <template #default="{ row }">
             {{ row.product_name || row.productName || 'Unnamed' }}
@@ -63,13 +76,26 @@
             </div>
             <div class="stat-item highlight">
               <span class="label">Final Price:</span>
-              <span class="value">¥{{ (newP.normal_price * newP.discount_rates[0]).toFixed(2) }}</span>
+              <span class="value">¥{{ (newP.normal_price * (newP.discount_rates[0] || 1)).toFixed(2) }}</span>
             </div>
           </div>
         </div>
 
         <div class="form-panel">
           <el-form :model="newP" label-position="top">
+            <el-form-item label="Product Image">
+              <el-upload
+                class="product-uploader"
+                action="#"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-change="handleFileChange"
+              >
+                <img v-if="imgPreview" :src="imgPreview" class="preview-img" />
+                <el-icon v-else class="uploader-icon"><Plus /></el-icon>
+              </el-upload>
+            </el-form-item>
+
             <el-row :gutter="20">
               <el-col :span="14">
                 <el-form-item label="Barcode">
@@ -130,13 +156,16 @@ import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Camera } from '@element-plus/icons-vue'
-import { Html5Qrcode } from 'html5-qrcode' // 需要安裝：npm install html5-qrcode
+import { Html5Qrcode } from 'html5-qrcode'
 
 const router = useRouter()
 const products = ref([])
 const loading = ref(false)
 const submitLoading = ref(false)
 const showAdd = ref(false)
+
+const imgFile = ref<File | null>(null)
+const imgPreview = ref('')
 
 const newP = ref({
   barcode: '',
@@ -145,13 +174,16 @@ const newP = ref({
   discount_rates: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 })
 
-// 掃描器相關邏輯
+const handleFileChange = (file: any) => {
+  imgFile.value = file.raw
+  imgPreview.value = URL.createObjectURL(file.raw)
+}
+
 const scanning = ref(false)
 let html5QrCode: Html5Qrcode | null = null
 
 const startScanner = async () => {
   scanning.value = true
-  // 給 DOM 渲染留一點時間
   setTimeout(async () => {
     try {
       html5QrCode = new Html5Qrcode("scanner-reader")
@@ -163,10 +195,10 @@ const startScanner = async () => {
           stopScanner()
           ElMessage.success('Barcode scanned!')
         },
-        () => { /* 掃描中忽略錯誤 */ }
+        () => { }
       )
     } catch (err) {
-      ElMessage.error('Camera access denied or error: ' + err)
+      ElMessage.error('Camera error: ' + err)
       scanning.value = false
     }
   }, 100)
@@ -206,6 +238,8 @@ const openAddDialog = () => {
     normal_price: 0.00,
     discount_rates: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   }
+  imgFile.value = null
+  imgPreview.value = ''
   showAdd.value = true
 }
 
@@ -213,14 +247,21 @@ const submitAdd = async () => {
   if (!newP.value.barcode || !newP.value.product_name) {
     return ElMessage.warning('Please fill in all information')
   }
+
   submitLoading.value = true
+
+  const formData = new FormData()
+  if (imgFile.value) {
+    formData.append('image', imgFile.value)
+  }
+  formData.append('barcode', newP.value.barcode)
+  formData.append('product_name', newP.value.product_name)
+  formData.append('normal_price', newP.value.normal_price.toString())
+  formData.append('discount_rates', JSON.stringify(newP.value.discount_rates))
+
   try {
-    await request.post('/products', {
-      barcode: newP.value.barcode,
-      product_name: newP.value.product_name,
-      normal_price: newP.value.normal_price,
-      discount_rates: JSON.stringify(newP.value.discount_rates)
-    })
+    // 这里依然发送 formData，由后端接收并执行文件的 IO 保存
+    await request.post('/products', formData)
     ElMessage.success('Product registered successfully')
     showAdd.value = false
     fetchData()
@@ -233,7 +274,7 @@ const submitAdd = async () => {
 
 const handleDelete = (row: any) => {
   const id = row.barcode
-  ElMessageBox.confirm(`Are you sure you want to delete [${row.product_name}]?`, 'Warning', { type: 'warning' }).then(async () => {
+  ElMessageBox.confirm(`Delete [${row.product_name}]?`, 'Warning', { type: 'warning' }).then(async () => {
     try {
       await request.delete(`/products/${id}`)
       ElMessage.success('Deleted successfully')
@@ -253,53 +294,40 @@ onUnmounted(stopScanner)
 </script>
 
 <style scoped>
+.product-uploader {
+  border: 1px dashed #d9d9d9; border-radius: 6px; cursor: pointer;
+  width: 120px; height: 120px; display: flex; justify-content: center; align-items: center;
+  overflow: hidden; transition: border-color 0.3s;
+}
+.product-uploader:hover { border-color: #409eff; }
+.uploader-icon { font-size: 28px; color: #8c939d; }
+.preview-img { width: 100%; height: 100%; object-fit: cover; }
+.image-slot-error { background: #f5f7fa; color: #909399; font-size: 12px; display: flex; justify-content: center; align-items: center; height: 100%; }
+
 .inventory-container { padding: 25px; background: #f0f2f5; min-height: 100vh; }
 .header-content { display: flex; justify-content: space-between; align-items: center; }
 .brand-strip { width: 4px; height: 18px; background: #409eff; margin-right: 10px; display: inline-block; vertical-align: middle; }
 .main-title { font-weight: bold; font-size: 16px; }
-
 .dialog-flex-layout { display: flex; gap: 25px; align-items: flex-start; }
-
-.preview-panel {
-  flex: 1; background: #1a1c1e; border-radius: 8px; padding: 20px; color: #fff;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-}
+.preview-panel { flex: 1; background: #1a1c1e; border-radius: 8px; padding: 20px; color: #fff; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
 .panel-title { font-size: 12px; color: #409eff; letter-spacing: 1px; margin-bottom: 20px; font-weight: bold; }
-
 .chart-container { height: 200px; display: flex; flex-direction: column; position: relative; padding-left: 30px; }
 .visual-graph { flex: 1; display: flex; align-items: flex-end; gap: 4px; border-left: 1px solid #333; border-bottom: 1px solid #333; padding: 0 5px; }
 .graph-bar { flex: 1; transition: all 0.4s ease; position: relative; border-radius: 2px 2px 0 0; }
 .graph-bar:hover .bar-tooltip { opacity: 1; }
-.bar-tooltip {
-  position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
-  background: #fff; color: #000; font-size: 10px; padding: 2px 4px; border-radius: 3px;
-  opacity: 0; pointer-events: none; white-space: nowrap;
-}
-
+.bar-tooltip { position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; font-size: 10px; padding: 2px 4px; border-radius: 3px; opacity: 0; pointer-events: none; white-space: nowrap; }
 .y-axis { position: absolute; left: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-size: 10px; color: #666; }
 .x-axis { display: flex; justify-content: space-between; margin-top: 10px; font-size: 10px; color: #666; padding: 0 10px; }
-
 .price-stats { margin-top: 20px; border-top: 1px solid #333; padding-top: 15px; }
 .stat-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
 .highlight { color: #409eff; font-weight: bold; font-size: 15px; }
-
 .form-panel { flex: 1.3; }
 .matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.discount-input-group {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #f5f7fa; padding: 5px 8px; border-radius: 4px; border: 1px solid #e4e7ed;
-}
+.discount-input-group { display: flex; align-items: center; justify-content: space-between; background: #f5f7fa; padding: 5px 8px; border-radius: 4px; border: 1px solid #e4e7ed; }
 .hour-label { font-size: 12px; color: #606266; font-weight: bold; }
-
-/* 掃描器遮罩樣式 */
-.scanner-overlay {
-  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.85); z-index: 10; display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-}
+.scanner-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 #scanner-reader { width: 100%; max-width: 400px; border-radius: 8px; overflow: hidden; }
 .close-scanner { margin-top: 20px; }
-
 :deep(.el-divider__text) { font-weight: bold; color: #409eff; }
 .price-tag { color: #f56c6c; font-weight: bold; }
 .mr-5 { margin-right: 5px; }
