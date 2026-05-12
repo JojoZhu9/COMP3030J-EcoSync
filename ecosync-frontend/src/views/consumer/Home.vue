@@ -55,6 +55,9 @@
                   <div class="stock-tag" :class="{ 'urgent': getRemaining(prod) < 5 }">
                     Only {{ getRemaining(prod) }} left
                   </div>
+                  <div class="expiry-timer-tag">
+                    <el-icon><Timer /></el-icon> {{ getTimeRemaining(prod.expirationDate) }}
+                  </div>
                 </div>
 
                 <div class="content">
@@ -130,6 +133,7 @@
           <div class="p-tags-container">
             <el-tag effect="dark" type="success" round size="small">Fresh Pick</el-tag>
             <el-tag effect="plain" type="warning" round size="small">Limited Quantity</el-tag>
+            <el-tag effect="light" type="danger" round size="small">Expires in: {{ getTimeRemaining(currentProduct.expirationDate) }}</el-tag>
           </div>
 
           <div class="p-description-card">
@@ -139,7 +143,7 @@
             </div>
             <div class="desc-item">
               <el-icon><Timer /></el-icon>
-              <span>Best consumed within 24-48 hours</span>
+              <span>Expires at: {{ new Date(currentProduct.expirationDate).toLocaleString() }}</span>
             </div>
           </div>
 
@@ -208,9 +212,24 @@ const getDiscountRate = (expirationTime: string, discountRatesStr: string): numb
   } catch { return 1.0 }
 }
 
+// --- 计算剩余时间函数 ---
+const getTimeRemaining = (expiryDate: string) => {
+  if (!expiryDate) return 'N/A';
+  const now = new Date().getTime();
+  const end = new Date(expiryDate).getTime();
+  const diff = end - now;
+
+  if (diff <= 0) return 'Expired';
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  if (hours < 24) return `${hours}h left`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d left`;
+}
+
 const getRemaining = (prod: any) => Number(prod.remainingStock || prod.stock || 0)
 
-// 修改：判断逻辑改为只依赖当前的数值
 const isAtLimit = (prod: any) => {
   if (!prod) return false
   return getRemaining(prod) <= 0
@@ -269,15 +288,12 @@ const addToCart = async (prod: any) => {
       quantity: 1
     })
 
-    // --- 实时刷新核心修改点 ---
-    // 直接修改 productList 数组中该对象的数值，Vue 会自动触发界面刷新
     const target = productList.value.find(p => p.productId === prod.productId)
     if (target) {
       if (target.remainingStock !== undefined) target.remainingStock--
       else if (target.stock !== undefined) target.stock--
     }
 
-    // 同步更新 LocalStorage (保持原有逻辑)
     let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
     const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
     if (existingIndex > -1) { localCart[existingIndex].quantity += 1 }
@@ -296,7 +312,6 @@ const showDetail = (prod: any) => {
 const handleDetailBuy = () => {
   if (currentProduct.value) {
     addToCart(currentProduct.value);
-    // 如果买完没货了，关闭弹窗
     if (getRemaining(currentProduct.value) <= 0) {
       detailVisible.value = false;
     }
@@ -312,7 +327,22 @@ onMounted(fetchStores)
 </script>
 
 <style scoped>
-/* 保持原有样式，未做任何改动 */
+.expiry-timer-tag {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 3;
+}
+
 .floating-img {
   width: 160px;
   height: 160px;
