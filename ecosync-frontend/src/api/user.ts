@@ -9,13 +9,17 @@ export const loginApi = (data: any) => {
 }
 
 export const registerApi = (data: any) => {
+  // 核心修复点：绝对不能在前端显式传递 balance（余额）与 status。
+  // 防止被抓包后篡改余额，此类字段应交由后端 Spring Boot 用户服务默认初始化。
   return request({
     url: '/users',
     method: 'post',
     data: {
-      ...data,
-      balance: 0, // 初始化余额
-      status: 'NORMAL' // 默认状态
+      username: data.username,
+      password: data.password,
+      passwordHash: data.passwordHash,
+      rawPassword: data.rawPassword,
+      role: data.role
     }
   })
 }
