@@ -191,7 +191,6 @@ const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 
 // --- 图片路径拼接函数 ---
-// 这里硬编码后端地址，因为浏览器能直接打开这个地址，说明它是通的。
 const getImageUrl = (barcode: string) => {
   if (!barcode) return '';
   return `http://localhost:8080/uploads/products/${barcode}.jpg`;
@@ -199,11 +198,10 @@ const getImageUrl = (barcode: string) => {
 
 const getRemaining = (prod: any) => Number(prod.remainingStock || prod.stock || 0)
 
+// 修改：判断逻辑改为只依赖当前的数值
 const isAtLimit = (prod: any) => {
   if (!prod) return false
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-  const inCart = cart.find((i: any) => i.productId === prod.productId)
-  return inCart && inCart.quantity >= getRemaining(prod)
+  return getRemaining(prod) <= 0
 }
 
 const fetchStores = async () => {
@@ -244,12 +242,9 @@ const fetchProducts = async () => {
 const addToCart = async (prod: any) => {
   const userId = localStorage.getItem('userId') || '4'
   const maxStock = getRemaining(prod)
-  let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
-  const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
-  const currentQty = existingIndex > -1 ? localCart[existingIndex].quantity : 0
 
-  if (currentQty + 1 > maxStock) {
-    return ElMessage.warning({ message: `Limit reached! Only ${maxStock} available.`, plain: true })
+  if (maxStock <= 0) {
+    return ElMessage.warning({ message: `Out of stock!`, plain: true })
   }
 
   try {
@@ -259,6 +254,17 @@ const addToCart = async (prod: any) => {
       quantity: 1
     })
 
+    // --- 实时刷新核心修改点 ---
+    // 直接修改 productList 数组中该对象的数值，Vue 会自动触发界面刷新
+    const target = productList.value.find(p => p.productId === prod.productId)
+    if (target) {
+      if (target.remainingStock !== undefined) target.remainingStock--
+      else if (target.stock !== undefined) target.stock--
+    }
+
+    // 同步更新 LocalStorage (保持原有逻辑)
+    let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
+    const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
     if (existingIndex > -1) { localCart[existingIndex].quantity += 1 }
     else { localCart.push({ productId: prod.productId, productName: prod.productName, pointsPrice: prod.normalPrice, quantity: 1 }) }
 
@@ -275,7 +281,10 @@ const showDetail = (prod: any) => {
 const handleDetailBuy = () => {
   if (currentProduct.value) {
     addToCart(currentProduct.value);
-    detailVisible.value = false;
+    // 如果买完没货了，关闭弹窗
+    if (getRemaining(currentProduct.value) <= 0) {
+      detailVisible.value = false;
+    }
   }
 }
 
@@ -288,7 +297,7 @@ onMounted(fetchStores)
 </script>
 
 <style scoped>
-/* 保持原有样式 */
+/* 保持原有样式，未做任何改动 */
 .floating-img {
   width: 160px;
   height: 160px;
