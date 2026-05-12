@@ -230,7 +230,7 @@ $env:SPRING_DATASOURCE_PASSWORD="ecosync123"
 $env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3307/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
 $env:SPRING_DATASOURCE_USERNAME="root"
 $env:SPRING_DATASOURCE_PASSWORD="ecosync123"
-.\mvnw.cmd test -B -Dtest="AuthRbacIntegrationTest,UserControllerIntegrationTest,OrderControllerIntegrationTest" -Dspring.profiles.active=test
+.\mvnw.cmd test -B -Dtest="AuthRbacIntegrationTest,UserControllerIntegrationTest,ShoppingCartControllerIntegrationTest,ExpiringProductControllerIntegrationTest,OrderControllerIntegrationTest" -Dspring.profiles.active=test
 ```
 
 #### 查看后端测试结果
@@ -252,6 +252,8 @@ cat target\surefire-reports\*.txt
 | `OrderServiceImplTest` | 单元 | 15 | 折扣计算/库存/余额/核销 |
 | `AuthRbacIntegrationTest` | 集成 | 8 | 401/403 权限/OPTIONS 预检/免认证路径 |
 | `UserControllerIntegrationTest` | 集成 | 6 | 登录/注册/用户查询 API |
+| `ShoppingCartControllerIntegrationTest` | 集成 | 6 | 购物车增删改查 API |
+| `ExpiringProductControllerIntegrationTest` | 集成 | 7 | 临期商品上架/查询/修改/删除 API |
 | `OrderControllerIntegrationTest` | 集成 | 6 | 下单/核销/订单查询 API |
 
 ### 前端测试
