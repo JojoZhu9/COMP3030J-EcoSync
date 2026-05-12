@@ -41,7 +41,10 @@
                   <el-button type="info" link @click="deleteSingleItem(item.cartItemId)"><el-icon><Close /></el-icon></el-button>
                 </div>
                 <div class="price-qty-row">
-                  <div class="price-tag">￥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</div>
+                  <div>
+                    <div class="price-tag">￥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</div>
+                    <div v-if="item.originalPrice && item.pointsPrice < item.originalPrice" class="cart-original-price">￥{{ (item.originalPrice * item.quantity).toFixed(2) }}</div>
+                  </div>
                   <el-input-number
                     v-model="item.quantity"
                     :min="0"
@@ -99,7 +102,7 @@
           <div v-for="item in selectedItems" :key="item.productId" class="r-item">
             <span class="r-name">{{ item.productName }}</span>
             <span class="r-qty">x{{ item.quantity }}</span>
-            <span class="r-price">¥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</span>
+            <span class="r-price">¥{{ (item.pointsPrice * item.quantity).toFixed(2) }}<span v-if="item.originalPrice && item.pointsPrice < item.originalPrice" style="text-decoration:line-through;color:#94a3b8;font-size:11px;margin-left:4px">{{ (item.originalPrice * item.quantity).toFixed(2) }}</span></span>
           </div>
         </div>
         <div class="r-divider"></div>
@@ -139,6 +142,16 @@ const getUserId = () => localStorage.getItem('userId')
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const totalPrice = computed(() => selectedItems.value.reduce((acc, i) => acc + (i.pointsPrice * i.quantity), 0).toFixed(2))
 
+const getDiscountRate = (expirationTime: string, discountRatesStr: string): number => {
+  try {
+    const rates: number[] = JSON.parse(discountRatesStr)
+    if (!Array.isArray(rates) || rates.length === 0) return 1.0
+    const hoursLeft = (new Date(expirationTime).getTime() - Date.now()) / (1000 * 60 * 60)
+    const index = Math.min(Math.max(0, 12 - Math.ceil(hoursLeft)), rates.length - 1)
+    return Number(rates[index]) || 1.0
+  } catch { return 1.0 }
+}
+
 const initData = async () => {
   const uid = getUserId()
   if (!uid) return router.push('/login')
@@ -160,13 +173,16 @@ const initData = async () => {
         const exp = expRes.data || expRes
         const stdRes: any = await request.get(`/products/${exp.barcode}`)
         const std = stdRes.data || stdRes
+        const normalPrice = Number(std.normalPrice || 0)
+        const rate = getDiscountRate(exp.expirationTime, std.discountRates || '[]')
 
         return {
           ...item,
           productId: pId,
           barcode: exp.barcode,
           productName: std.productName,
-          pointsPrice: Number(std.normalPrice),
+          originalPrice: normalPrice,
+          pointsPrice: +(normalPrice * rate).toFixed(2),
           maxStock: Number(exp.remainingStock),
           selected: true
         }
@@ -279,6 +295,7 @@ const executePayment = async () => {
 .item-tile.is-selected { border-color: #008163; background: #f0fdf9; }
 .product-name { font-weight: 800; font-size: 14px; color: #1e293b; }
 .price-tag { color: #EE7203; font-weight: 900; font-size: 18px; }
+.cart-original-price { text-decoration: line-through; color: #94a3b8; font-size: 11px; }
 
 .sticky-footer {
   position: absolute;
