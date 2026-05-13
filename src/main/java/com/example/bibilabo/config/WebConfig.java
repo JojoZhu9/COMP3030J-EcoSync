@@ -3,7 +3,7 @@ package com.example.bibilabo.config;
 import com.example.bibilabo.interceptor.JwtInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.CorsRegistry; // 新增导入
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -14,25 +14,25 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private JwtInterceptor jwtInterceptor;
 
+    // --- 新增跨域配置开始 ---
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
+        registry.addMapping("/**") // 允许所有路径
                 .allowedOrigins(
-                        "http://localhost:5173",
-                        "http://127.0.0.1:5173",
-                        "http://csi420-02-vm9.ucd.ie",
-                        "https://csi420-02-vm9.ucd.ie"
-                )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
+                    "http://localhost:5173",
+                    "http://127.0.0.1:5173",
+                    "http://csi420-02-vm9.ucd.ie",
+                    "https://csi420-02-vm9.ucd.ie"
+                ) // 允许本地开发和线上域名
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // 允许的方法
+                .allowedHeaders("*") // 允许的 Header
+                .allowCredentials(true); // 允许带上 Cookie 或认证信息
     }
+    // --- 新增跨域配置结束 ---
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 修改点 1：将资源处理路径改为 /api/uploads/**，确保和前端请求以及拦截器放行路径一致
-        // 这样访问 /api/uploads/products/1.jpg 就会去 /app/uploads/products/1.jpg 找
-        registry.addResourceHandler("/api/uploads/**")
+        registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:/app/uploads/");
     }
 
@@ -40,11 +40,12 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")
+                // 在这里新增放行 uploads 路径
                 .excludePathPatterns(
                         "/api/users/login",
                         "/api/users",
                         "/api/products",
-                        "/api/uploads/**"  // 修改点 2：这里已经正确，保持不动
+                        "/api/uploads/**"  // 关键：放行图片资源
                 );
     }
 }

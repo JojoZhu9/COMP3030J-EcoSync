@@ -6,9 +6,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/products")
@@ -17,6 +25,9 @@ public class StandardProductController {
 
     @Autowired
     private StandardProductService productService;
+
+    @Value("${app.upload.dir:./uploads/products}")
+    private String uploadDir;
 
     @GetMapping
     @Operation(summary = "获取所有标准商品", description = "查询基础商品库中的所有商品列表")
@@ -30,11 +41,32 @@ public class StandardProductController {
         return productService.getProductByBarcode(barcode);
     }
 
-    @PostMapping
-    @Operation(summary = "录入新标准商品", description = "在基础库中添加新的商品品类")
-    public String add(@RequestBody StandardProduct product) {
+    @PostMapping(consumes = "multipart/form-data")
+    @Operation(summary = "录入新标准商品（支持图片上传）", description = "在基础库中添加新的商品品类，可选上传商品图片")
+    public String add(
+            @RequestParam("barcode") String barcode,
+            @RequestParam("product_name") String productName,
+            @RequestParam("normal_price") BigDecimal normalPrice,
+            @RequestParam("discount_rates") String discountRates,
+            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+
+        StandardProduct product = new StandardProduct();
+        product.setBarcode(barcode);
+        product.setProductName(productName);
+        product.setNormalPrice(normalPrice);
+        product.setDiscountRates(discountRates);
+
+        if (image != null && !image.isEmpty()) {
+            String filename = barcode + "_" + UUID.randomUUID().toString().substring(0, 8)
+                    + getExtension(image.getOriginalFilename());
+            Path uploadPath = Paths.get(uploadDir);
+            Files.createDirectories(uploadPath);
+            Files.copy(image.getInputStream(), uploadPath.resolve(filename));
+            product.setImageUrl(filename);
+        }
+
         productService.createProduct(product);
-        return "商品添加成功，条码: " + product.getBarcode();
+        return "商品添加成功，条码: " + barcode;
     }
 
     @PutMapping("/{barcode}")
@@ -50,5 +82,10 @@ public class StandardProductController {
     public String delete(@Parameter(description = "商品条码") @PathVariable String barcode) {
         productService.deleteProduct(barcode);
         return "商品删除成功";
+    }
+
+    private String getExtension(String filename) {
+        if (filename == null || !filename.contains(".")) return ".jpg";
+        return filename.substring(filename.lastIndexOf("."));
     }
 }
