@@ -14,13 +14,13 @@ public interface StandardProductMapper {
     StandardProduct findByBarcode(String barcode);
 
     // 增加了 discount_rates 字段的插入
-    @Insert("INSERT INTO standard_products(barcode, product_name, normal_price, discount_rates) " +
-            "VALUES(#{barcode}, #{productName}, #{normalPrice}, #{discountRates})")
+    @Insert("INSERT INTO standard_products(barcode, product_name, normal_price, discount_rates, image_url) " +
+            "VALUES(#{barcode}, #{productName}, #{normalPrice}, #{discountRates}, #{imageUrl})")
     int insert(StandardProduct product);
 
     // 增加了 discount_rates 字段的更新
     @Update("UPDATE standard_products SET product_name = #{productName}, " +
-            "normal_price = #{normalPrice}, discount_rates = #{discountRates} " +
+            "normal_price = #{normalPrice}, discount_rates = #{discountRates}, image_url = #{imageUrl} " +
             "WHERE barcode = #{barcode}")
     int update(StandardProduct product);
 

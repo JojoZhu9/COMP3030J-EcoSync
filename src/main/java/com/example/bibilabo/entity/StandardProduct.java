@@ -7,6 +7,7 @@ public class StandardProduct {
     private String productName;
     private BigDecimal normalPrice;
     private String discountRates; // 映射 MySQL 中的 JSON 数组字符串，例如 "[1.0, 0.9, ...]"
+    private String imageUrl;
 
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
@@ -19,4 +20,7 @@ public class StandardProduct {
 
     public String getDiscountRates() { return discountRates; }
     public void setDiscountRates(String discountRates) { this.discountRates = discountRates; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }
