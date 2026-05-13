@@ -149,6 +149,10 @@ jobs:
             export APP_IMAGE=ghcr.io/jojozhu9/ecosync-app
             export FRONTEND_IMAGE=ghcr.io/jojozhu9/ecosync-frontend
             export IMAGE_TAG=${{ github.sha }}
+
+            # Ensure seed images directory exists
+            mkdir -p uploads/products
+
             docker compose pull
             docker compose up -d --remove-orphans
 
@@ -159,6 +163,7 @@ jobs:
                 echo "MinIO is ready"
                 break
               fi
+              echo "  attempt $i/20..."
               sleep 2
             done
 
@@ -168,8 +173,7 @@ jobs:
             docker compose exec -T minio mc mb --ignore-existing local/ecosync
             docker compose exec -T minio mc anonymous set public local/ecosync
 
-            # Upload seed images to MinIO (read from mounted volume)
-            docker compose exec -T minio mc cp --recursive /opt/seed-uploads/products/ local/ecosync/products/
-            docker compose exec -T minio mc anonymous set public local/ecosync/products
+            # Sync seed images (overwrite changed, keep user uploads)
+            docker compose exec -T minio mc mirror --overwrite /opt/seed-uploads/products/ local/ecosync/products/ || true
 
             echo "MinIO bucket configured and seeded"
