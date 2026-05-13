@@ -73,19 +73,74 @@
         </el-form>
       </el-card>
 
+      <el-card class="settings-card security-section" shadow="never">
+        <template #header>
+          <div class="card-title">
+            <el-icon><Lock /></el-icon>
+            <span>Security Settings</span>
+          </div>
+        </template>
+        <div class="security-item">
+          <div class="sec-info">
+            <div class="sec-label">Account Password</div>
+            <div class="sec-desc">Regularly updating your password improves account security.</div>
+          </div>
+          <el-button type="info" plain size="small" @click="pwdDialogVisible = true">
+            Change Password
+          </el-button>
+        </div>
+      </el-card>
+
       <p class="app-version">Version 2.4.0-Stable | 7-Eco Framework</p>
     </div>
+
+    <el-dialog
+      v-model="pwdDialogVisible"
+      title="Change Account Password"
+      width="400px"
+      align-center
+      class="modern-dialog"
+      @closed="resetPwdForm"
+    >
+      <el-form
+        ref="pwdFormRef"
+        :model="pwdForm"
+        :rules="pwdRules"
+        label-position="top"
+      >
+        <el-form-item label="OLD PASSWORD" prop="oldPassword">
+          <el-input v-model="pwdForm.oldPassword" type="password" show-password placeholder="Enter current password" />
+        </el-form-item>
+        <el-form-item label="NEW PASSWORD" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="6-20 characters, no Chinese" />
+        </el-form-item>
+        <el-form-item label="CONFIRM NEW PASSWORD" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="Repeat new password" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="pwdDialogVisible = false">Cancel</el-button>
+          <el-button type="success" :loading="pwdSaving" @click="handleUpdatePassword">
+            Confirm Update
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import { MapLocation, Location, Phone } from '@element-plus/icons-vue'
+import { MapLocation, Location, Phone, Lock } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 
 const userId = localStorage.getItem('userId') || '12'
 const saving = ref(false)
+const pwdSaving = ref(false)
+const pwdDialogVisible = ref(false)
+const pwdFormRef = ref<FormInstance>()
 const rawUserData = ref<any>({})
 
 const userForm = reactive({
@@ -94,6 +149,76 @@ const userForm = reactive({
   points: 0,
   username: ''
 })
+
+// --- 密码修改相关逻辑 ---
+const pwdForm = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const validateNewPwd = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('Please enter new password'))
+  } else if (value.length < 6 || value.length > 20) {
+    callback(new Error('Password must be 6-20 characters'))
+  } else if (/[\u4e00-\u9fa5]/.test(value)) {
+    callback(new Error('Chinese characters are not allowed'))
+  } else {
+    callback()
+  }
+}
+
+const validateConfirmPwd = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('Please confirm new password'))
+  } else if (value !== pwdForm.newPassword) {
+    callback(new Error('Passwords do not match'))
+  } else {
+    callback()
+  }
+}
+
+const pwdRules = reactive({
+  oldPassword: [{ required: true, message: 'Current password required', trigger: 'blur' }],
+  newPassword: [{ validator: validateNewPwd, trigger: 'blur' }],
+  confirmPassword: [{ validator: validateConfirmPwd, trigger: 'blur' }]
+})
+
+const resetPwdForm = () => {
+  pwdFormRef.value?.resetFields()
+}
+
+const handleUpdatePassword = async () => {
+  if (!pwdFormRef.value) return
+
+  await pwdFormRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    pwdSaving.value = true
+    try {
+      // 在实际业务中，修改密码通常需要传递旧密码进行验证
+      // 这里根据你之前的 PUT /users/${userId} 逻辑，合并 password 到 payload
+      const payload = {
+        ...rawUserData.value,
+        password: pwdForm.newPassword,
+        // 如果后端有专门的旧密码校验逻辑，此处需根据后端API调整
+        oldPassword: pwdForm.oldPassword
+      }
+
+      await request.put(`/users/${userId}`, payload)
+
+      ElMessage.success('Password updated successfully!')
+      pwdDialogVisible.value = false
+    } catch (e: any) {
+      const errorDetail = e.response?.data || 'Security sync failed'
+      ElMessage.error(`Error: ${typeof errorDetail === 'string' ? errorDetail : 'Password mismatch or system error'}`)
+    } finally {
+      pwdSaving.value = false
+    }
+  })
+}
+// ----------------------
 
 const fetchUser = async () => {
   try {
@@ -110,9 +235,6 @@ const fetchUser = async () => {
   }
 }
 
-/**
- * 自定义充值逻辑：同步至数据库
- */
 const handleRecharge = () => {
   ElMessageBox.prompt('Please enter recharge amount (¥)', 'Balance Top-up', {
     confirmButtonText: 'Confirm',
@@ -124,21 +246,11 @@ const handleRecharge = () => {
     try {
       const amount = parseFloat(value)
       if (isNaN(amount) || amount <= 0) return
-
-      // 计算新余额
       const newBalance = Number(userForm.points) + amount
-
-      // 构建同步 Payload
-      const payload = {
-        ...rawUserData.value,
-        balance: newBalance
-      }
-
-      // 同步到数据库
+      const payload = { ...rawUserData.value, balance: newBalance }
       await request.put(`/users/${userId}`, payload)
-
       ElMessage.success(`Successfully recharged ¥${amount.toFixed(2)}`)
-      await fetchUser() // 刷新本地数据
+      await fetchUser()
     } catch (e) {
       ElMessage.error('Recharge failed. System sync error.')
     }
@@ -196,7 +308,6 @@ onMounted(fetchUser)
   position: relative;
   z-index: 2;
 }
-/* 钱包布局调整 */
 .wallet-content { display: flex; justify-content: space-between; align-items: center; }
 .wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 .points-display { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; }
@@ -204,11 +315,24 @@ onMounted(fetchUser)
 .points-unit { font-size: 20px; font-weight: 800; color: #ff7900; margin-right: 2px; }
 
 .settings-body { padding: 0 20px; }
-.settings-card { border-radius: 16px; border: 1px solid #f1f5f9; }
+.settings-card { border-radius: 16px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
 .card-title { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #475569; font-size: 14px; text-transform: uppercase; }
+
+/* 安全设置条目样式 */
+.security-section { margin-top: 24px; }
+.security-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+.sec-label { font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+.sec-desc { font-size: 12px; color: #94a3b8; }
 
 .custom-form :deep(.el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 8px !important; }
 .commit-btn { width: 100%; height: 48px; border-radius: 12px; font-weight: 800; background-color: #007934 !important; border: none; box-shadow: 0 8px 16px rgba(0, 121, 52, 0.2); margin-top: 10px; }
 
 .app-version { text-align: center; font-size: 10px; color: #cbd5e1; font-weight: 700; margin-top: 30px; text-transform: uppercase; letter-spacing: 1px; }
+
+/* 弹窗表单标签样式 */
+:deep(.modern-dialog .el-form-item__label) {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+}
 </style>
