@@ -43,12 +43,20 @@ public class MinioService {
                 .credentials(accessKey, secretKey)
                 .build();
 
-        try {
-            ensureBucketAndPolicy();
-            seedImages();
-        } catch (Exception e) {
-            log.warn("MinIO init failed (will retry on first upload): {}", e.getMessage());
+        for (int retry = 0; retry < 10; retry++) {
+            try {
+                ensureBucketAndPolicy();
+                seedImages();
+                log.info("MinIO initialized successfully");
+                return;
+            } catch (Exception e) {
+                log.warn("MinIO init attempt {} failed: {}", retry + 1, e.getMessage());
+                if (retry < 9) {
+                    try { Thread.sleep(3000); } catch (InterruptedException ignored) {}
+                }
+            }
         }
+        log.error("MinIO init failed after 10 attempts — images may not work");
     }
 
     private void seedImages() {
