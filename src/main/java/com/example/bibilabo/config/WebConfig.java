@@ -3,7 +3,7 @@ package com.example.bibilabo.config;
 import com.example.bibilabo.interceptor.JwtInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry; // 新增导入
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -33,6 +33,12 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/users/login", "/api/users", "/api/products");
+                // 在这里新增放行 uploads 路径
+                .excludePathPatterns(
+                        "/api/users/login",
+                        "/api/users",
+                        "/api/products",
+                        "/api/uploads/**"  // 关键：放行图片资源
+                );
     }
 }
