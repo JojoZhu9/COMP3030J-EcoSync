@@ -43,7 +43,7 @@
               <el-card class="product-card" shadow="never" @click="showDetail(prod)">
                 <div class="image-box">
                   <el-image
-                    :src="getImageUrl(prod.barcode)"
+                    :src="getImageUrl(prod)"
                     fit="cover"
                     style="width: 100%; height: 100%"
                   >
@@ -107,7 +107,7 @@
           <div class="hero-bg"></div>
 
           <el-image
-            :src="getImageUrl(currentProduct.barcode)"
+            :src="getImageUrl(currentProduct)"
             fit="contain"
             class="floating-img"
           >
@@ -199,11 +199,14 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 
-// 修正：图片路径必须匹配后端映射地址，且需后端放行 /api/uploads/** 路径
-const getImageUrl = (barcode: string) => {
+// Use backend-provided imageUrl when available, otherwise fall back to barcode-based path
+const getImageUrl = (prod: any) => {
+  if (prod.imageUrl) {
+    return `/uploads/products/${prod.imageUrl}`;
+  }
+  const barcode = prod.barcode;
   if (!barcode) return '';
-  const baseUrl = 'https://csi420-02-vm9.ucd.ie/api';
-  return `${baseUrl}/uploads/products/${barcode}.jpg`;
+  return `/uploads/products/${barcode}.jpg`;
 }
 
 const getDiscountRate = (expirationTime: string, discountRatesStr: string): number => {
@@ -266,7 +269,8 @@ const fetchProducts = async () => {
           ...item,
           productName: stdData.productName || `SKU:${item.barcode}`,
           normalPrice: normalPrice,
-          discountedPrice: (normalPrice * rate).toFixed(2)
+          discountedPrice: (normalPrice * rate).toFixed(2),
+          imageUrl: stdData.imageUrl || null
         }
       } catch { return item }
     }))
