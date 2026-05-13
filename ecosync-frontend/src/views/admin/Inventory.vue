@@ -19,7 +19,7 @@
           <template #default="{ row }">
             <el-image
               style="width: 50px; height: 50px; border-radius: 4px; background: #f5f7fa"
-              :src="`http://localhost:8080/uploads/products/${row.barcode}.jpg`"
+              :src="row.image_url || row.imageUrl ? `/uploads/products/${row.image_url || row.imageUrl}` : `/uploads/products/${row.barcode}.jpg`"
               fit="cover"
             >
               <template #error>
