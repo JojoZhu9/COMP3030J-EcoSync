@@ -1,20 +1,16 @@
 package com.example.bibilabo.controller;
 
 import com.example.bibilabo.entity.StandardProduct;
+import com.example.bibilabo.service.MinioService;
 import com.example.bibilabo.service.StandardProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,8 +22,8 @@ public class StandardProductController {
     @Autowired
     private StandardProductService productService;
 
-    @Value("${app.upload.dir:./uploads/products}")
-    private String uploadDir;
+    @Autowired
+    private MinioService minioService;
 
     @GetMapping
     @Operation(summary = "获取所有标准商品", description = "查询基础商品库中的所有商品列表")
@@ -48,7 +44,7 @@ public class StandardProductController {
             @RequestParam("product_name") String productName,
             @RequestParam("normal_price") BigDecimal normalPrice,
             @RequestParam("discount_rates") String discountRates,
-            @RequestPart(value = "image", required = false) MultipartFile image) throws IOException {
+            @RequestPart(value = "image", required = false) MultipartFile image) throws Exception {
 
         StandardProduct product = new StandardProduct();
         product.setBarcode(barcode);
@@ -59,9 +55,7 @@ public class StandardProductController {
         if (image != null && !image.isEmpty()) {
             String filename = barcode + "_" + UUID.randomUUID().toString().substring(0, 8)
                     + getExtension(image.getOriginalFilename());
-            Path uploadPath = Paths.get(uploadDir);
-            Files.createDirectories(uploadPath);
-            Files.copy(image.getInputStream(), uploadPath.resolve(filename));
+            minioService.upload(image, filename);
             product.setImageUrl(filename);
         }
 
