@@ -128,15 +128,16 @@ import { MapLocation, Location, Phone, Lock } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 
+// 从本地存储获取 ID
 const userId = localStorage.getItem('userId') || '12'
 const saving = ref(false)
 const pwdSaving = ref(false)
 const pwdDialogVisible = ref(false)
 const pwdFormRef = ref<FormInstance>()
 
-// 严格对应 User 实体类的响应式数据
+// 状态初始化
 const rawUserData = ref<any>({
-  userId: null,
+  userId: Number(userId),
   username: '',
   passwordHash: '',
   role: '',
@@ -148,119 +149,114 @@ const rawUserData = ref<any>({
   createdAt: null
 })
 
-// --- 密码修改逻辑 ---
 const pwdForm = reactive({
   newPassword: '',
   confirmPassword: ''
 })
 
 const pwdRules = reactive({
-  newPassword: [{ required: true, min: 6, message: 'Password must be at least 6 characters', trigger: 'blur' }],
+  newPassword: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
   confirmPassword: [
-    { required: true, message: 'Please confirm password', trigger: 'blur' },
+    { required: true, message: 'Confirm your password', trigger: 'blur' },
     { validator: (rule: any, value: any, callback: any) => {
-        if (value !== pwdForm.newPassword) callback(new Error('Passwords do not match!'))
+        if (value !== pwdForm.newPassword) callback(new Error('Mismatch!'))
         else callback()
       }, trigger: 'blur'
     }
   ]
 })
 
-const resetPwdForm = () => {
-  pwdForm.newPassword = ''
-  pwdForm.confirmPassword = ''
-  pwdFormRef.value?.resetFields()
+// 数据同步方法
+const fetchUser = async () => {
+  try {
+    // 路径修正：去掉多余的 /api，确保拼接后为 .../api/users/12
+    const res: any = await request.get(`/users/${userId}`)
+    // 处理可能存在的数据包装
+    const data = res.data?.data || res.data || res
+    if (data && typeof data === 'object') {
+      rawUserData.value = data
+    }
+  } catch (e) {
+    ElMessage.error('Profile sync failed')
+  }
 }
 
-// 核心修复 1：发送新密码作为明文。后端 update 方法会检测到它与旧的 hash 不同并自动进行 MD5
 const handleUpdatePassword = async () => {
   if (!pwdFormRef.value) return
   await pwdFormRef.value.validate(async (valid) => {
     if (!valid) return
     pwdSaving.value = true
     try {
-      // 必须包含旧对象的所有字段，确保 role, status 等不丢失
       const payload = {
         ...rawUserData.value,
-        passwordHash: pwdForm.newPassword // 传入明文，后端 Service 会处理加密
+        passwordHash: pwdForm.newPassword
       }
+      // 路径修正
       await request.put(`/users/${userId}`, payload)
-      ElMessage.success('Password updated and encrypted!')
+      ElMessage.success('Password updated')
       pwdDialogVisible.value = false
-      await fetchUser() // 刷新以获取新的密文存入本地
+      await fetchUser()
     } catch (e: any) {
-      ElMessage.error('Password sync failed')
+      ElMessage.error('Password update failed')
     } finally {
       pwdSaving.value = false
     }
   })
 }
 
-// --- 数据读取逻辑 ---
-const fetchUser = async () => {
-  try {
-    const res: any = await request.get(`/users/${userId}`)
-    const data = res.data?.data || res.data || res
-    rawUserData.value = data
-  } catch (e) {
-    ElMessage.error('Infrastructure Link Error')
-  }
-}
-
-// 核心修复 2：充值逻辑，确保 balance 以数值形式发送
-const handleRecharge = () => {
-  ElMessageBox.prompt('Recharge amount (¥)', 'Wallet Top-up', {
-    confirmButtonText: 'Confirm',
-    cancelButtonText: 'Cancel',
-    inputPattern: /^\d+(\.\d{1,2})?$/,
-    inputErrorMessage: 'Invalid numeric amount',
-  }).then(async ({ value }) => {
-    try {
-      const amount = parseFloat(value)
-      const payload = {
-        ...rawUserData.value,
-        balance: (Number(rawUserData.value.balance) + amount).toFixed(2)
-      }
-      await request.put(`/users/${userId}`, payload)
-      ElMessage.success('Balance updated successfully')
-      await fetchUser()
-    } catch (e) {
-      ElMessage.error('Recharge transmission failed')
-    }
-  })
-}
-
-// 核心修复 3：基础信息更新。此时 rawUserData.passwordHash 里存的是 MD5 密文
-// 传给后端时，Service 里的 if (incomingPassword.equals(existingUser.getPasswordHash())) 会成立
-// 从而保证了“只改地址不改密码”的功能
 const updateUserInfo = async () => {
   if (!rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
-    return ElMessage.warning('Logistics data cannot be empty')
+    return ElMessage.warning('Fields cannot be empty')
   }
   saving.value = true
   try {
+    // 路径修正
     await request.put(`/users/${userId}`, rawUserData.value)
-    ElMessage.success('Logistics data synchronized!')
+    ElMessage.success('Profile saved')
     await fetchUser()
   } catch (e) {
-    ElMessage.error('Fulfillment update failed')
+    ElMessage.error('Update failed')
   } finally {
     saving.value = false
   }
 }
 
-const formatBalance = (val: any) => {
-  return val ? Number(val).toFixed(2) : '0.00'
+const handleRecharge = () => {
+  ElMessageBox.prompt('Amount (¥)', 'Top-up', {
+    confirmButtonText: 'Confirm',
+    inputPattern: /^\d+(\.\d{1,2})?$/,
+    inputErrorMessage: 'Invalid amount',
+  }).then(async ({ value }) => {
+    try {
+      const currentBalance = Number(rawUserData.value.balance) || 0
+      const newBalance = (currentBalance + parseFloat(value)).toFixed(2)
+      const payload = {
+        ...rawUserData.value,
+        balance: newBalance
+      }
+      // 路径修正
+      await request.put(`/users/${userId}`, payload)
+      ElMessage.success('Balance updated')
+      await fetchUser()
+    } catch (e) {
+      ElMessage.error('Transaction failed')
+    }
+  })
+}
+
+const formatBalance = (val: any) => (val ? Number(val).toFixed(2) : '0.00')
+const resetPwdForm = () => {
+  pwdForm.newPassword = ''; pwdForm.confirmPassword = ''
+  pwdFormRef.value?.resetFields()
 }
 
 onMounted(fetchUser)
 </script>
 
 <style scoped>
-/* 样式保持一致 */
 .profile-page { background: #f8fafc; min-height: 100vh; padding-bottom: 50px; }
 .brand-stripe { height: 4px; background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%); }
-.member-hero { background: #1e293b; padding: 40px 24px 60px; color: white; position: relative; overflow: hidden; }
+.member-hero { background: #1e293b; padding: 40px 24px 60px; color: white; position: relative; }
 .hero-content { display: flex; align-items: center; gap: 20px; position: relative; z-index: 1; }
 .member-avatar { border: 4px solid #334155; }
 .status-ring { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; background: #007934; border: 3px solid #1e293b; border-radius: 50%; }
@@ -270,15 +266,15 @@ onMounted(fetchUser)
 .welcome-text { margin: 0; font-size: 18px; font-weight: 800; }
 .wallet-card { margin: -30px 20px 24px; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; z-index: 2; }
 .wallet-content { display: flex; justify-content: space-between; align-items: center; }
-.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
 .points-display { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; }
 .points-num { font-size: 36px; font-weight: 900; color: #ff7900; line-height: 1; }
-.points-unit { font-size: 20px; font-weight: 800; color: #ff7900; margin-right: 2px; }
+.points-unit { font-size: 20px; font-weight: 800; color: #ff7900; }
 .settings-body { padding: 0 20px; }
 .settings-card { border-radius: 16px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
 .card-title { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #475569; font-size: 14px; text-transform: uppercase; }
 .security-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-.sec-label { font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+.sec-label { font-size: 14px; font-weight: 800; color: #1e293b; }
 .sec-desc { font-size: 12px; color: #94a3b8; }
 .custom-form :deep(.el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 8px !important; }
 .commit-btn { width: 100%; height: 48px; border-radius: 12px; font-weight: 800; background-color: #007934 !important; border: none; margin-top: 10px; }
