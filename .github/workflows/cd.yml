@@ -144,7 +144,8 @@ jobs:
 
           script: |
             cd /opt/EcoSync
-            git pull
+            git fetch origin
+            git reset --hard origin/main
             export APP_IMAGE=ghcr.io/jojozhu9/ecosync-app
             export FRONTEND_IMAGE=ghcr.io/jojozhu9/ecosync-frontend
             export IMAGE_TAG=${{ github.sha }}
