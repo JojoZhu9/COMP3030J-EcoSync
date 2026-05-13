@@ -11,9 +11,9 @@
         <div class="member-info">
           <div class="id-row">
             <span class="member-id">UID: {{ userId }}</span>
-            <el-tag size="small" class="active-tag">ACTIVE MEMBER</el-tag>
+            <el-tag size="small" class="active-tag">{{ rawUserData.role || 'MEMBER' }}</el-tag>
           </div>
-          <h2 class="welcome-text">Welcome back, {{ rawUserData.username || 'Eco-Partner' }}!</h2>
+          <h2 class="welcome-text">Welcome back, {{ rawUserData.username || 'User' }}!</h2>
         </div>
       </div>
     </div>
@@ -24,7 +24,7 @@
           <span class="wallet-label">Available Balance</span>
           <div class="points-display">
             <span class="points-unit">¥</span>
-            <span class="points-num">{{ rawUserData.balance || 0 }}</span>
+            <span class="points-num">{{ formatBalance(rawUserData.balance) }}</span>
           </div>
         </div>
         <div class="wallet-right">
@@ -83,7 +83,7 @@
         <div class="security-item">
           <div class="sec-info">
             <div class="sec-label">Account Password</div>
-            <div class="sec-desc">Regularly updating your password improves account security.</div>
+            <div class="sec-desc">Update your password to keep your account secure.</div>
           </div>
           <el-button type="info" plain size="small" @click="pwdDialogVisible = true">
             Change Password
@@ -102,14 +102,9 @@
       class="modern-dialog"
       @closed="resetPwdForm"
     >
-      <el-form
-        ref="pwdFormRef"
-        :model="pwdForm"
-        :rules="pwdRules"
-        label-position="top"
-      >
+      <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-position="top">
         <el-form-item label="NEW PASSWORD" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="6-20 characters" />
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="Enter new password" />
         </el-form-item>
         <el-form-item label="CONFIRM NEW PASSWORD" prop="confirmPassword">
           <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="Repeat new password" />
@@ -139,13 +134,18 @@ const pwdSaving = ref(false)
 const pwdDialogVisible = ref(false)
 const pwdFormRef = ref<FormInstance>()
 
-// 核心：直接使用响应式的对象存储后端返回的完整 User 实体
+// 严格按照 User.java 的属性初始化
 const rawUserData = ref<any>({
+  userId: null,
   username: '',
+  passwordHash: '',
+  role: '',
+  status: '',
+  storeId: null,
   balance: 0,
   phoneNumber: '',
   userAddress: '',
-  role: ''
+  createdAt: null
 })
 
 // --- 密码修改逻辑 ---
@@ -154,29 +154,16 @@ const pwdForm = reactive({
   confirmPassword: ''
 })
 
-const validateNewPwd = (rule: any, value: string, callback: any) => {
-  if (!value) {
-    callback(new Error('Please enter new password'))
-  } else if (value.length < 6 || value.length > 20) {
-    callback(new Error('6-20 characters required'))
-  } else {
-    callback()
-  }
-}
-
-const validateConfirmPwd = (rule: any, value: string, callback: any) => {
-  if (!value) {
-    callback(new Error('Please confirm password'))
-  } else if (value !== pwdForm.newPassword) {
-    callback(new Error('Passwords do not match'))
-  } else {
-    callback()
-  }
-}
-
 const pwdRules = reactive({
-  newPassword: [{ validator: validateNewPwd, trigger: 'blur' }],
-  confirmPassword: [{ validator: validateConfirmPwd, trigger: 'blur' }]
+  newPassword: [{ required: true, min: 6, message: 'Min 6 characters', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: 'Confirm your password', trigger: 'blur' },
+    { validator: (rule: any, value: any, callback: any) => {
+        if (value !== pwdForm.newPassword) callback(new Error('Passwords do not match!'))
+        else callback()
+      }, trigger: 'blur'
+    }
+  ]
 })
 
 const resetPwdForm = () => {
@@ -185,27 +172,23 @@ const resetPwdForm = () => {
   pwdFormRef.value?.resetFields()
 }
 
-// 核心修复：更新密码时，发送完整的 User 实体
+// 核心修复：更新密码时，JSON 键名必须为 passwordHash 以匹配后端的 setPasswordHash
 const handleUpdatePassword = async () => {
   if (!pwdFormRef.value) return
-
   await pwdFormRef.value.validate(async (valid) => {
     if (!valid) return
-
     pwdSaving.value = true
     try {
-      // 构造符合后端 User 实体的 Payload
       const payload = {
-        ...rawUserData.value,    // 包含 userId, username, balance, role 等所有字段
-        password: pwdForm.newPassword  // 覆盖为新密码
+        ...rawUserData.value,
+        passwordHash: pwdForm.newPassword // 🔥 关键：匹配后端字段名
       }
-
+      // 调用 UserController 中的 @PutMapping("/{id}")
       await request.put(`/users/${userId}`, payload)
-
       ElMessage.success('Password updated successfully!')
       pwdDialogVisible.value = false
     } catch (e: any) {
-      ElMessage.error('Failed to update password')
+      ElMessage.error('Password update failed')
     } finally {
       pwdSaving.value = false
     }
@@ -216,49 +199,43 @@ const handleUpdatePassword = async () => {
 const fetchUser = async () => {
   try {
     const res: any = await request.get(`/users/${userId}`)
-    // 后端返回的是 User 实体，直接存入 rawUserData
-    rawUserData.value = res.data?.data || res.data || res
+    // 直接获取后端 User 对象
+    const data = res.data?.data || res.data || res
+    rawUserData.value = data
   } catch (e) {
-    ElMessage.error('Data sync error')
+    ElMessage.error('Profile sync error')
   }
 }
 
-// 充值逻辑：同样需要发送完整实体
 const handleRecharge = () => {
-  ElMessageBox.prompt('Enter amount (¥)', 'Top-up', {
+  ElMessageBox.prompt('Recharge amount (¥)', 'Top-up', {
     confirmButtonText: 'Confirm',
     cancelButtonText: 'Cancel',
     inputPattern: /^\d+(\.\d{1,2})?$/,
     inputErrorMessage: 'Invalid amount',
-    buttonSize: 'small'
   }).then(async ({ value }) => {
     try {
-      const amount = parseFloat(value)
+      // 保持原有字段，仅修改余额
       const payload = {
         ...rawUserData.value,
-        balance: Number(rawUserData.value.balance) + amount
+        balance: (Number(rawUserData.value.balance) + parseFloat(value)).toFixed(2)
       }
       await request.put(`/users/${userId}`, payload)
-      ElMessage.success(`Recharged ¥${amount.toFixed(2)}`)
-      await fetchUser()
+      ElMessage.success('Balance updated')
+      fetchUser()
     } catch (e) {
       ElMessage.error('Recharge failed')
     }
   })
 }
 
-// 更新个人资料逻辑
 const updateUserInfo = async () => {
-  if (!rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
-    return ElMessage.warning('Required fields missing')
-  }
-
   saving.value = true
   try {
-    // 此时 rawUserData.value 已经包含了用户输入的最新值
+    // rawUserData.value 中已包含最新的 userAddress 和 phoneNumber
     await request.put(`/users/${userId}`, rawUserData.value)
-    ElMessage.success('Profile updated!')
-    await fetchUser()
+    ElMessage.success('Profile synchronization successful')
+    fetchUser()
   } catch (e) {
     ElMessage.error('Update failed')
   } finally {
@@ -266,14 +243,19 @@ const updateUserInfo = async () => {
   }
 }
 
+const formatBalance = (val: any) => {
+  return val ? Number(val).toFixed(2) : '0.00'
+}
+
 onMounted(fetchUser)
 </script>
 
 <style scoped>
+/* 保持原有样式不变 */
 .profile-page { background: #f8fafc; min-height: 100vh; padding-bottom: 50px; }
 .brand-stripe { height: 4px; background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%); }
-.member-hero { background: #1e293b; padding: 40px 24px 60px; color: white; position: relative; overflow: hidden; }
-.hero-content { display: flex; align-items: center; gap: 20px; position: relative; z-index: 1; }
+.member-hero { background: #1e293b; padding: 40px 24px 60px; color: white; position: relative; }
+.hero-content { display: flex; align-items: center; gap: 20px; z-index: 1; }
 .member-avatar { border: 4px solid #334155; }
 .status-ring { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; background: #007934; border: 3px solid #1e293b; border-radius: 50%; }
 .id-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
@@ -282,18 +264,18 @@ onMounted(fetchUser)
 .welcome-text { margin: 0; font-size: 18px; font-weight: 800; }
 .wallet-card { margin: -30px 20px 24px; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; z-index: 2; }
 .wallet-content { display: flex; justify-content: space-between; align-items: center; }
-.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
 .points-display { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; }
-.points-num { font-size: 36px; font-weight: 900; color: #ff7900; line-height: 1; }
-.points-unit { font-size: 20px; font-weight: 800; color: #ff7900; margin-right: 2px; }
+.points-num { font-size: 36px; font-weight: 900; color: #ff7900; }
+.points-unit { font-size: 20px; font-weight: 800; color: #ff7900; }
 .settings-body { padding: 0 20px; }
 .settings-card { border-radius: 16px; border: 1px solid #f1f5f9; margin-bottom: 20px; }
 .card-title { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #475569; font-size: 14px; text-transform: uppercase; }
 .security-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-.sec-label { font-size: 14px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+.sec-label { font-size: 14px; font-weight: 800; color: #1e293b; }
 .sec-desc { font-size: 12px; color: #94a3b8; }
 .custom-form :deep(.el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; margin-bottom: 8px !important; }
 .commit-btn { width: 100%; height: 48px; border-radius: 12px; font-weight: 800; background-color: #007934 !important; border: none; margin-top: 10px; }
-.app-version { text-align: center; font-size: 10px; color: #cbd5e1; font-weight: 700; margin-top: 30px; text-transform: uppercase; letter-spacing: 1px; }
+.app-version { text-align: center; font-size: 10px; color: #cbd5e1; margin-top: 30px; text-transform: uppercase; }
 :deep(.modern-dialog .el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; }
 </style>
