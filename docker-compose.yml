@@ -28,8 +28,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-ecosync123}
-    volumes:
-      - ./uploads:/app/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -50,11 +48,13 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
       - "3307:3307"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./EcoSync/certbot/conf:/etc/letsencrypt:ro
       - ./EcoSync/certbot/www:/var/www/certbot:ro
+      - ./uploads:/opt/EcoSync/uploads:ro
     depends_on:
       - frontend
       - app
