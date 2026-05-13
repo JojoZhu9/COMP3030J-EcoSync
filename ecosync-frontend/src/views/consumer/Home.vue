@@ -202,8 +202,11 @@ const currentProduct = ref<any>(null)
 // 1. 修复：动态获取图片路径，避免硬编码 localhost
 const getImageUrl = (barcode: string) => {
   if (!barcode) return '';
-  // 通过环境变量或相对路径获取，确保适配部署环境
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+
+  // 这里的 '/api' 对应你后端的 context-path 或 Nginx 代理前缀
+  // 结合截图路径：static 映射到 /，所以后面接 uploads/products/
+  const baseUrl = 'https://csi420-02-vm9.ucd.ie/api';
+
   return `${baseUrl}/uploads/products/${barcode}.jpg`;
 }
 
