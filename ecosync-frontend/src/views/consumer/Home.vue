@@ -56,7 +56,7 @@
                     Only {{ getRemaining(prod) }} left
                   </div>
                   <div class="expiry-timer-tag">
-                    <el-icon><Timer /></el-icon> {{ getTimeRemaining(prod.expirationDate) }}
+                    <el-icon><Timer /></el-icon> {{ getTimeRemaining(prod.expirationTime) }}
                   </div>
                 </div>
 
@@ -67,9 +67,9 @@
                   <div class="price-box">
                     <div class="points-price">
                       <span class="unit">¥</span>
-                      <span class="num">{{ (prod.discountedPrice ?? prod.normalPrice ?? 0).toFixed(2) }}</span>
+                      <span class="num">{{ prod.discountedPrice }}</span>
                     </div>
-                    <div v-if="prod.discountedPrice && prod.discountedPrice < prod.normalPrice" class="card-original-price">
+                    <div v-if="prod.discountedPrice < prod.normalPrice" class="card-original-price">
                       ¥{{ Number(prod.normalPrice).toFixed(2) }}
                     </div>
                   </div>
@@ -125,15 +125,17 @@
           <div class="info-header">
             <h2 class="p-name">{{ currentProduct.productName }}</h2>
             <div class="p-price-row">
-              <span class="p-price">¥{{ (currentProduct.discountedPrice ?? currentProduct.normalPrice ?? 0).toFixed(2) }}</span>
-              <span v-if="currentProduct.discountedPrice && currentProduct.discountedPrice < currentProduct.normalPrice" class="p-original">¥{{ Number(currentProduct.normalPrice).toFixed(2) }}</span>
+              <span class="p-price">¥{{ currentProduct.discountedPrice }}</span>
+              <span v-if="currentProduct.discountedPrice < currentProduct.normalPrice" class="p-original">
+                ¥{{ Number(currentProduct.normalPrice).toFixed(2) }}
+              </span>
             </div>
           </div>
 
           <div class="p-tags-container">
             <el-tag effect="dark" type="success" round size="small">Fresh Pick</el-tag>
             <el-tag effect="plain" type="warning" round size="small">Limited Quantity</el-tag>
-            <el-tag effect="light" type="danger" round size="small">Expires in: {{ getTimeRemaining(currentProduct.expirationDate) }}</el-tag>
+            <el-tag effect="light" type="danger" round size="small">Expires in: {{ getTimeRemaining(currentProduct.expirationTime) }}</el-tag>
           </div>
 
           <div class="p-description-card">
@@ -143,7 +145,7 @@
             </div>
             <div class="desc-item">
               <el-icon><Timer /></el-icon>
-              <span>Expires at: {{ new Date(currentProduct.expirationDate).toLocaleString() }}</span>
+              <span>Expires at: {{ new Date(currentProduct.expirationTime).toLocaleString() }}</span>
             </div>
           </div>
 
@@ -197,22 +199,33 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 
+// 1. 修复：动态获取图片路径，避免硬编码 localhost
 const getImageUrl = (barcode: string) => {
   if (!barcode) return '';
-  return `/uploads/products/${barcode}.jpg`;
+  // 通过环境变量或相对路径获取，确保适配部署环境
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+  return `${baseUrl}/uploads/products/${barcode}.jpg`;
 }
 
+// 2. 修复：根据当前时间与过期时间计算阶梯折扣
 const getDiscountRate = (expirationTime: string, discountRatesStr: string): number => {
   try {
     const rates: number[] = JSON.parse(discountRatesStr)
     if (!Array.isArray(rates) || rates.length === 0) return 1.0
-    const hoursLeft = (new Date(expirationTime).getTime() - Date.now()) / (1000 * 60 * 60)
-    const index = Math.min(Math.max(0, 12 - Math.ceil(hoursLeft)), rates.length - 1)
+
+    const now = Date.now()
+    const exp = new Date(expirationTime).getTime()
+    const hoursLeft = (exp - now) / (1000 * 60 * 60)
+
+    // 假设逻辑：距离过期越近，折扣越深。
+    // 阶梯通常基于小时，这里以 12 小时阶梯为例：
+    const step = Math.max(0, 12 - Math.ceil(hoursLeft))
+    const index = Math.min(step, rates.length - 1)
+
     return Number(rates[index]) || 1.0
   } catch { return 1.0 }
 }
 
-// --- 计算剩余时间函数 ---
 const getTimeRemaining = (expiryDate: string) => {
   if (!expiryDate) return 'N/A';
   const now = new Date().getTime();
@@ -228,7 +241,7 @@ const getTimeRemaining = (expiryDate: string) => {
   return `${days}d left`;
 }
 
-const getRemaining = (prod: any) => Number(prod.remainingStock || prod.stock || 0)
+const getRemaining = (prod: any) => Number(prod.remainingStock || 0)
 
 const isAtLimit = (prod: any) => {
   if (!prod) return false
@@ -253,21 +266,26 @@ const fetchProducts = async () => {
   try {
     const res = await expiringApi.getByStore(selectedStoreId.value) as any
     const rawItems = res.data || res || []
+
     const enriched = await Promise.all(rawItems.map(async (item: any) => {
       try {
+        // 获取该 SKU 的标准库信息（包含原价和折扣率配置）
         const std = await standardApi.getByBarcode(item.barcode) as any
         const stdData = std.data || std
         const normalPrice = Number(stdData.normalPrice || 0)
+
+        // 计算当前时刻的实时折扣率
         const rate = getDiscountRate(item.expirationTime, stdData.discountRates || '[]')
+
         return {
           ...item,
-          barcode: item.barcode,
           productName: stdData.productName || `SKU:${item.barcode}`,
-          normalPrice,
-          discountedPrice: +(normalPrice * rate).toFixed(2)
+          normalPrice: normalPrice,
+          discountedPrice: (normalPrice * rate).toFixed(2) // 真实折扣价
         }
       } catch { return item }
     }))
+
     productList.value = enriched.filter(i => i.status === 'AVAILABLE')
   } catch (e) { ElMessage.error('Load Items Failed') }
   finally { loading.value = false }
@@ -288,16 +306,25 @@ const addToCart = async (prod: any) => {
       quantity: 1
     })
 
+    // 前端即时更新库存显示
     const target = productList.value.find(p => p.productId === prod.productId)
-    if (target) {
-      if (target.remainingStock !== undefined) target.remainingStock--
-      else if (target.stock !== undefined) target.stock--
+    if (target && target.remainingStock !== undefined) {
+      target.remainingStock--
     }
 
     let localCart = JSON.parse(localStorage.getItem('cart') || '[]')
     const existingIndex = localCart.findIndex((i: any) => i.productId === prod.productId)
-    if (existingIndex > -1) { localCart[existingIndex].quantity += 1 }
-    else { localCart.push({ productId: prod.productId, productName: prod.productName, pointsPrice: prod.discountedPrice ?? prod.normalPrice, quantity: 1 }) }
+
+    if (existingIndex > -1) {
+      localCart[existingIndex].quantity += 1
+    } else {
+      localCart.push({
+        productId: prod.productId,
+        productName: prod.productName,
+        pointsPrice: prod.discountedPrice,
+        quantity: 1
+      })
+    }
 
     localStorage.setItem('cart', JSON.stringify(localCart))
     ElMessage.success(`${prod.productName} added!`)
@@ -327,6 +354,7 @@ onMounted(fetchStores)
 </script>
 
 <style scoped>
+/* 样式部分保持不变，已包含你代码中的所有美化细节 */
 .expiry-timer-tag {
   position: absolute;
   top: 8px;
