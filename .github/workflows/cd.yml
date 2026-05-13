@@ -151,3 +151,25 @@ jobs:
             export IMAGE_TAG=${{ github.sha }}
             docker compose pull
             docker compose up -d --remove-orphans
+
+            # Wait for MinIO to be healthy
+            echo "Waiting for MinIO..."
+            for i in $(seq 1 20); do
+              if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+                echo "MinIO is ready"
+                break
+              fi
+              sleep 2
+            done
+
+            # Configure MinIO bucket (mc client is included in minio/minio image)
+            export MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-ecosync123}
+            docker compose exec -T minio mc alias set local http://localhost:9000 ecosync $MINIO_SECRET_KEY
+            docker compose exec -T minio mc mb --ignore-existing local/ecosync
+            docker compose exec -T minio mc anonymous set public local/ecosync
+
+            # Upload seed images to MinIO (read from mounted volume)
+            docker compose exec -T minio mc cp --recursive /opt/seed-uploads/products/ local/ecosync/products/
+            docker compose exec -T minio mc anonymous set public local/ecosync/products
+
+            echo "MinIO bucket configured and seeded"
