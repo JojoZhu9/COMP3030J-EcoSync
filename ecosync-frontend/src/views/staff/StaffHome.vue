@@ -26,7 +26,7 @@
                     <span class="dot"></span>
                     <span class="title-text">Live Shelf Stock</span>
                   </div>
-                  <el-button type="primary" @click="fetchData" :loading="loading" icon="Refresh" size="default">
+                  <el-button type="primary" @click="fetchData" :loading="loading" icon="Refresh">
                     Refresh Inventory
                   </el-button>
                 </div>
@@ -101,33 +101,33 @@
                     <el-table-column label="Price" width="100">
                       <template #default="s">¥{{ s.row.actualPrice?.toFixed(2) }}</template>
                     </el-table-column>
-                    <el-table-column label="Qty" prop="quantity" width="80" />
+                    <el-table-column label="Qty" prop="quantity" width="80" align="center" />
                   </el-table>
                 </div>
               </template>
             </el-table-column>
 
-            <el-table-column label="Order ID" width="100" align="center">
+            <el-table-column label="ID" width="80" align="center">
               <template #default="{row}"><b>#{{ row.orderId }}</b></template>
             </el-table-column>
 
-            <el-table-column label="Pickup Code" width="180" align="center">
+            <el-table-column label="Pickup Code" width="200" align="center">
               <template #default="{row}"><code class="code-badge">{{ row.pickupCode }}</code></template>
             </el-table-column>
 
-            <el-table-column label="Total Amount" width="130" align="right">
+            <el-table-column label="Payment" width="130" align="right">
               <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template>
             </el-table-column>
 
-            <el-table-column label="Process Status" width="180" align="center">
+            <el-table-column label="Order Status" width="180" align="center">
               <template #default="{row}">
-                <el-tag :type="row.status === 'SOLD_OUT' ? 'success' : 'warning'" effect="dark">
-                  {{ row.status === 'AVAILABLE' ? 'Awaiting Pickup' : (row.status === 'SOLD_OUT' ? 'Completed' : 'Cancelled') }}
+                <el-tag :type="getOrderStatusType(row.status)" effect="light" round>
+                  {{ formatStatusText(row.status) }}
                 </el-tag>
               </template>
             </el-table-column>
 
-            <el-table-column label="Created At" min-width="160" align="center">
+            <el-table-column label="Timestamp" min-width="160" align="center">
               <template #default="{row}">{{ formatDateTime(row.createdAt) }}</template>
             </el-table-column>
           </el-table>
@@ -151,7 +151,7 @@ const library = ref([])
 const allExpiringProducts = ref([])
 const orderList = ref([])
 
-// 1. 获取库存和产品库基础数据
+// 1. 数据获取
 const fetchData = async () => {
   loading.value = true
   try {
@@ -162,22 +162,22 @@ const fetchData = async () => {
     allExpiringProducts.value = stockRes.data || stockRes
     library.value = libRes.data || libRes
   } catch (err) {
-    ElMessage.error('Failed to load inventory data')
+    ElMessage.error('Failed to sync data')
   } finally { loading.value = false }
 }
 
-// 2. 修改库存项 (ExpiringProductController PUT)
+// 2. 库存状态更新 (保留)
 const handleInventoryUpdate = async (row) => {
   try {
     await request.put(`/expiring-products/${row.productId}`, row)
-    ElMessage.success('Inventory updated successfully')
+    ElMessage.success('Stock status updated')
   } catch (e) {
-    ElMessage.error('Failed to update inventory status')
+    ElMessage.error('Inventory update failed')
     fetchData()
   }
 }
 
-// 3. 同步订单
+// 3. 订单同步
 const syncAllOrders = async () => {
   loadingOrders.value = true
   try {
@@ -210,15 +210,33 @@ const syncAllOrders = async () => {
   } finally { loadingOrders.value = false }
 }
 
+// 状态文本转换逻辑
+const formatStatusText = (status) => {
+  const map = {
+    'AVAILABLE': 'Awaiting Pickup',
+    'PENDING': 'Pending',
+    'SOLD_OUT': 'Completed',
+    'DISCARDED': 'Cancelled'
+  }
+  return map[status] || status
+}
+
+const getOrderStatusType = (status) => {
+  if (status === 'SOLD_OUT') return 'success'
+  if (status === 'AVAILABLE') return 'warning'
+  if (status === 'DISCARDED') return 'danger'
+  return 'info'
+}
+
 const formatDateTime = (val: string) => {
-  if (!val) return 'No Date'
+  if (!val) return 'N/A'
   return val.replace('T', ' ').substring(0, 16)
 }
 
 const enrichedStockList = computed(() => {
   return allExpiringProducts.value.map(stock => {
     const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
-    return { ...stock, productName: std?.productName || 'Unknown' }
+    return { ...stock, productName: std?.productName || 'Unknown SKU' }
   })
 })
 
