@@ -33,19 +33,18 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:/app/uploads/");
+                .addResourceLocations("file:./uploads/", "classpath:/static/uploads/");
     }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")
-                // 在这里新增放行 uploads 路径
                 .excludePathPatterns(
                         "/api/users/login",
                         "/api/users",
                         "/api/products",
-                        "/api/uploads/**"  // 关键：放行图片资源
+                        "/api/uploads/**"
                 );
     }
 }
