@@ -1,5 +1,6 @@
 package com.example.bibilabo.service.impl;
 
+import com.example.bibilabo.constant.ProductStatus; // 引入常量
 import com.example.bibilabo.entity.ExpiringProduct;
 import com.example.bibilabo.mapper.ExpiringProductMapper;
 import com.example.bibilabo.service.ExpiringProductService;
@@ -31,9 +32,9 @@ public class ExpiringProductServiceImpl implements ExpiringProductService {
 
     @Override
     public String createProduct(ExpiringProduct product) {
-        // 如果前端没有传状态，默认设为 AVAILABLE
+        // 使用常量接口替换硬编码
         if (product.getStatus() == null) {
-            product.setStatus("AVAILABLE");
+            product.setStatus(ProductStatus.AVAILABLE);
         }
         expiringProductMapper.insert(product);
         return "临期商品上架成功，批次ID: " + product.getProductId();

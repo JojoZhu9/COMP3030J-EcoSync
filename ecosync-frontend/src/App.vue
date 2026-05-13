@@ -35,7 +35,6 @@
           <template v-else>
             <template v-if="isLogged">
               <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">Store Home</div>
-              <div class="menu-item" :class="{ active: route.path === '/category' }" @click="go('/category')">Categories</div>
               <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">Cart</div>
               <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">Orders</div>
             </template>

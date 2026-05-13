@@ -11,15 +11,6 @@
           <div class="carousel-slide slide-1">
             <div class="hero-bg-grid"></div>
             <div class="hero-content">
-              <el-tag
-                type="danger"
-                effect="dark"
-                round
-                class="pulse-tag animate-fade-in-down"
-              >
-                <el-icon class="tag-icon"><Stamp /></el-icon>
-                Official & Authentic · Safety Guaranteed
-              </el-tag>
               <h1 class="hero-title">
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Rescue Delicious Food,</span>
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.3s">
@@ -64,15 +55,6 @@
           <div class="carousel-slide slide-2">
             <div class="hero-bg-grid"></div>
             <div class="hero-content">
-              <el-tag
-                type="warning"
-                effect="dark"
-                round
-                class="pulse-tag animate-fade-in-down"
-              >
-                <el-icon class="tag-icon"><TrendCharts /></el-icon>
-                TECH EMPOWERMENT
-              </el-tag>
               <h1 class="hero-title">
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Sustainable Retail,</span>
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.3s">
@@ -334,14 +316,6 @@ const resetTilt = (e: MouseEvent) => {
     shine.style.opacity = '0'
   }
 }
-
-// 统计数据
-const stats = [
-  { value: '50K+', label: 'Active Users', icon: 'User', color: 'text-green' },
-  { value: '1.2M', label: 'Items Rescued', icon: 'Food', color: 'text-orange' },
-  { value: '35%', label: 'Avg. Savings', icon: 'Wallet', color: 'text-red' },
-  { value: '200+', label: 'Store Partners', icon: 'Shop', color: 'text-green' }
-]
 
 // 流程步骤
 const processSteps = [
