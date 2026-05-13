@@ -8,13 +8,14 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
 
-    // 定义一个结果映射，解决数据库字段名和 Java 属性名不一致的问题
+    // 核心：建立数据库字段与 Java 实体类属性的对应关系
     @Results(id = "userMap", value = {
-            @Result(property = "userId", column = "user_id"),
+            @Result(property = "userId", column = "user_id", id = true),
             @Result(property = "passwordHash", column = "password_hash"),
             @Result(property = "phoneNumber", column = "phone_number"),
             @Result(property = "userAddress", column = "user_address"),
-            @Result(property = "storeId", column = "store_id")
+            @Result(property = "storeId", column = "store_id"),
+            @Result(property = "createdAt", column = "created_at")
     })
     @Select("SELECT * FROM users WHERE user_id = #{userId}")
     User findById(Integer userId);
