@@ -75,7 +75,7 @@ public class UserServiceImpl implements UserService {
         return userMapper.findByUsername(username);
     }
 
-    // 🔥 核心漏洞修复：安全地更新用户信息（包括新加的 userAddress）
+    // 🔥 核心漏洞修复：安全地更新用户信息（包括新加的 userAddress），并防止密码反复加密
     @Override
     public String updateUser(User user) {
         User existingUser = userMapper.findById(user.getUserId());
@@ -83,13 +83,21 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("要更新的用户不存在");
         }
 
-        // 检查前端是否传了新密码
-        if (user.getPasswordHash() != null && !user.getPasswordHash().trim().isEmpty()) {
-            // 前端传了新密码，必须 MD5 加密
-            String md5Password = DigestUtils.md5DigestAsHex(user.getPasswordHash().getBytes());
-            user.setPasswordHash(md5Password);
+        // 获取前端传来的密码
+        String incomingPassword = user.getPasswordHash();
+
+        if (incomingPassword != null && !incomingPassword.trim().isEmpty()) {
+            // 【修复关键点】判断传来的密码是否和数据库里存的旧密文一模一样
+            if (incomingPassword.equals(existingUser.getPasswordHash())) {
+                // 一模一样，说明前端传回了旧的密文，不需要重新加密
+                user.setPasswordHash(existingUser.getPasswordHash());
+            } else {
+                // 不一样，说明前端传了新的明文密码，必须进行 MD5 加密
+                String md5Password = DigestUtils.md5DigestAsHex(incomingPassword.getBytes());
+                user.setPasswordHash(md5Password);
+            }
         } else {
-            // 前端没传新密码，沿用数据库里的旧密文
+            // 前端没传密码，沿用数据库里的旧密文
             user.setPasswordHash(existingUser.getPasswordHash());
         }
 

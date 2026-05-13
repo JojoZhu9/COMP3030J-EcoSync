@@ -28,7 +28,7 @@ describe('user API', () => {
     expect(result).toContain('登录成功')
   })
 
-  it('registerApi sends POST with balance=0 and status=NORMAL', async () => {
+  it('registerApi sends POST without balance/status for security', async () => {
     mockedRequest.mockResolvedValue('用户创建成功')
 
     const result = await registerApi({ username: 'new_user', passwordHash: '123' })
@@ -36,7 +36,7 @@ describe('user API', () => {
     expect(mockedRequest).toHaveBeenCalledWith({
       url: '/users',
       method: 'post',
-      data: { username: 'new_user', passwordHash: '123', balance: 0, status: 'NORMAL' }
+      data: { username: 'new_user', password: undefined, passwordHash: '123', rawPassword: undefined, role: undefined }
     })
   })
 
