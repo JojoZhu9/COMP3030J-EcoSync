@@ -26,14 +26,14 @@
                     <span class="dot"></span>
                     <span class="title-text">Live Shelf Stock</span>
                   </div>
-                  <el-button type="primary" size="small" @click="fetchData" :loading="loading" plain>
-                    <el-icon><Refresh /></el-icon>&nbsp;Refresh Data
+                  <el-button type="primary" @click="fetchData" :loading="loading" icon="Refresh" size="default">
+                    Refresh Inventory
                   </el-button>
                 </div>
               </template>
 
               <el-table :data="enrichedStockList" border stripe height="620">
-                <el-table-column label="Product Information" min-width="200">
+                <el-table-column label="Product Information" min-width="180">
                   <template #default="{row}">
                     <div class="product-info-cell">
                       <div class="p-name">{{ row.productName }}</div>
@@ -42,11 +42,11 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column label="Expiration" width="160" align="center">
+                <el-table-column label="Expiration Date" width="180" align="center">
                   <template #default="{row}">
-                    <div class="time-column">
+                    <div class="expiry-time-cell">
                       <el-icon><Timer /></el-icon>
-                      <span class="time-text">{{ formatDate(row.expirationTime || row.expirationDate) }}</span>
+                      <span>{{ formatDateTime(row.expirationTime || row.expirationDate) }}</span>
                     </div>
                   </template>
                 </el-table-column>
@@ -59,14 +59,9 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column label="Status Action" width="160" align="center">
+                <el-table-column label="Action" width="160" align="center">
                   <template #default="{row}">
-                    <el-select
-                      v-model="row.status"
-                      size="small"
-                      @change="handleInventoryUpdate(row)"
-                      placeholder="Change Status"
-                    >
+                    <el-select v-model="row.status" size="small" @change="handleInventoryUpdate(row)">
                       <el-option label="Available" value="AVAILABLE" />
                       <el-option label="Sold Out" value="SOLD_OUT" />
                       <el-option label="Discarded" value="DISCARDED" />
@@ -90,8 +85,8 @@
                 <span class="dot orange"></span>
                 <span class="title-text">Recent Pickup Orders</span>
               </div>
-              <el-button type="warning" @click="syncAllOrders" :loading="loadingOrders" round>
-                <el-icon><Refresh /></el-icon>&nbsp;Sync All Orders
+              <el-button type="warning" @click="syncAllOrders" :loading="loadingOrders" icon="Refresh">
+                Sync All Orders
               </el-button>
             </div>
           </template>
@@ -100,19 +95,19 @@
             <el-table-column type="expand">
               <template #default="{ row }">
                 <div class="order-detail-wrapper">
-                  <div class="detail-header"><el-icon><ShoppingBag /></el-icon> Itemized Receipt</div>
-                  <el-table :data="row.items" size="small" class="inner-table">
-                    <el-table-column label="Description" prop="productName" />
-                    <el-table-column label="Price" width="120" align="right">
-                      <template #default="s">¥{{ s.row.actualPrice.toFixed(2) }}</template>
+                  <div class="detail-header"><el-icon><ShoppingBag /></el-icon> Order Items</div>
+                  <el-table :data="row.items" size="small">
+                    <el-table-column label="Item Name" prop="productName" />
+                    <el-table-column label="Price" width="100">
+                      <template #default="s">¥{{ s.row.actualPrice?.toFixed(2) }}</template>
                     </el-table-column>
-                    <el-table-column label="Qty" prop="quantity" width="80" align="center" />
+                    <el-table-column label="Qty" prop="quantity" width="80" />
                   </el-table>
                 </div>
               </template>
             </el-table-column>
 
-            <el-table-column label="ID" width="80" align="center">
+            <el-table-column label="Order ID" width="100" align="center">
               <template #default="{row}"><b>#{{ row.orderId }}</b></template>
             </el-table-column>
 
@@ -120,13 +115,18 @@
               <template #default="{row}"><code class="code-badge">{{ row.pickupCode }}</code></template>
             </el-table-column>
 
-            <el-table-column label="Payment" width="120" align="right">
-              <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount.toFixed(2) }}</span></template>
+            <el-table-column label="Total Amount" width="130" align="right">
+              <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template>
             </el-table-column>
 
-            <el-table-column label="Update Status" width="180" align="center">
+            <el-table-column label="Process Status" width="200" align="center">
               <template #default="{row}">
-                <el-select v-model="row.status" size="small" @change="handleOrderUpdate(row)">
+                <el-select
+                  v-model="row.status"
+                  size="small"
+                  @change="handleOrderUpdate(row)"
+                  placeholder="Update Status"
+                >
                   <el-option label="Awaiting Pickup" value="AVAILABLE" />
                   <el-option label="Completed" value="SOLD_OUT" />
                   <el-option label="Cancelled" value="DISCARDED" />
@@ -134,8 +134,8 @@
               </template>
             </el-table-column>
 
-            <el-table-column label="Time" min-width="160" align="center">
-              <template #default="{row}"><span class="time-text">{{ formatDate(row.createdAt) }}</span></template>
+            <el-table-column label="Created At" min-width="160" align="center">
+              <template #default="{row}">{{ formatDateTime(row.createdAt) }}</template>
             </el-table-column>
           </el-table>
         </el-card>
@@ -168,47 +168,36 @@ const fetchData = async () => {
     ])
     allExpiringProducts.value = stockRes.data || stockRes
     library.value = libRes.data || libRes
-    ElMessage.success('Inventory synced')
   } catch (err) {
-    ElMessage.error('Failed to load inventory')
+    ElMessage.error('Failed to load inventory data')
   } finally { loading.value = false }
 }
 
-// 2. 修改库存状态 (对应后端的 PUT /api/expiring-products/{id})
+// 2. 修改库存项 (ExpiringProductController PUT)
 const handleInventoryUpdate = async (row) => {
   try {
-    // 匹配后端 @RequestBody ExpiringProduct 结构
-    const updatePayload = {
-      productId: row.productId,
-      barcode: row.barcode,
-      storeId: row.storeId,
-      remainingStock: row.remainingStock,
-      status: row.status,
-      expirationTime: row.expirationTime
-    }
-
-    const res: any = await request.put(`/expiring-products/${row.productId}`, updatePayload)
-
-    if (res.toString().includes('失败')) {
-      throw new Error(res)
-    }
-    ElMessage.success(`Stock #${row.productId} updated to ${row.status}`)
-  } catch (e: any) {
-    ElMessage.error('Stock update failed: ' + (e.message || 'Server Error'))
-    fetchData() // 失败回滚
+    // 根据你的后端，PUT 请求需要把对象放在 Body 里
+    await request.put(`/expiring-products/${row.productId}`, row)
+    ElMessage.success('Inventory updated successfully')
+  } catch (e) {
+    ElMessage.error('Failed to update inventory status')
+    fetchData() // 失败则刷新回滚
   }
 }
 
-// 3. 修改订单状态 (对应 OrderController 的 PutMapping)
+// 3. 重点修复：修改订单状态 (OrderController)
 const handleOrderUpdate = async (row) => {
   try {
-    await request.put(`/orders/${row.orderId}`, null, {
+    // 根据你的 404 报错，我们需要确保路径和后端 @PutMapping("/{id}/status") 一致
+    // 假设你在 OrderController 补充了 /{orderId}/status 接口
+    await request.put(`/orders/${row.orderId}/status`, null, {
       params: { status: row.status }
     })
-    ElMessage.success(`Order #${row.orderId} updated`)
+    ElMessage.success(`Order #${row.orderId} status changed to ${row.status}`)
   } catch (e) {
-    ElMessage.error('Order update failed')
-    syncAllOrders()
+    console.error('Update Status Error:', e)
+    ElMessage.error('Failed to update order status. Please check backend API.')
+    syncAllOrders() // 回滚
   }
 }
 
@@ -232,12 +221,13 @@ const syncAllOrders = async () => {
         const enrichedItems = (vo.items || []).map(item => {
           const stock = allExpiringProducts.value.find(s => Number(s.productId) === Number(item.productId))
           const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
-          return { ...item, productName: prod?.productName || `ID: ${item.productId}` }
+          return { ...item, productName: prod?.productName || 'Unknown Product' }
         })
         return { ...order, items: enrichedItems }
       } catch (e) { return { ...order, items: [] } }
     }))
 
+    // 去重并排序
     orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
       .sort((a, b) => b.orderId - a.orderId)
   } catch (e) {
@@ -245,15 +235,15 @@ const syncAllOrders = async () => {
   } finally { loadingOrders.value = false }
 }
 
-const formatDate = (val: string) => {
-  if (!val) return '-'
+const formatDateTime = (val: string) => {
+  if (!val) return 'No Date'
   return val.replace('T', ' ').substring(0, 16)
 }
 
 const enrichedStockList = computed(() => {
   return allExpiringProducts.value.map(stock => {
     const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
-    return { ...stock, productName: std?.productName || 'Unknown SKU' }
+    return { ...stock, productName: std?.productName || 'Unknown' }
   })
 })
 
@@ -275,14 +265,13 @@ onMounted(() => {
 .title-group { display: flex; align-items: center; gap: 10px; }
 .dot { width: 10px; height: 10px; background: #008163; border-radius: 50%; }
 .dot.orange { background: #EE7203; }
-.product-info-cell .p-name { font-weight: bold; color: #333; }
-.product-info-cell .p-bc { font-size: 12px; color: #7f8c8d; }
+.p-name { font-weight: bold; color: #333; }
+.p-bc { font-size: 12px; color: #7f8c8d; }
 .stock-num { font-weight: 800; font-size: 16px; }
 .stock-num.critical { color: #e74c3c; }
+.expiry-time-cell { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #606266; }
 .amount-text { color: #EE7203; font-weight: 800; }
 .code-badge { background: #f1f2f6; padding: 5px 10px; border-radius: 6px; font-family: monospace; font-weight: bold; }
 .order-detail-wrapper { padding: 20px; background: #fafafa; border-left: 5px solid #EE7203; }
-.time-column { display: flex; align-items: center; gap: 5px; justify-content: center; }
-.time-text { font-size: 12px; color: #606266; }
 .side-panel { background: white; padding: 20px; border-radius: 12px; height: 100%; box-sizing: border-box; }
 </style>
