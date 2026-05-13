@@ -10,5 +10,5 @@ public interface UserService {
     String createUser(User user);
     String updateUser(User user);
     String deleteUser(Integer userId);
-    String login(String username, String password) throws Exception;
+    String login(String username, String password);
 }
