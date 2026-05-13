@@ -26,17 +26,25 @@
               <div class="title-underline"></div>
             </div>
 
-            <el-form :model="form" @keyup.enter="handleSubmit" label-position="top" class="custom-form">
-              <el-form-item label="Username">
+            <el-form
+              ref="formRef"
+              :model="form"
+              :rules="rules"
+              @keyup.enter="handleSubmit"
+              label-position="top"
+              class="custom-form"
+            >
+              <el-form-item label="Username" prop="username">
                 <el-input
                   v-model="form.username"
                   placeholder="Enter your username"
                   :prefix-icon="User"
                   class="brand-input"
+                  clearable
                 />
               </el-form-item>
 
-              <el-form-item label="Password">
+              <el-form-item label="Password" prop="password">
                 <el-input
                   v-model="form.password"
                   type="password"
@@ -49,7 +57,7 @@
 
               <el-collapse-transition>
                 <div v-if="isRegister">
-                  <el-form-item label="Confirm Password">
+                  <el-form-item label="Confirm Password" prop="rePassword">
                     <el-input
                       v-model="form.rePassword"
                       type="password"
@@ -100,17 +108,76 @@
 import { reactive, ref } from 'vue'
 import { loginApi, registerApi } from '../api/user'
 import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { User, Lock, CircleCheck } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 const isRegister = ref(false)
 const form = reactive({ username: '', password: '', rePassword: '' })
 
+// --- 自定义表单验证规则 ---
+const validateUsername = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('Username cannot be empty'))
+  } else if (isRegister.value && !/^[a-zA-Z0-9_]{4,20}$/.test(value)) {
+    callback(new Error('4-20 characters, letters, numbers, or underscores only'))
+  } else {
+    callback()
+  }
+}
+
+const validatePassword = (rule: any, value: string, callback: any) => {
+  if (!value) {
+    callback(new Error('Password cannot be empty'))
+  } else if (isRegister.value) {
+    if (value.length < 6 || value.length > 20) {
+      callback(new Error('Password length must be between 6 and 20 characters'))
+    } else if (/[\u4e00-\u9fa5]/.test(value)) {
+      callback(new Error('Password cannot contain Chinese characters'))
+    } else if (/\s/.test(value)) {
+      callback(new Error('Password cannot contain spaces'))
+    } else {
+      if (form.rePassword !== '') {
+        formRef.value?.validateField('rePassword')
+      }
+      callback()
+    }
+  } else {
+    callback()
+  }
+}
+
+const validateRePassword = (rule: any, value: string, callback: any) => {
+  if (isRegister.value) {
+    if (!value) {
+      callback(new Error('Please confirm your password'))
+    } else if (value !== form.password) {
+      callback(new Error('The two passwords do not match'))
+    } else {
+      callback()
+    }
+  } else {
+    callback()
+  }
+}
+
+const rules = reactive<FormRules>({
+  username: [{ validator: validateUsername, trigger: 'blur' }],
+  password: [{ validator: validatePassword, trigger: 'blur' }],
+  rePassword: [{ validator: validateRePassword, trigger: 'blur' }]
+})
+// ----------------------
+
 const toggleMode = () => {
   isRegister.value = !isRegister.value
-  form.username = ''; form.password = ''; form.rePassword = ''
+  form.username = ''
+  form.password = ''
+  form.rePassword = ''
+  // 切换模式时清除表单验证错误提示
+  formRef.value?.clearValidate()
 }
 
 const parseJwt = (token: string) => {
@@ -127,105 +194,110 @@ const parseJwt = (token: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.username || !form.password) {
-    return ElMessage.warning({
-      message: 'Please fill in all fields',
-      duration: 1500
-    })
-  }
-  loading.value = true
+  if (!formRef.value) return
 
-  try {
-    if (isRegister.value) {
-      if (form.password !== form.rePassword) {
-        loading.value = false
-        return ElMessage.error({
-          message: 'Passwords do not match',
-          duration: 1500
-        })
-      }
+  // 触发表单统一验证
+  await formRef.value.validate(async (valid) => {
+    if (!valid) {
+      return // 如果验证不通过，直接返回，Element Plus 会在输入框下显示红色错误
+    }
 
-      const registerPayload = {
-        username: form.username,
-        password: form.password,
-        passwordHash: form.password,
-        rawPassword: form.password,
-        role: 'CONSUMER'
-      }
+    loading.value = true
 
-      const res = await registerApi(registerPayload)
-      const resMsg = String(res)
+    try {
+      if (isRegister.value) {
+        const registerPayload = {
+          username: form.username,
+          password: form.password,
+          passwordHash: form.password,
+          rawPassword: form.password,
+          role: 'CONSUMER'
+        }
 
-      if (resMsg.includes('成功') || resMsg.toLowerCase().includes('ok')) {
-        ElMessage.success({
-          message: 'Registration Successful!',
-          duration: 1500
-        })
-        isRegister.value = false
-      } else {
-        ElMessage.error({
-          message: resMsg || 'Registration Failed',
-          duration: 1500
-        })
-      }
+        const res = await registerApi(registerPayload)
+        const resMsg = String(res)
 
-    } else {
-      const res = await loginApi({
-        username: form.username,
-        password: form.password
-      })
-
-      const resStr = String(res)
-
-      if (resStr.includes('成功')) {
-        const tokenMatch = resStr.match(/Token[:：]\s*([^,，\s"}]+)/)
-        const token = tokenMatch ? tokenMatch[1].trim() : null
-
-        if (token) {
-          const payload = parseJwt(token)
-          if (!payload) throw new Error('Failed to parse Token')
-
-          localStorage.setItem('token', token)
-          localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
-          localStorage.setItem('username', payload.username || form.username)
-
-          const userId = payload.userId || payload.id
-          if (userId) localStorage.setItem('userId', String(userId))
-
-          window.dispatchEvent(new Event('auth-change'))
-
+        if (resMsg.includes('成功') || resMsg.toLowerCase().includes('ok')) {
           ElMessage.success({
-            message: 'Login Successful',
-            duration: 1500
+            message: 'Registration Successful! Please login.',
+            duration: 2000
           })
-
-          const finalRole = (payload.role || 'CONSUMER').toUpperCase()
-          if (finalRole === 'ADMIN') router.push('/admin/accounts')
-          else if (finalRole === 'EMPLOYEE') router.push('/staff/home')
-          else router.push('/home')
+          toggleMode() // 注册成功后自动切换回登录页
         } else {
           ElMessage.error({
-            message: 'Unable to retrieve Token',
-            duration: 1500
+            message: `Registration Failed: ${resMsg}`,
+            duration: 3000
           })
         }
+
       } else {
-        ElMessage.error({
-          message: 'Login Failed: Invalid username or password',
-          duration: 1500
+        const res = await loginApi({
+          username: form.username,
+          password: form.password
         })
+
+        const resStr = String(res)
+
+        if (resStr.includes('成功')) {
+          const tokenMatch = resStr.match(/Token[:：]\s*([^,，\s"}]+)/)
+          const token = tokenMatch ? tokenMatch[1].trim() : null
+
+          if (token) {
+            const payload = parseJwt(token)
+            if (!payload) throw new Error('Failed to parse Token')
+
+            localStorage.setItem('token', token)
+            localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
+            localStorage.setItem('username', payload.username || form.username)
+
+            const userId = payload.userId || payload.id
+            if (userId) localStorage.setItem('userId', String(userId))
+
+            window.dispatchEvent(new Event('auth-change'))
+
+            ElMessage.success({
+              message: 'Login Successful',
+              duration: 1500
+            })
+
+            const finalRole = (payload.role || 'CONSUMER').toUpperCase()
+            if (finalRole === 'ADMIN') router.push('/admin/accounts')
+            else if (finalRole === 'EMPLOYEE') router.push('/staff/home')
+            else router.push('/home')
+          } else {
+            ElMessage.error({
+              message: 'Login succeeded but unable to retrieve Token from server response.',
+              duration: 3000
+            })
+          }
+        } else {
+          ElMessage.error({
+            message: 'Login Failed: Invalid username or password',
+            duration: 2000
+          })
+        }
       }
+    } catch (error: any) {
+      console.error('Error:', error)
+      // 更详细地抓取后端的错误信息进行提示
+      let errorMsg = 'System Error: Please try again later'
+      if (error.response && error.response.data) {
+        // 兼容不同后端的错误格式 (如 {message: "错误"}, 或是直接返回字符串)
+        errorMsg = typeof error.response.data === 'string'
+          ? error.response.data
+          : (error.response.data.message || errorMsg)
+      } else if (error.message) {
+        errorMsg = error.message
+      }
+
+      ElMessage.error({
+        message: `Error: ${errorMsg}`,
+        duration: 3000
+      })
+    } finally {
+      loading.value = false
     }
-  } catch (error: any) {
-    console.error('Error:', error)
-    const backendError = error.response?.data
-    ElMessage.error({
-      message: typeof backendError === 'string' ? backendError : 'System Error: Please try again later',
-      duration: 1500
-    })
-  } finally {
-    loading.value = false
-  }
+  })
 }
 </script>
 
@@ -243,4 +315,10 @@ const handleSubmit = async () => {
 .submit-btn { width: 100%; height: 48px; background-color: #007934 !important; border: none; font-weight: bold; margin-top: 10px; }
 .switch-mode { margin-top: 25px; text-align: center; font-size: 14px; }
 .login-footer { padding: 20px; text-align: center; color: #999; font-size: 12px; }
+
+/* 调整表单验证错误提示文本的样式，使其更美观 */
+:deep(.el-form-item__error) {
+  padding-top: 4px;
+  font-weight: 600;
+}
 </style>
