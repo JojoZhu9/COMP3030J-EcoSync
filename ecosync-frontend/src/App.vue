@@ -1,4 +1,4 @@
-<template>
+<<template>
   <div class="pc-layout">
     <div class="brand-top-stripe"></div>
 
