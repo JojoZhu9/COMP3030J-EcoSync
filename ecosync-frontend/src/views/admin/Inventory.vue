@@ -19,7 +19,7 @@
           <template #default="{ row }">
             <el-image
               style="width: 50px; height: 50px; border-radius: 4px; background: #f5f7fa"
-              :src="`/uploads/products/${row.barcode}.jpg`"
+              :src="`http://localhost:8080/uploads/products/${row.barcode}.jpg`"
               fit="cover"
             >
               <template #error>
@@ -82,7 +82,12 @@
         </div>
 
         <div class="form-panel">
-          <el-form :model="newP" label-position="top">
+          <el-form
+            ref="formRef"
+            :model="newP"
+            :rules="rules"
+            label-position="top"
+          >
             <el-form-item label="Product Image">
               <el-upload
                 class="product-uploader"
@@ -98,8 +103,13 @@
 
             <el-row :gutter="20">
               <el-col :span="14">
-                <el-form-item label="Barcode">
-                  <el-input v-model="newP.barcode" placeholder="Scan or enter barcode">
+                <el-form-item label="Barcode" prop="barcode">
+                  <el-input
+                    v-model="newP.barcode"
+                    placeholder="Scan or enter barcode"
+                    maxlength="13"
+                    show-word-limit
+                  >
                     <template #append>
                       <el-button @click="startScanner">
                         <el-icon><Camera /></el-icon>
@@ -115,7 +125,7 @@
               </el-col>
             </el-row>
 
-            <el-form-item label="Product Name">
+            <el-form-item label="Product Name" prop="product_name">
               <el-input v-model="newP.product_name" placeholder="Enter product name" />
             </el-form-item>
 
@@ -151,14 +161,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { Plus, Camera } from '@element-plus/icons-vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
 const router = useRouter()
+const formRef = ref<FormInstance>()
 const products = ref([])
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -172,6 +183,17 @@ const newP = ref({
   product_name: '',
   normal_price: 0.00,
   discount_rates: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+})
+
+// --- 表单校验规则 ---
+const rules = reactive({
+  barcode: [
+    { required: true, message: 'Barcode is required', trigger: 'blur' },
+    { pattern: /^\d{13}$/, message: 'Barcode must be exactly 13 digits', trigger: 'change' }
+  ],
+  product_name: [
+    { required: true, message: 'Product name is required', trigger: 'blur' }
+  ]
 })
 
 const handleFileChange = (file: any) => {
@@ -244,32 +266,33 @@ const openAddDialog = () => {
 }
 
 const submitAdd = async () => {
-  if (!newP.value.barcode || !newP.value.product_name) {
-    return ElMessage.warning('Please fill in all information')
-  }
+  if (!formRef.value) return
 
-  submitLoading.value = true
+  // 执行表单校验
+  await formRef.value.validate(async (valid) => {
+    if (!valid) return
 
-  const formData = new FormData()
-  if (imgFile.value) {
-    formData.append('image', imgFile.value)
-  }
-  formData.append('barcode', newP.value.barcode)
-  formData.append('product_name', newP.value.product_name)
-  formData.append('normal_price', newP.value.normal_price.toString())
-  formData.append('discount_rates', JSON.stringify(newP.value.discount_rates))
+    submitLoading.value = true
+    const formData = new FormData()
+    if (imgFile.value) {
+      formData.append('image', imgFile.value)
+    }
+    formData.append('barcode', newP.value.barcode)
+    formData.append('product_name', newP.value.product_name)
+    formData.append('normal_price', newP.value.normal_price.toString())
+    formData.append('discount_rates', JSON.stringify(newP.value.discount_rates))
 
-  try {
-    // 这里依然发送 formData，由后端接收并执行文件的 IO 保存
-    await request.post('/products', formData)
-    ElMessage.success('Product registered successfully')
-    showAdd.value = false
-    fetchData()
-  } catch (e: any) {
-    ElMessage.error('Registration failed')
-  } finally {
-    submitLoading.value = false
-  }
+    try {
+      await request.post('/products', formData)
+      ElMessage.success('Product registered successfully')
+      showAdd.value = false
+      fetchData()
+    } catch (e: any) {
+      ElMessage.error('Registration failed')
+    } finally {
+      submitLoading.value = false
+    }
+  })
 }
 
 const handleDelete = (row: any) => {
