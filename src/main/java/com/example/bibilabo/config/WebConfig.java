@@ -40,6 +40,12 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/users/login", "/api/users", "/api/products");
+                // 在这里新增放行 uploads 路径
+                .excludePathPatterns(
+                        "/api/users/login",
+                        "/api/users",
+                        "/api/products",
+                        "/api/uploads/**"  // 关键：放行图片资源
+                );
     }
 }
