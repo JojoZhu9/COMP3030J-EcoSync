@@ -31,12 +31,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void createUser(User user) {
+    public String createUser(User user) {
         // 创建用户时进行 MD5 加密
         if (user.getPasswordHash() != null) {
             user.setPasswordHash(DigestUtils.md5DigestAsHex(user.getPasswordHash().getBytes()));
         }
         userMapper.insert(user);
+        return null;
     }
 
     @Override
@@ -80,7 +81,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Integer userId) {
+    public String deleteUser(Integer userId) {
         userMapper.deleteById(userId);
+        return null;
+    }
+
+    @Override
+    public String login(String username, String password) {
+        return "";
     }
 }
