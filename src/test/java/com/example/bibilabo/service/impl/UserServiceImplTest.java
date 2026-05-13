@@ -27,7 +27,7 @@ class UserServiceImplTest {
     private UserServiceImpl userService;
 
     @Test
-    void login_validCredentials_returnsToken() {
+    void login_validCredentials_returnsToken() throws Exception {
         User user = new User();
         user.setUserId(12);
         user.setUsername("user_alice");
