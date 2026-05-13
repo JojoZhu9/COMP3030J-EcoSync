@@ -8,22 +8,30 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
 
-    @Select("SELECT * FROM users")
-    List<User> findAll();
-
+    // 定义一个结果映射，解决数据库字段名和 Java 属性名不一致的问题
+    @Results(id = "userMap", value = {
+            @Result(property = "userId", column = "user_id"),
+            @Result(property = "passwordHash", column = "password_hash"),
+            @Result(property = "phoneNumber", column = "phone_number"),
+            @Result(property = "userAddress", column = "user_address"),
+            @Result(property = "storeId", column = "store_id")
+    })
     @Select("SELECT * FROM users WHERE user_id = #{userId}")
     User findById(Integer userId);
 
+    @ResultMap("userMap")
+    @Select("SELECT * FROM users")
+    List<User> findAll();
+
+    @ResultMap("userMap")
     @Select("SELECT * FROM users WHERE username = #{username}")
     User findByUsername(String username);
 
-    // 🔥 修改：加入 user_address
     @Insert("INSERT INTO users(username, password_hash, role, status, store_id, balance, phone_number, user_address) " +
             "VALUES(#{username}, #{passwordHash}, #{role}, #{status}, #{storeId}, #{balance}, #{phoneNumber}, #{userAddress})")
     @Options(useGeneratedKeys = true, keyProperty = "userId")
     int insert(User user);
 
-    // 🔥 修改：加入 user_address
     @Update("UPDATE users SET password_hash = #{passwordHash}, role = #{role}, status = #{status}, " +
             "store_id = #{storeId}, balance = #{balance}, phone_number = #{phoneNumber}, user_address = #{userAddress} " +
             "WHERE user_id = #{userId}")
