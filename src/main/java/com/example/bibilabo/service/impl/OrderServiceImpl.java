@@ -1,5 +1,7 @@
 package com.example.bibilabo.service.impl;
 
+import com.example.bibilabo.constant.OrderStatus; // 引入订单常量
+import com.example.bibilabo.constant.ProductStatus; // 引入商品常量
 import com.example.bibilabo.entity.*;
 import com.example.bibilabo.mapper.*;
 import com.example.bibilabo.service.OrderService;
@@ -41,7 +43,8 @@ public class OrderServiceImpl implements OrderService {
         order.setStoreId(storeId);
         order.setPickupCode(pickupCode);
         order.setTotalAmount(BigDecimal.ZERO);
-        order.setStatus("AWAITING_PICKUP"); // 支付成功，等待提货
+        // 使用常量接口替换硬编码
+        order.setStatus(OrderStatus.AWAITING_PICKUP);
         orderMapper.insert(order);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -49,7 +52,8 @@ public class OrderServiceImpl implements OrderService {
         // 2. 遍历购物车，处理每件商品
         for (ShoppingCart item : cartItems) {
             ExpiringProduct expProduct = expiringProductMapper.findById(item.getProductId());
-            if (expProduct == null || !"AVAILABLE".equals(expProduct.getStatus())) {
+            // 使用常量接口替换硬编码
+            if (expProduct == null || !ProductStatus.AVAILABLE.equals(expProduct.getStatus())) {
                 throw new RuntimeException("商品已下架或售罄");
             }
 
@@ -139,7 +143,6 @@ public class OrderServiceImpl implements OrderService {
 
         // 3. 组装成 OrderVO
         OrderVO vo = new OrderVO();
-        // 将 order 的属性复制给 vo (也可以手动 set)
         vo.setOrderId(order.getOrderId());
         vo.setUserId(order.getUserId());
         vo.setStoreId(order.getStoreId());
