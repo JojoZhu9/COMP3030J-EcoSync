@@ -119,18 +119,11 @@
               <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template>
             </el-table-column>
 
-            <el-table-column label="Process Status" width="200" align="center">
+            <el-table-column label="Process Status" width="180" align="center">
               <template #default="{row}">
-                <el-select
-                  v-model="row.status"
-                  size="small"
-                  @change="handleOrderUpdate(row)"
-                  placeholder="Update Status"
-                >
-                  <el-option label="Awaiting Pickup" value="AVAILABLE" />
-                  <el-option label="Completed" value="SOLD_OUT" />
-                  <el-option label="Cancelled" value="DISCARDED" />
-                </el-select>
+                <el-tag :type="row.status === 'SOLD_OUT' ? 'success' : 'warning'" effect="dark">
+                  {{ row.status === 'AVAILABLE' ? 'Awaiting Pickup' : (row.status === 'SOLD_OUT' ? 'Completed' : 'Cancelled') }}
+                </el-tag>
               </template>
             </el-table-column>
 
@@ -176,32 +169,15 @@ const fetchData = async () => {
 // 2. 修改库存项 (ExpiringProductController PUT)
 const handleInventoryUpdate = async (row) => {
   try {
-    // 根据你的后端，PUT 请求需要把对象放在 Body 里
     await request.put(`/expiring-products/${row.productId}`, row)
     ElMessage.success('Inventory updated successfully')
   } catch (e) {
     ElMessage.error('Failed to update inventory status')
-    fetchData() // 失败则刷新回滚
+    fetchData()
   }
 }
 
-// 3. 重点修复：修改订单状态 (OrderController)
-const handleOrderUpdate = async (row) => {
-  try {
-    // 根据你的 404 报错，我们需要确保路径和后端 @PutMapping("/{id}/status") 一致
-    // 假设你在 OrderController 补充了 /{orderId}/status 接口
-    await request.put(`/orders/${row.orderId}/status`, null, {
-      params: { status: row.status }
-    })
-    ElMessage.success(`Order #${row.orderId} status changed to ${row.status}`)
-  } catch (e) {
-    console.error('Update Status Error:', e)
-    ElMessage.error('Failed to update order status. Please check backend API.')
-    syncAllOrders() // 回滚
-  }
-}
-
-// 4. 同步订单
+// 3. 同步订单
 const syncAllOrders = async () => {
   loadingOrders.value = true
   try {
@@ -227,7 +203,6 @@ const syncAllOrders = async () => {
       } catch (e) { return { ...order, items: [] } }
     }))
 
-    // 去重并排序
     orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
       .sort((a, b) => b.orderId - a.orderId)
   } catch (e) {
