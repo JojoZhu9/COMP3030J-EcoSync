@@ -1,6 +1,15 @@
 server:
   port: 8080 # 部署端口
 
+app:
+  upload:
+    dir: ./uploads/products  # 商品图片上传目录（种子图位置）
+  minio:
+    endpoint: http://minio:9000
+    access-key: ecosync
+    secret-key: ${MINIO_SECRET_KEY:-ecosync123}
+    bucket: ecosync
+
 jwt:
   secret: RWNvU3luY1N1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb24yMDI2
   expiration: 86400000  # 24小时，单位毫秒

@@ -144,9 +144,36 @@ jobs:
 
           script: |
             cd /opt/EcoSync
-            git pull
+            git fetch origin
+            git reset --hard origin/main
             export APP_IMAGE=ghcr.io/jojozhu9/ecosync-app
             export FRONTEND_IMAGE=ghcr.io/jojozhu9/ecosync-frontend
             export IMAGE_TAG=${{ github.sha }}
+
+            # Ensure seed images directory exists
+            mkdir -p uploads/products
+
             docker compose pull
             docker compose up -d --remove-orphans
+
+            # Wait for MinIO to be healthy
+            echo "Waiting for MinIO..."
+            for i in $(seq 1 20); do
+              if curl -sf http://localhost:9000/minio/health/live > /dev/null 2>&1; then
+                echo "MinIO is ready"
+                break
+              fi
+              echo "  attempt $i/20..."
+              sleep 2
+            done
+
+            # Configure MinIO bucket (mc client is included in minio/minio image)
+            export MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-ecosync123}
+            docker compose exec -T minio mc alias set local http://localhost:9000 ecosync $MINIO_SECRET_KEY
+            docker compose exec -T minio mc mb --ignore-existing local/ecosync
+            docker compose exec -T minio mc anonymous set public local/ecosync
+
+            # Sync seed images (overwrite changed, keep user uploads)
+            docker compose exec -T minio mc mirror --overwrite /opt/seed-uploads/products/ local/ecosync/products/ || true
+
+            echo "MinIO bucket configured and seeded"
