@@ -36,14 +36,17 @@
     <div class="settings-body">
       <el-card class="settings-card" shadow="never">
         <template #header>
-          <div class="card-title"><el-icon><MapLocation /></el-icon><span>Logistics & Fulfillment</span></div>
+          <div class="card-title">
+            <el-icon><MapLocation /></el-icon>
+            <span>Logistics & Fulfillment</span>
+          </div>
         </template>
         <el-form label-position="top" class="custom-form">
           <el-form-item label="DEFAULT DELIVERY ADDRESS">
-            <el-input v-model="rawUserData.userAddress" :prefix-icon="Location" clearable />
+            <el-input v-model="rawUserData.userAddress" :prefix-icon="Location" clearable placeholder="Enter your delivery address" />
           </el-form-item>
           <el-form-item label="CONTACT TELEPHONE">
-            <el-input v-model="rawUserData.phoneNumber" :prefix-icon="Phone" clearable />
+            <el-input v-model="rawUserData.phoneNumber" :prefix-icon="Phone" clearable placeholder="Enter your phone number" />
           </el-form-item>
           <el-button type="primary" class="commit-btn" @click="updateUserInfo" :loading="saving">
             Update Profile Data
@@ -53,7 +56,10 @@
 
       <el-card class="settings-card security-section" shadow="never">
         <template #header>
-          <div class="card-title"><el-icon><Lock /></el-icon><span>Security Settings</span></div>
+          <div class="card-title">
+            <el-icon><Lock /></el-icon>
+            <span>Security Settings</span>
+          </div>
         </template>
         <div class="security-item">
           <div class="sec-info">
@@ -68,15 +74,15 @@
     <el-dialog v-model="pwdDialogVisible" title="Change Password" width="400px" @closed="resetPwdForm">
       <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-position="top">
         <el-form-item label="NEW PASSWORD" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password />
+          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="At least 6 characters" />
         </el-form-item>
         <el-form-item label="CONFIRM NEW" prop="confirmPassword">
-          <el-input v-model="pwdForm.confirmPassword" type="password" show-password />
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="Repeat your new password" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="pwdDialogVisible = false">Cancel</el-button>
-        <el-button type="success" :loading="pwdSaving" @click="handleUpdatePassword">Confirm</el-button>
+        <el-button type="success" :loading="pwdSaving" @click="handleUpdatePassword">Confirm Change</el-button>
       </template>
     </el-dialog>
   </div>
@@ -88,14 +94,14 @@ import { MapLocation, Location, Phone, Lock } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 
-// 1. 确保 ID 是数字类型（后端要求 Integer）
-const userId = Number(localStorage.getItem('userId') || 12)
+// 1. 获取本地存储的 ID（必须与登录时存入的 key 一致）
+const userId = Number(localStorage.getItem('userId') || 1)
 const saving = ref(false)
 const pwdSaving = ref(false)
 const pwdDialogVisible = ref(false)
 const pwdFormRef = ref<FormInstance>()
 
-// 2. 严格对齐 User.java 实体类
+// 2. 初始化数据结构（对齐 User.java）
 const rawUserData = ref<any>({
   userId: userId,
   username: '',
@@ -108,95 +114,114 @@ const rawUserData = ref<any>({
 })
 
 const pwdForm = reactive({ newPassword: '', confirmPassword: '' })
-const pwdRules = reactive({
-  newPassword: [{ required: true, min: 6, message: 'Min 6 chars', trigger: 'blur' }],
-  confirmPassword: [{ validator: (r, v, cb) => (v !== pwdForm.newPassword ? cb(new Error('Mismatch!')) : cb()), trigger: 'blur' }]
-})
 
-const resetPwdForm = () => {
-  pwdForm.newPassword = ''; pwdForm.confirmPassword = ''; pwdFormRef.value?.resetFields()
-}
+// 校验逻辑
+const pwdRules = reactive({
+  newPassword: [{ required: true, min: 6, message: 'Password must be at least 6 characters', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: 'Please confirm password', trigger: 'blur' },
+    {
+      validator: (rule: any, value: any, callback: any) => {
+        if (value !== pwdForm.newPassword) callback(new Error('Passwords do not match!'))
+        else callback()
+      },
+      trigger: 'blur'
+    }
+  ]
+})
 
 // 获取用户信息
 const fetchUser = async () => {
   try {
-    // 路径：/api/users/${id}
     const res: any = await request.get(`/api/users/${userId}`)
-    rawUserData.value = res.data?.data || res.data || res
-    console.log('User Data Synced:', rawUserData.value)
+    // 这里兼容两种返回结构：直接对象 或 包装在 data 中
+    const userData = res.data || res
+    if (userData) {
+      rawUserData.value = userData
+      console.log('User synced:', rawUserData.value)
+    }
   } catch (e) {
-    ElMessage.error('Fetch Error')
+    ElMessage.error('Failed to sync user data')
   }
 }
 
-// 核心：修改密码
+// 修改密码逻辑
 const handleUpdatePassword = async () => {
   if (!pwdFormRef.value) return
   await pwdFormRef.value.validate(async (valid) => {
     if (!valid) return
     pwdSaving.value = true
     try {
-      // 构造完整 User 对象发送
+      // 合并当前数据，仅替换 passwordHash 为明文
       const payload = {
         ...rawUserData.value,
-        passwordHash: pwdForm.newPassword  // 发送明文，后端 Service 自动 MD5
+        passwordHash: pwdForm.newPassword
       }
-      console.log('Sending Password Update:', payload)
 
       await request.put(`/api/users/${userId}`, payload)
-      ElMessage.success('Password updated!')
+      ElMessage.success('Password successfully updated!')
       pwdDialogVisible.value = false
-      await fetchUser()
+      await fetchUser() // 刷新本地存储的密文，防止后续修改资料触发二次加密
     } catch (e) {
-      ElMessage.error('Password Update Failed')
-    } finally { pwdSaving.value = false }
+      ElMessage.error('Password update failed')
+    } finally {
+      pwdSaving.value = false
+    }
   })
 }
 
-// 核心：更新地址和电话
+// 更新个人资料（地址和电话）
 const updateUserInfo = async () => {
   saving.value = true
   try {
-    // 此时 rawUserData.passwordHash 里是旧的 MD5 密文
-    // 后端 Service 判定 equals 成立，则不会重复加密
-    console.log('Sending Profile Update:', rawUserData.value)
-
+    // 此时 rawUserData.passwordHash 存放的是 MD5 密文
+    // 发送给后端时，后端判断密文一致，不会再次加密
     await request.put(`/api/users/${userId}`, rawUserData.value)
-    ElMessage.success('Profile saved!')
+    ElMessage.success('Profile updated successfully!')
     await fetchUser()
   } catch (e) {
-    ElMessage.error('Update Failed')
-  } finally { saving.value = false }
+    ElMessage.error('Update failed')
+  } finally {
+    saving.value = false
+  }
 }
 
-// 核心：充值
+// 充值逻辑
 const handleRecharge = () => {
-  ElMessageBox.prompt('Amount (¥)', 'Top-up', {
+  ElMessageBox.prompt('Enter amount to top up (¥)', 'Wallet Top-up', {
     confirmButtonText: 'Confirm',
+    cancelButtonText: 'Cancel',
     inputPattern: /^\d+(\.\d{1,2})?$/,
-    inputErrorMessage: 'Invalid number'
+    inputErrorMessage: 'Please enter a valid amount'
   }).then(async ({ value }) => {
     try {
+      const newBalance = (Number(rawUserData.value.balance) + parseFloat(value)).toFixed(2)
       const payload = {
         ...rawUserData.value,
-        balance: (Number(rawUserData.value.balance) + parseFloat(value)).toFixed(2)
+        balance: newBalance
       }
       await request.put(`/api/users/${userId}`, payload)
-      ElMessage.success('Balance updated')
+      ElMessage.success(`¥${value} added to your balance`)
       await fetchUser()
-    } catch (e) { ElMessage.error('Recharge failed') }
+    } catch (e) {
+      ElMessage.error('Recharge failed')
+    }
   })
 }
 
 const formatBalance = (val: any) => (val ? Number(val).toFixed(2) : '0.00')
-const resetPwdFormFields = () => { resetPwdForm() }
+
+const resetPwdForm = () => {
+  pwdForm.newPassword = ''
+  pwdForm.confirmPassword = ''
+  pwdFormRef.value?.resetFields()
+}
 
 onMounted(fetchUser)
 </script>
 
 <style scoped>
-/* 样式部分保持不变，确保美观 */
-.profile-page { background: #f8fafc; min-height: 100vh; padding-bottom: 50px; }
+.profile-page { background: #f8fafc; min-height: 100vh; padding-bottom: 50px; font-family: 'Inter', system-ui, sans-serif; }
 .brand-stripe { height: 4px; background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%); }
 .member-hero { background: #1e293b; padding: 40px 24px 60px; color: white; position: relative; }
 .hero-content { display: flex; align-items: center; gap: 20px; z-index: 1; position: relative; }
@@ -204,11 +229,11 @@ onMounted(fetchUser)
 .status-ring { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; background: #007934; border: 3px solid #1e293b; border-radius: 50%; }
 .id-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
 .member-id { font-family: monospace; font-weight: 700; color: #94a3b8; font-size: 13px; }
-.active-tag { background: #007934 !important; color: white !important; border: none; font-weight: 800; font-size: 9px; }
+.active-tag { background: #007934 !important; color: white !important; border: none; font-weight: 800; font-size: 9px; padding: 0 8px; }
 .welcome-text { margin: 0; font-size: 18px; font-weight: 800; }
 .wallet-card { margin: -30px 20px 24px; background: white; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative; z-index: 2; }
 .wallet-content { display: flex; justify-content: space-between; align-items: center; }
-.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+.wallet-label { font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
 .points-display { display: flex; align-items: baseline; gap: 4px; margin-top: 4px; }
 .points-num { font-size: 36px; font-weight: 900; color: #ff7900; }
 .points-unit { font-size: 20px; font-weight: 800; color: #ff7900; }
