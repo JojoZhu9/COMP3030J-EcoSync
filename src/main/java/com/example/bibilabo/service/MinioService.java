@@ -44,30 +44,7 @@ public class MinioService {
                 .build();
 
         try {
-            boolean found = false;
-            for (Bucket b : client.listBuckets()) {
-                if (bucket.equals(b.name())) { found = true; break; }
-            }
-            if (!found) {
-                client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-                log.info("MinIO bucket '{}' created", bucket);
-            }
-
-            String policy = """
-                    {
-                      "Version": "2012-10-17",
-                      "Statement": [
-                        {
-                          "Effect": "Allow",
-                          "Principal": {"AWS": ["*"]},
-                          "Action": ["s3:GetObject"],
-                          "Resource": ["arn:aws:s3:::%s/*"]
-                        }
-                      ]
-                    }
-                    """.formatted(bucket);
-            client.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucket).config(policy).build());
-
+            ensureBucketAndPolicy();
             seedImages();
         } catch (Exception e) {
             log.warn("MinIO init failed (will retry on first upload): {}", e.getMessage());
@@ -103,7 +80,7 @@ public class MinioService {
     }
 
     public String upload(MultipartFile file, String filename) throws Exception {
-        ensureBucket();
+        ensureBucketAndPolicy();
         String key = "products/" + filename;
         client.putObject(PutObjectArgs.builder()
                 .bucket(bucket).object(key)
@@ -113,7 +90,7 @@ public class MinioService {
         return filename;
     }
 
-    private void ensureBucket() {
+    private void ensureBucketAndPolicy() {
         try {
             boolean found = false;
             for (Bucket b : client.listBuckets()) {
@@ -122,6 +99,20 @@ public class MinioService {
             if (!found) {
                 client.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
             }
+            String policy = """
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
+                        {
+                          "Effect": "Allow",
+                          "Principal": {"AWS": ["*"]},
+                          "Action": ["s3:GetObject"],
+                          "Resource": ["arn:aws:s3:::%s/*"]
+                        }
+                      ]
+                    }
+                    """.formatted(bucket);
+            client.setBucketPolicy(SetBucketPolicyArgs.builder().bucket(bucket).config(policy).build());
         } catch (Exception e) {
             throw new RuntimeException("MinIO unavailable", e);
         }
