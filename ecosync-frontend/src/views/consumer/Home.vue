@@ -6,7 +6,7 @@
           <div class="store-module">
             <div class="store-indicator">
               <el-icon class="icon-pulse"><LocationFilled /></el-icon>
-              <span class="label">Store</span>
+              <span class="label">Current Store</span>
             </div>
             <el-select
               v-model="selectedStoreId"
@@ -43,24 +43,25 @@
               <el-card class="product-card" shadow="never" @click="showDetail(prod)">
                 <div class="image-box">
                   <el-image
-                    :src="getImageUrl(prod.barcode)"
+                    :src="`/uploads/products/${prod.barcode}.jpg`"
                     fit="cover"
                     style="width: 100%; height: 100%"
                   >
                     <template #error>
-                      <div class="image-error-slot">
+                      <div class="image-placeholder">
                         <el-icon :size="48" color="#e2e8f0"><Goods /></el-icon>
-                        <span class="error-tip">No Image</span>
+                        <span class="error-text">No Image</span>
                       </div>
                     </template>
                   </el-image>
 
-                  <div class="stock-tag" :class="{ 'urgent': getRemaining(prod) < 5 }">
-                    Only {{ getRemaining(prod) }} left
+                  <div class="stock-tag" :class="{ 'urgent': prod.remainingStock < 5 }">
+                    Only {{ prod.remainingStock }} left
                   </div>
+
                   <div class="expiry-timer-tag">
                     <el-icon><Timer /></el-icon>
-                    {{ getTimeRemaining(prod.expirationTime || prod.expirationDate) }}
+                    {{ formatTimeRemaining(prod.expirationTime || prod.expirationDate) }}
                   </div>
                 </div>
 
@@ -73,20 +74,19 @@
                       <span class="unit">¥</span>
                       <span class="num">{{ prod.discountedPrice }}</span>
                     </div>
-                    <div v-if="Number(prod.discountedPrice) < Number(prod.normalPrice)" class="card-original-price">
+                    <div class="card-original-price">
                       ¥{{ Number(prod.normalPrice).toFixed(2) }}
                     </div>
                   </div>
 
                   <el-button
-                    :type="isAtLimit(prod) ? 'info' : 'success'"
+                    type="success"
                     class="add-btn"
                     round
                     @click.stop="addToCart(prod)"
-                    :disabled="getRemaining(prod) <= 0 || isAtLimit(prod)"
+                    :disabled="prod.remainingStock <= 0"
                   >
-                    <el-icon v-if="!isAtLimit(prod)"><Plus /></el-icon>
-                    {{ isAtLimit(prod) ? 'Limit Reached' : 'Add to Basket' }}
+                    <el-icon><Plus /></el-icon> Add to Basket
                   </el-button>
                 </div>
               </el-card>
@@ -95,27 +95,23 @@
         </template>
       </el-skeleton>
 
-      <el-empty v-if="!loading && productList.length === 0" description="No available items in this store." />
+      <el-empty v-if="!loading && productList.length === 0" description="No available items." />
     </div>
 
-    <el-dialog v-model="detailVisible" width="420px" center append-to-body class="modern-detail-dialog">
+    <el-dialog v-model="detailVisible" width="400px" center append-to-body custom-class="modern-dialog">
       <div v-if="currentProduct" class="detail-wrapper">
         <div class="product-hero">
-          <el-image :src="getImageUrl(currentProduct.barcode)" fit="contain" class="floating-img">
-            <template #error><el-icon :size="100" color="white"><Goods /></el-icon></template>
-          </el-image>
+          <el-image :src="`/uploads/products/${currentProduct.barcode}.jpg`" fit="contain" />
         </div>
         <div class="product-info-sheet">
           <h2 class="p-name">{{ currentProduct.productName }}</h2>
           <div class="p-price-row">
             <span class="p-price">¥{{ currentProduct.discountedPrice }}</span>
-            <span class="p-original">¥{{ Number(currentProduct.normalPrice).toFixed(2) }}</span>
+            <span class="p-original">¥{{ currentProduct.normalPrice }}</span>
           </div>
-          <div class="p-tags-container">
-            <el-tag type="danger" effect="light">
-              Expires: {{ getTimeRemaining(currentProduct.expirationTime || currentProduct.expirationDate) }}
-            </el-tag>
-          </div>
+          <el-tag type="danger" effect="dark">
+            Expires: {{ formatTimeRemaining(currentProduct.expirationTime || currentProduct.expirationDate) }}
+          </el-tag>
         </div>
       </div>
     </el-dialog>
@@ -125,10 +121,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { LocationFilled, Goods, Plus, Timer } from '@element-plus/icons-vue'
-import { storeApi } from '@/api/store'
-import { expiringApi, standardApi } from '@/api/product'
-import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 const storeList = ref([])
 const selectedStoreId = ref(null)
@@ -137,161 +131,157 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref(null)
 
-/**
- * 核心修改：图片读取函数
- * 确保你的图片放在前端项目的：/public/uploads/products/ 目录下
- */
-const getImageUrl = (barcode: string) => {
-  if (!barcode) return '';
-  // 直接通过根路径访问 public 文件夹下的资源
-  return `/uploads/products/${barcode}.jpg`;
+// 1. 获取倒计时文字 (修复逻辑)
+const formatTimeRemaining = (expiryDate: any) => {
+  if (!expiryDate) return 'Calculating...'
+
+  const end = new Date(expiryDate).getTime()
+  const now = new Date().getTime()
+  const diff = end - now
+
+  if (diff <= 0) return 'Expired'
+
+  const mins = Math.floor(diff / (1000 * 60))
+  const hrs = Math.floor(mins / 60)
+
+  if (hrs > 24) return `${Math.floor(hrs / 24)}d left`
+  if (hrs > 0) return `${hrs}h ${mins % 60}m left`
+  return `${mins}m left`
 }
 
-/**
- * 核心修改：计算倒计时
- */
-const getTimeRemaining = (expiryDate: string) => {
-  if (!expiryDate) return 'N/A';
-  const now = new Date().getTime();
-  const end = new Date(expiryDate).getTime();
-  const diff = end - now;
-
-  if (diff <= 0) return 'Expired';
-
-  const mins = Math.floor(diff / (1000 * 60));
-  const hrs = Math.floor(mins / 60);
-  const days = Math.floor(hrs / 24);
-
-  if (days > 0) return `${days}d left`;
-  if (hrs > 0) return `${hrs}h ${mins % 60}m left`;
-  return `${mins}m left`;
-}
-
-// 计算折扣逻辑
-const getDiscountRate = (expirationTime: string, discountRatesStr: string): number => {
-  try {
-    const rates = JSON.parse(discountRatesStr || '[1.0]')
-    const hoursLeft = (new Date(expirationTime).getTime() - Date.now()) / (1000 * 60 * 60)
-    const index = Math.min(Math.max(0, 12 - Math.ceil(hoursLeft)), rates.length - 1)
-    return rates[index] || 1.0
-  } catch { return 1.0 }
-}
-
+// 2. 加载数据
 const fetchProducts = async () => {
   if (!selectedStoreId.value) return
   loading.value = true
   try {
-    const res: any = await expiringApi.getByStore(selectedStoreId.value)
-    const rawItems = res.data || res || []
+    // 获取特价库存记录
+    const expRes: any = await request.get(`/expiring-products/store/${selectedStoreId.value}`)
+    const expiringItems = expRes.data || expRes || []
 
-    const enriched = await Promise.all(rawItems.map(async (item: any) => {
-      try {
-        const std: any = await standardApi.getByBarcode(item.barcode)
-        const stdData = std.data || std
-        const normalPrice = Number(stdData.normalPrice || 0)
+    // 获取标准产品库信息（为了拿到原价和名字）
+    const libRes: any = await request.get('/products')
+    const library = libRes.data || libRes || []
 
-        // 兼容字段名: expirationTime 或 expirationDate
-        const time = item.expirationTime || item.expirationDate
-        const rate = getDiscountRate(time, stdData.discountRates)
+    const enriched = expiringItems.map(item => {
+      const std = library.find(p => String(p.barcode) === String(item.barcode))
+      return {
+        ...item,
+        productName: std?.productName || 'Unknown Product',
+        normalPrice: std?.normalPrice || 0,
+        // 假设折扣价是原价的 0.7 倍，具体可根据业务逻辑调整
+        discountedPrice: (Number(std?.normalPrice || 0) * 0.7).toFixed(2)
+      }
+    })
 
-        return {
-          ...item,
-          productName: stdData.productName,
-          normalPrice: normalPrice,
-          discountedPrice: (normalPrice * rate).toFixed(2)
-        }
-      } catch { return item }
-    }))
     productList.value = enriched.filter(i => i.status === 'AVAILABLE')
   } catch (e) {
-    ElMessage.error('Product sync failed')
+    ElMessage.error('Failed to sync products')
   } finally {
     loading.value = false
   }
 }
 
 const addToCart = async (prod: any) => {
-  const userId = localStorage.getItem('userId') || '4'
   try {
     await request.post('/cart', {
-      userId: Number(userId),
-      productId: Number(prod.productId),
+      userId: Number(localStorage.getItem('userId') || 1),
+      productId: prod.productId,
       quantity: 1
     })
-    ElMessage.success('Added to basket')
-  } catch (e) { ElMessage.error('Add failed') }
+    ElMessage.success('Added to Basket')
+  } catch (e) {
+    ElMessage.error('Add failed')
+  }
 }
 
 const handleStoreChange = (val) => {
-  selectedStoreId.value = val;
-  fetchProducts();
+  selectedStoreId.value = val
+  fetchProducts()
 }
 
 const showDetail = (prod) => {
-  currentProduct.value = prod;
-  detailVisible.value = true;
+  currentProduct.value = prod
+  detailVisible.value = true
 }
-
-const getRemaining = (prod: any) => Number(prod.remainingStock || 0)
-const isAtLimit = (prod: any) => getRemaining(prod) <= 0
 
 onMounted(async () => {
   try {
-    const res: any = await storeApi.getAll()
+    const res: any = await request.get('/stores')
     storeList.value = res.data || res || []
     if (storeList.value.length > 0) {
       selectedStoreId.value = storeList.value[0].storeId
       fetchProducts()
     }
-  } catch (e) { ElMessage.error('Init failed') }
+  } catch (e) {
+    ElMessage.error('Init failed')
+  }
 })
 </script>
 
 <style scoped>
-.home-container { background: #f8fafc; min-height: 100vh; }
-.image-box {
-  height: 180px;
-  background: #fff;
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom: 1px solid #f1f5f9;
+.home-container { background: #f4f7f6; min-height: 100vh; padding-bottom: 50px; }
+.header-filter { background: white; padding: 15px 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.store-module { display: flex; align-items: center; gap: 12px; }
+.store-indicator { display: flex; align-items: center; gap: 5px; color: #008163; font-weight: 800; }
+.icon-pulse { animation: pulse 2s infinite; }
+
+.product-grid { padding: 25px; max-width: 1300px; margin: 0 auto; }
+.section-title { font-size: 24px; color: #2c3e50; margin: 0; }
+.section-subtitle { color: #7f8c8d; margin: 5px 0 20px 0; }
+
+.product-card {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 25px;
+  transition: transform 0.3s;
+  cursor: pointer;
+  border: none !important;
 }
-.image-error-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #cbd5e1;
-}
-.error-tip { font-size: 12px; margin-top: 8px; }
+.product-card:hover { transform: translateY(-5px); }
+
+.image-box { height: 200px; background: white; position: relative; }
+.image-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f8fafc; color: #cbd5e1; }
 
 .expiry-timer-tag {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(239, 68, 68, 0.9);
+  top: 12px;
+  right: 12px;
+  background: rgba(231, 76, 60, 0.9);
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
   display: flex;
   align-items: center;
   gap: 4px;
+  z-index: 2;
 }
 
 .stock-tag {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: #f1f5f9;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.9);
   padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 700;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #2c3e50;
 }
-.stock-tag.urgent { color: #ef4444; background: #fee2e2; }
+.stock-tag.urgent { color: #e74c3c; background: #ffdada; }
 
-/* ... 其他样式保持原有美化 ... */
+.content { padding: 15px; }
+.name { font-size: 16px; font-weight: 700; color: #2c3e50; display: block; height: 44px; overflow: hidden; }
+.price-box { display: flex; align-items: baseline; gap: 8px; margin: 10px 0; }
+.points-price { color: #e67e22; font-weight: 800; font-size: 20px; }
+.card-original-price { text-decoration: line-through; color: #bdc3c7; font-size: 13px; }
+
+.add-btn { width: 100%; font-weight: bold; background: #008163 !important; border: none !important; }
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
 </style>
