@@ -80,8 +80,8 @@ public class MinioService {
 
         try (var stream = Files.list(dir)) {
             stream.filter(f -> f.toString().endsWith(".jpg")).forEach(f -> {
+                String key = "products/" + f.getFileName().toString();
                 try {
-                    String key = "products/" + f.getFileName().toString();
                     client.statObject(StatObjectArgs.builder().bucket(bucket).object(key).build());
                     // already exists, skip
                 } catch (Exception e) {
