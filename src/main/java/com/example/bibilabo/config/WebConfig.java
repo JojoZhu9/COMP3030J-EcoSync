@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry; // 新增导入
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -28,6 +29,12 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowCredentials(true); // 允许带上 Cookie 或认证信息
     }
     // --- 新增跨域配置结束 ---
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:/app/uploads/");
+    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
