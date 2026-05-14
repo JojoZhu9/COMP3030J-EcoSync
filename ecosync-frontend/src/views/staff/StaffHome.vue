@@ -120,11 +120,11 @@
             <el-table-column label="Order Status" width="180" align="center">
               <template #default="{row}">
                 <el-select v-model="row.status" size="small" @change="handleOrderUpdate(row)">
-                  <el-option label="Pending (待支付)" value="PENDING" />
-                  <el-option label="Paid (已支付)" value="PAID" />
-                  <el-option label="Awaiting Pickup (待提货)" value="AWAITING_PICKUP" />
-                  <el-option label="Completed (已完成)" value="COMPLETED" />
-                  <el-option label="Cancelled (已取消)" value="CANCELLED" />
+                  <el-option label="Pending" value="PENDING" />
+                  <el-option label="Paid" value="PAID" />
+                  <el-option label="Awaiting Pickup" value="AWAITING_PICKUP" />
+                  <el-option label="Completed" value="COMPLETED" />
+                  <el-option label="Cancelled" value="CANCELLED" />
                 </el-select>
               </template>
             </el-table-column>
