@@ -59,13 +59,11 @@
                   </template>
                 </el-table-column>
 
-                <el-table-column label="Action" width="160" align="center">
+                <el-table-column label="Status" width="160" align="center">
                   <template #default="{row}">
-                    <el-select v-model="row.status" size="small" @change="handleInventoryUpdate(row)">
-                      <el-option label="Available" value="AVAILABLE" />
-                      <el-option label="Sold Out" value="SOLD_OUT" />
-                      <el-option label="Discarded" value="DISCARDED" />
-                    </el-select>
+                    <el-tag :type="row.remainingStock <= 0 ? 'info' : 'success'" round effect="light">
+                      {{ row.remainingStock <= 0 ? 'Sold Out' : 'Available' }}
+                    </el-tag>
                   </template>
                 </el-table-column>
               </el-table>
@@ -121,9 +119,13 @@
 
             <el-table-column label="Order Status" width="180" align="center">
               <template #default="{row}">
-                <el-tag :type="getOrderStatusType(row.status)" effect="light" round>
-                  {{ formatStatusText(row.status) }}
-                </el-tag>
+                <el-select v-model="row.status" size="small" @change="handleOrderUpdate(row)">
+                  <el-option label="Pending" value="PENDING" />
+                  <el-option label="Preparing" value="PREPARING" />
+                  <el-option label="Awaiting Pickup" value="AVAILABLE" />
+                  <el-option label="Completed" value="SOLD_OUT" />
+                  <el-option label="Cancelled" value="DISCARDED" />
+                </el-select>
               </template>
             </el-table-column>
 
@@ -166,14 +168,16 @@ const fetchData = async () => {
   } finally { loading.value = false }
 }
 
-// 2. 库存状态更新 (保留)
-const handleInventoryUpdate = async (row) => {
+// 2. 修改点 3: 订单状态更新写入数据库
+const handleOrderUpdate = async (row: any) => {
   try {
-    await request.put(`/expiring-products/${row.productId}`, row)
-    ElMessage.success('Stock status updated')
+    // 假设后端接受 PUT 方式更新订单信息（按照你的库存接口推断）
+    await request.put(`/orders/${row.orderId}`, row)
+    ElMessage.success('Order status updated successfully')
   } catch (e) {
-    ElMessage.error('Inventory update failed')
-    fetchData()
+    ElMessage.error('Order status update failed')
+    // 失败时刷新重置回原状态
+    syncAllOrders()
   }
 }
 
@@ -208,24 +212,6 @@ const syncAllOrders = async () => {
   } catch (e) {
     ElMessage.error('Order sync failed')
   } finally { loadingOrders.value = false }
-}
-
-// 状态文本转换逻辑
-const formatStatusText = (status) => {
-  const map = {
-    'AVAILABLE': 'Awaiting Pickup',
-    'PENDING': 'Pending',
-    'SOLD_OUT': 'Completed',
-    'DISCARDED': 'Cancelled'
-  }
-  return map[status] || status
-}
-
-const getOrderStatusType = (status) => {
-  if (status === 'SOLD_OUT') return 'success'
-  if (status === 'AVAILABLE') return 'warning'
-  if (status === 'DISCARDED') return 'danger'
-  return 'info'
 }
 
 const formatDateTime = (val: string) => {
