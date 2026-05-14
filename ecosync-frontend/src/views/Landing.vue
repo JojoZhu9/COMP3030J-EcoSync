@@ -12,7 +12,7 @@
             <div class="hero-bg-grid"></div>
             <div class="hero-content">
               <h1 class="hero-title">
-                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Rescue Delicious Food,</span>
+                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Rescue Near-Expiry Food,</span>
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.3s">
                   <span class="c-green">Embrace an Eco-Friendly Life</span>
                 </span>
@@ -29,7 +29,7 @@
                   round
                   @click="goLogin"
                 >
-                  Start Your Savings Journey
+                  Purchase near-expiry food
                   <el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
                 <el-button
@@ -87,19 +87,6 @@
           </div>
         </el-carousel-item>
       </el-carousel>
-    </section>
-
-    <!-- 数据统计区 -->
-    <section class="stats-section">
-      <div class="stats-container">
-        <div v-for="(stat, index) in stats" :key="index" class="stat-item" :style="{ animationDelay: `${index * 0.15}s` }">
-          <div class="stat-icon" :class="stat.color">
-            <el-icon :size="28"><component :is="stat.icon" /></el-icon>
-          </div>
-          <div class="stat-number">{{ stat.value }}</div>
-          <div class="stat-label">{{ stat.label }}</div>
-        </div>
-      </div>
     </section>
 
     <<!-- Features 区域 -->
@@ -210,25 +197,6 @@
       </div>
     </section>
 
-    <!-- CTA 区域 -->
-    <section class="cta-section">
-      <div class="cta-bg-pattern"></div>
-      <div class="cta-content">
-        <h2>Ready to Make a Difference?</h2>
-        <p>Join thousands of eco-conscious consumers saving money and the planet.</p>
-        <el-button
-          type="primary"
-          size="large"
-          class="cta-btn primary-cta magnetic-btn"
-          round
-          @click="goLogin"
-        >
-          Start Saving Now
-          <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-        </el-button>
-      </div>
-    </section>
-
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-content">
@@ -327,7 +295,7 @@ const processSteps = [
   },
   {
     title: 'Smart Discount',
-    desc: 'AI-powered dynamic pricing ensures you get the best deal based on expiry proximity.',
+    desc: 'Dynamic pricing ensures you get the best deal based on expiry proximity.',
     icon: 'Discount',
     color: 'bg-orange'
   },
@@ -1038,12 +1006,14 @@ onUnmounted(() => {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #007934, #00b34a);
+  /* 替换为橘色渐变：从深橘色 (#e65c00) 到浅橘色 (#ff9800) */
+  background: linear-gradient(135deg, #e65c00, #ff9800);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 20px 60px rgba(0, 121, 52, 0.3);
+  /* 阴影颜色同步修改为深橘色的 RGB 值：230, 92, 0 */
+  box-shadow: 0 20px 60px rgba(230, 92, 0, 0.3);
   position: relative;
 }
 
@@ -1052,7 +1022,8 @@ onUnmounted(() => {
   position: absolute;
   inset: -10px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 121, 52, 0.3);
+  /* 边框颜色同步修改为深橘色 */
+  border: 2px solid rgba(230, 92, 0, 0.3);
   animation: ripple 2s infinite;
 }
 
