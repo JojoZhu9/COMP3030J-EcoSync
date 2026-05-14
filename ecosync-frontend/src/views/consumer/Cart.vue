@@ -92,7 +92,9 @@
             <template #image>
               <el-icon :size="80" color="#cbd5e1"><Shop /></el-icon>
             </template>
-            <el-button type="primary" round class="go-shop-btn" @click="$router.push('/')">Go Shopping</el-button>
+            <el-button type="primary" round class="go-shop-btn" @click="$router.push('/home')">
+              Go Shopping
+            </el-button>
           </el-empty>
         </div>
       </div>
@@ -373,8 +375,25 @@ const executePayment = async () => {
 .item-tile.is-selected { border-color: #008163; background: #f8fafc; box-shadow: 0 8px 16px rgba(0, 129, 99, 0.08); }
 
 .item-check { display: flex; align-items: center; justify-content: center; }
-.custom-checkbox :deep(.el-checkbox__inner) { border-radius: 6px; width: 20px; height: 20px; }
-.custom-checkbox :deep(.el-checkbox__inner::after) { height: 10px; left: 6px; top: 2px; width: 4px; }
+/* 复选框：删除内部对勾，选中时纯色填充 */
+.custom-checkbox :deep(.el-checkbox__inner) {
+  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+}
+/* 彻底删除对勾 */
+.custom-checkbox :deep(.el-checkbox__inner::after) {
+  display: none !important;
+  border: none !important;
+  content: none !important;
+}
+/* 选中状态：品牌绿纯色填充 */
+.custom-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #008163;
+  border-color: #008163;
+}
 
 .item-preview {
   width: 72px; height: 72px; background: #f1f5f9; border-radius: 12px;
