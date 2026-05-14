@@ -1,8 +1,7 @@
-<template>
+<<template>
   <div class="order-status-page">
     <div class="brand-top-header">
       <div class="header-main">
-        <!-- 删除方形图标，只保留文字 -->
         <div class="header-text">
           <h2 class="title">My Transactions</h2>
           <div class="header-desc">Data synchronized with central store network</div>
@@ -96,16 +95,28 @@
                 <span class="num">{{ order.totalAmount.toFixed(2) }}</span>
               </div>
             </div>
-            <el-button
-              v-if="order.status === 'AWAITING_PICKUP'"
-              type="success"
-              size="small"
-              round
-              class="action-btn"
-              @click="router.push('/cart')"
-            >
-              <el-icon><ShoppingCart /></el-icon> Shop More
-            </el-button>
+            <!-- 操作按钮区：Awaiting Pickup 显示 Cancel + Shop More -->
+            <div class="action-group" v-if="order.status === 'AWAITING_PICKUP'">
+              <el-button
+                type="danger"
+                size="small"
+                round
+                plain
+                class="cancel-order-btn"
+                @click="cancelOrder(order.orderId)"
+              >
+                <el-icon><CircleClose /></el-icon> Cancel
+              </el-button>
+              <el-button
+                type="success"
+                size="small"
+                round
+                class="action-btn"
+                @click="router.push('/')"
+              >
+                <el-icon><ShoppingCart /></el-icon> Shop More
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -128,8 +139,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid } from '@element-plus/icons-vue'
+import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid, CircleClose } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -183,6 +195,28 @@ const fetchOrders = async () => {
   }
 }
 
+// 取消订单方法 - POST 请求
+const cancelOrder = async (orderId: number) => {
+  try {
+    await ElMessageBox.confirm(
+      'Are you sure you want to cancel this order?',
+      'Cancel Order',
+      {
+        confirmButtonText: 'Yes, Cancel',
+        cancelButtonText: 'No, Keep It',
+        type: 'warning'
+      }
+    )
+    await request.post(`/orders/${orderId}/cancel`)
+    ElMessage.success('Order cancelled successfully')
+    fetchOrders()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.message || e.message || 'Failed to cancel order')
+    }
+  }
+}
+
 const formatStatus = (s: string) => s.replace('_', ' ')
 const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
 
@@ -192,7 +226,6 @@ onMounted(fetchOrders)
 <style scoped>
 .order-status-page { background: #f4f6f8; min-height: 100vh; }
 
-/* 顶部 Header */
 .brand-top-header {
   background: linear-gradient(135deg, #008163 0%, #006b52 60%, #004d3a 100%);
   padding: 32px 24px 40px;
@@ -218,11 +251,10 @@ onMounted(fetchOrders)
   background: #EE7203; color: white; font-size: 10px;
   padding: 4px 10px; border-radius: 20px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 0.5px;
-  margin-top: 8px;           /* 往下移一点 */
+  margin-top: 8px;
   display: inline-block;
 }
 
-/* 粘性 Tabs */
 .sticky-tabs-container {
   position: sticky; top: 0; z-index: 10;
   background: #fff;
@@ -234,10 +266,8 @@ onMounted(fetchOrders)
 :deep(.brand-tabs .el-tabs__active-bar) { background-color: #008163; height: 3px; border-radius: 2px; }
 :deep(.brand-tabs .el-tabs__nav-wrap::after) { height: 1px; background: #f1f5f9; }
 
-/* 列表容器 */
 .list-container { padding: 20px 16px; max-width: 640px; margin: 0 auto; }
 
-/* 订单卡片 */
 .order-card {
   background: #fff; border-radius: 20px; padding: 20px;
   margin-bottom: 20px;
@@ -272,7 +302,6 @@ onMounted(fetchOrders)
 .status-badge.COMPLETED { background: #d1fae5; color: #059669; }
 .status-badge.CANCELLED { background: #fee2e2; color: #dc2626; }
 
-/* 详情盒 */
 .details-box {
   background: #f8fafc; border-radius: 16px;
   padding: 16px; margin-bottom: 16px;
@@ -306,7 +335,6 @@ onMounted(fetchOrders)
 .qty { font-size: 12px; color: #94a3b8; margin-bottom: 2px; }
 .price { font-weight: 800; color: #1e293b; font-size: 15px; }
 
-/* 取货码 */
 .pickup-section {
   background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
   border: 2px dashed #008163;
@@ -332,17 +360,36 @@ onMounted(fetchOrders)
   border: 1px solid #e2e8f0; color: #cbd5e1;
 }
 
-/* 底部结算 */
+/* 底部结算 + 操作按钮 */
 .card-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; }
 .total-section { display: flex; flex-direction: column; }
 .total-label { font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
 .total-val { color: #EE7203; display: flex; align-items: baseline; gap: 2px; margin-top: 2px; }
 .currency { font-size: 14px; font-weight: 800; }
 .num { font-size: 26px; font-weight: 900; }
+
+/* 操作按钮组：Cancel + Shop More 并排 */
+.action-group { display: flex; align-items: center; gap: 8px; }
+
 .action-btn {
   background: #008163 !important; border: none !important;
-  font-weight: 700; padding: 0 20px; height: 36px;
+  font-weight: 700; padding: 0 18px; height: 36px;
   box-shadow: 0 4px 12px rgba(0,129,99,0.2);
+}
+
+/* 新增：取消订单按钮 */
+.cancel-order-btn {
+  font-weight: 700;
+  padding: 0 14px;
+  height: 36px;
+  border-color: #fecaca !important;
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+.cancel-order-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #b91c1c !important;
 }
 
 /* 空状态 */

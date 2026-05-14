@@ -32,6 +32,10 @@ public interface ExpiringProductMapper {
             "WHERE product_id = #{productId} AND remaining_stock >= #{quantity}")
     int decreaseStock(@Param("productId") Integer productId, @Param("quantity") Integer quantity);
 
+    // 增加库存（取消订单时回滚）
+    @Update("UPDATE expiring_products SET remaining_stock = remaining_stock + #{quantity} WHERE product_id = #{productId}")
+    int increaseStock(@Param("productId") Integer productId, @Param("quantity") Integer quantity);
+
     @Delete("DELETE FROM expiring_products WHERE product_id = #{productId}")
     int deleteById(Integer productId);
 }

@@ -12,10 +12,11 @@ public interface OrderService {
     List<Order> getUserOrders(Integer userId);
 
     // 🔥 新增：更新订单状态
-    String updateOrderStatus(Integer orderId, String status);
+    void updateOrderStatus(Integer orderId, String status);
 
     // 店员扫码核销
     String confirmPickup(String pickupCode);
 
     OrderVO getOrderDetails(Integer orderId);
+    String cancelOrder(Integer orderId);
 }
