@@ -120,11 +120,11 @@
             <el-table-column label="Order Status" width="180" align="center">
               <template #default="{row}">
                 <el-select v-model="row.status" size="small" @change="handleOrderUpdate(row)">
-                  <el-option label="Pending" value="PENDING" />
-                  <el-option label="Preparing" value="PREPARING" />
-                  <el-option label="Awaiting Pickup" value="AVAILABLE" />
-                  <el-option label="Completed" value="SOLD_OUT" />
-                  <el-option label="Cancelled" value="DISCARDED" />
+                  <el-option label="Pending (待支付)" value="PENDING" />
+                  <el-option label="Paid (已支付)" value="PAID" />
+                  <el-option label="Awaiting Pickup (待提货)" value="AWAITING_PICKUP" />
+                  <el-option label="Completed (已完成)" value="COMPLETED" />
+                  <el-option label="Cancelled (已取消)" value="CANCELLED" />
                 </el-select>
               </template>
             </el-table-column>
@@ -171,8 +171,10 @@ const fetchData = async () => {
 // 2. 修改点 3: 订单状态更新写入数据库
 const handleOrderUpdate = async (row: any) => {
   try {
-    // 假设后端接受 PUT 方式更新订单信息（按照你的库存接口推断）
-    await request.put(`/orders/${row.orderId}`, row)
+    // 🔥 修改点 2：只发送后端需要的 status 字段，不发整个大对象
+    await request.put(`/orders/${row.orderId}`, {
+      status: row.status
+    })
     ElMessage.success('Order status updated successfully')
   } catch (e) {
     ElMessage.error('Order status update failed')
