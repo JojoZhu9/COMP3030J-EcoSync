@@ -316,7 +316,7 @@ const handleDelete = (row: any) => {
 }
 
 const goDetail = (row: any) => {
-  router.push({ name: 'Dashboard', query: { id: row.barcode } })
+  router.push({ name: 'AdminHome', query: { id: row.barcode } })
 }
 
 onMounted(fetchData)
