@@ -4,7 +4,7 @@
 
     <div class="back-home-nav">
       <el-button link @click="router.push('/')">
-        <el-icon><ArrowLeft /></el-icon> Back to Introduction
+        <el-icon><ArrowLeft /></el-icon> Back to Home page
       </el-button>
     </div>
 
