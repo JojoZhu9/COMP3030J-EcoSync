@@ -135,8 +135,9 @@ docker compose stop mysql
     - `ghcr.io/<owner>/ecosync-app:<sha>`
     - `ghcr.io/<owner>/ecosync-frontend:<sha>`
   - 通过跳板机 SSH 到目标机部署：
-    - `docker compose pull`
-    - `docker compose up -d`
+    - `docker compose pull app frontend`
+    - `docker compose up -d --remove-orphans`
+    - `docker compose up -d --force-recreate frontend gateway`（保证新镜像一定生效）
 
 ### 2) 镜像与 Compose 对应关系
 
@@ -158,8 +159,20 @@ git pull
 export APP_IMAGE=ghcr.io/<owner>/ecosync-app
 export FRONTEND_IMAGE=ghcr.io/<owner>/ecosync-frontend
 export IMAGE_TAG=<commit-sha>
-docker compose pull
-docker compose up -d
+
+# 拉取指定 SHA 的镜像
+docker compose pull app frontend
+
+# 启动全部服务
+docker compose up -d --remove-orphans
+
+# 强制重建 frontend + gateway，确保新镜像生效
+# （gateway 一并重建是因为 nginx 可能缓存了旧 frontend 容器的 IP）
+docker compose up -d --force-recreate frontend gateway
+
+# 验证运行中的镜像版本
+echo "Expected: ${FRONTEND_IMAGE}:${IMAGE_TAG}"
+docker inspect --format='{{.Config.Image}}' ecosync-frontend
 ```
 
 ### 4) 常用运维命令
@@ -182,8 +195,9 @@ docker compose logs -f mysql
 
 ```bash
 export IMAGE_TAG=<old-commit-sha>
-docker compose pull
-docker compose up -d
+docker compose pull app frontend
+docker compose up -d --remove-orphans
+docker compose up -d --force-recreate frontend gateway
 ```
 
 ### 5) 必要前置条件
@@ -193,6 +207,28 @@ docker compose up -d
 - CD 里配置的 Secrets 可用：
   - `TARGET_HOST` / `TARGET_USER` / `TARGET_SSH_KEY`
   - `BASTION_HOST` / `BASTION_USER` / `BASTION_SSH_KEY`
+
+### 6) 确认线上前端版本
+
+部署后运行以下命令，确认容器实际使用的镜像与预期一致：
+
+```bash
+# 查看 frontend 容器当前运行的镜像 tag
+docker inspect --format='{{.Config.Image}}' ecosync-frontend
+
+# 查看本地已有的前端镜像及 digest
+docker images ghcr.io/jojozhu9/ecosync-frontend --digests
+
+# 对比线上 index.html 与 Git 仓库中构建产物的 hash（辅助判断）
+docker compose exec frontend md5sum /usr/share/nginx/html/index.html
+```
+
+### 7) 若前端仍显示旧版本，按以下顺序排查
+
+1. **确认容器镜像是否已更新** — `docker inspect --format='{{.Config.Image}}' ecosync-frontend` 输出的 tag 是否与期望的 `IMAGE_TAG` 一致。如果不一致，说明 `docker compose pull` 或 `up` 未生效，手动执行 `docker compose pull app frontend && docker compose up -d --force-recreate frontend gateway`。
+2. **确认 gateway 是否指向新的 frontend 容器** — `docker compose restart gateway` 即可清除 nginx 的 DNS 缓存。如果问题依旧，`docker compose up -d --force-recreate gateway` 彻底重建。
+3. **清除浏览器缓存** — 前端静态资源（js/css）可能被浏览器缓存。使用无痕窗口访问，或 DevTools → Network → Disable cache。
+4. **检查 GHCR 上的镜像是否确实包含最新构建** — 访问 `https://github.com/jojozhu9/EcoSync/pkgs/container/ecosync-frontend`，确认对应 SHA 的镜像存在且 digest 正确。
 
 ---
 
