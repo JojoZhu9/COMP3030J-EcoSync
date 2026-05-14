@@ -303,13 +303,16 @@ const handleDelete = (row: any) => {
       ElMessage.success('Deleted successfully')
       fetchData()
     } catch (e) {
-      ElMessage.error('Delete failed')
+      ElMessageBox.alert('Cannot delete: Related orders or inventory still exist.', 'Deletion Failed', {
+        confirmButtonText: 'OK',
+        type: 'error'
+      })
     }
   }).catch(() => {})
 }
 
 const goDetail = (row: any) => {
-  router.push({ name: 'AdminHome', query: { id: row.barcode } })
+  router.push({ name: 'Dashboard', query: { id: row.barcode } })
 }
 
 onMounted(fetchData)
