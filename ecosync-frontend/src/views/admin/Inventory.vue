@@ -297,12 +297,16 @@ const submitAdd = async () => {
 
 const handleDelete = (row: any) => {
   const id = row.barcode
-  ElMessageBox.confirm(`Delete [${row.product_name}]?`, 'Warning', { type: 'warning' }).then(async () => {
+  // 加上兼容处理，确保不会显示 undefined
+  const targetName = row.product_name || row.productName || 'this product'
+
+  ElMessageBox.confirm(`Delete [${targetName}]?`, 'Warning', { type: 'warning' }).then(async () => {
     try {
       await request.delete(`/products/${id}`)
       ElMessage.success('Deleted successfully')
       fetchData()
     } catch (e) {
+      // 严格按照你要求的全英文错误弹窗，用户点击 OK 后消失
       ElMessageBox.alert('Cannot delete: Related orders or inventory still exist.', 'Deletion Failed', {
         confirmButtonText: 'OK',
         type: 'error'
