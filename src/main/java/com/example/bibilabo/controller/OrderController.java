@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,20 @@ public class OrderController {
 
     @Autowired
     private OrderService orderService;
+
+    @PostMapping("/{orderId}/cancel")
+    public Map<String, Object> cancelOrder(@PathVariable Integer orderId) {
+        Map<String, Object> result = new HashMap<>();
+        try {
+            String msg = orderService.cancelOrder(orderId);
+            result.put("success", true);
+            result.put("message", msg);
+        } catch (RuntimeException e) {
+            result.put("success", false);
+            result.put("message", e.getMessage());
+        }
+        return result;
+    }
 
     @PostMapping("/checkout")
     @Operation(summary = "提交自提订单", description = "扣减库存和账户余额，计算JSON阶梯折扣，生成核销自提码")

@@ -32,6 +32,10 @@ public interface UserMapper {
     @Update("UPDATE users SET balance = balance - #{amount} WHERE user_id = #{userId} AND balance >= #{amount}")
     int decreaseBalance(@Param("userId") Integer userId, @Param("amount") BigDecimal amount);
 
+    // 增加余额（退款）
+    @Update("UPDATE users SET balance = balance + #{amount} WHERE user_id = #{userId}")
+    int increaseBalance(@Param("userId") Integer userId, @Param("amount") BigDecimal amount);
+
     @Delete("DELETE FROM users WHERE user_id = #{userId}")
     int deleteById(Integer userId);
 }

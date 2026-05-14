@@ -116,11 +116,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public String updateOrderStatus(Integer orderId, String status) {
+    public void updateOrderStatus(Integer orderId, String status) {
         // 🔥 优化点：判断是否真的更新成功，配合 Controller 层的 catch 返回准确信息
         int rows = orderMapper.updateStatus(orderId, status);
         if (rows > 0) {
-            return "订单状态已更新";
         } else {
             throw new RuntimeException("订单不存在或更新失败");
         }
@@ -160,5 +159,37 @@ public class OrderServiceImpl implements OrderService {
         vo.setItems(items); // 塞入商品明细
 
         return vo;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public String cancelOrder(Integer orderId) {
+        // 1. 查询订单
+        Order order = orderMapper.findById(orderId);
+        if (order == null) {
+            throw new RuntimeException("订单不存在");
+        }
+
+        // 2. 只有 AWAITING_PICKUP 才能取消
+        if (!OrderStatus.AWAITING_PICKUP.equals(order.getStatus())) {
+            throw new RuntimeException("只有待自提的订单才能取消");
+        }
+
+        // 3. 查询订单明细，回滚库存
+        List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
+        for (OrderItem item : items) {
+            expiringProductMapper.increaseStock(item.getProductId(), item.getQuantity());
+        }
+
+        // 4. 退款到用户余额
+        userMapper.increaseBalance(order.getUserId(), order.getTotalAmount());
+
+        // 5. 更新订单状态为 CANCELLED
+        int rows = orderMapper.updateStatus(orderId, OrderStatus.CANCELLED);
+        if (rows == 0) {
+            throw new RuntimeException("取消订单失败");
+        }
+
+        return "订单已取消，金额已退回余额";
     }
 }
