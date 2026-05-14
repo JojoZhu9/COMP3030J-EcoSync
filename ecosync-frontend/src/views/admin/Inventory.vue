@@ -297,12 +297,19 @@ const submitAdd = async () => {
 
 const handleDelete = (row: any) => {
   const id = row.barcode
-  ElMessageBox.confirm(`Delete [${row.product_name}]?`, 'Warning', { type: 'warning' }).then(async () => {
+  // 终极兼容判定：排除空值及后端的 "undefined" 字符串
+  let targetName = row.product_name || row.productName
+  if (!targetName || targetName === 'undefined' || targetName === 'null') {
+    targetName = 'this product'
+  }
+
+  ElMessageBox.confirm(`Delete [${targetName}]?`, 'Warning', { type: 'warning' }).then(async () => {
     try {
       await request.delete(`/products/${id}`)
       ElMessage.success('Deleted successfully')
       fetchData()
     } catch (e) {
+      // 全英文错误弹窗，点击 OK 消失
       ElMessageBox.alert('Cannot delete: Related orders or inventory still exist.', 'Deletion Failed', {
         confirmButtonText: 'OK',
         type: 'error'
@@ -312,7 +319,27 @@ const handleDelete = (row: any) => {
 }
 
 const goDetail = (row: any) => {
-  router.push({ name: 'Dashboard', query: { id: row.barcode } })
+  // 将当前行的数据回显到本页面的表单中
+  let parsedRates = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  const rawRates = row.discount_rates || row.discountRates
+
+  if (rawRates) {
+    // 防止后端返回的是 JSON 字符串导致格式报错
+    parsedRates = typeof rawRates === 'string' ? JSON.parse(rawRates) : rawRates
+  }
+
+  newP.value = {
+    barcode: row.barcode,
+    product_name: row.product_name || row.productName || '',
+    normal_price: parseFloat(row.normal_price || row.normalPrice || 0),
+    discount_rates: parsedRates
+  }
+
+  // 回显图片
+  imgPreview.value = row.image_url || row.imageUrl ? `/uploads/products/${row.image_url || row.imageUrl}` : `/uploads/products/${row.barcode}.jpg`
+
+  // 打开本页面的弹窗
+  showAdd.value = true
 }
 
 onMounted(fetchData)
