@@ -20,7 +20,7 @@
         </div>
 
         <nav class="nav-menu">
-          <div v-if="currentRole !== 'ADMIN'" class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Introduction</div>
+          <div v-if="currentRole !== 'ADMIN'" class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Home Page</div>
 
           <template v-if="currentRole === 'ADMIN'">
             <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">Accounts</div>
