@@ -153,8 +153,28 @@ jobs:
             # Ensure seed images directory exists
             mkdir -p uploads/products
 
-            docker compose pull
+            # Pull only the two images we build in CI (not mysql/minio/nginx)
+            docker compose pull app frontend || {
+              echo "ERROR: Failed to pull images from GHCR"
+              exit 1
+            }
+
+            # Bring up all services
             docker compose up -d --remove-orphans
+
+            # Force-recreate frontend + gateway so old containers/images
+            # can never survive a deploy (e.g. when pull failed silently or
+            # Docker Compose didn't detect a config change). Gateway is
+            # recreated as well because nginx caches upstream DNS and may
+            # still point to the old frontend container IP otherwise.
+            docker compose up -d --force-recreate frontend gateway
+
+            # Verify the running frontend image matches this commit
+            echo "=== Deploy verification ==="
+            echo "Expected frontend: ${FRONTEND_IMAGE}:${IMAGE_TAG}"
+            docker inspect --format='{{.Config.Image}}' ecosync-frontend
+            echo "Expected app:       ${APP_IMAGE}:${IMAGE_TAG}"
+            docker inspect --format='{{.Config.Image}}' ecosync-app
 
             # Wait for MinIO to be healthy
             echo "Waiting for MinIO..."
