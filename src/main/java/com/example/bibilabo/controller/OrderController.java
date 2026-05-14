@@ -29,7 +29,8 @@ public class OrderController {
         try {
             return orderService.checkout(userId, storeId);
         } catch (Exception e) {
-            return "下单失败: " + e.getMessage();
+            // 让报错抛出去，前端才能捕捉到
+            throw new RuntimeException("下单失败: " + e.getMessage());
         }
     }
 
@@ -51,16 +52,18 @@ public class OrderController {
         return orderService.getOrderDetails(orderId);
     }
 
-    // 🔥 新增：供店员端直接修改订单状态的接口
+    // 🔥 修改点：放弃使用 Order 对象接收，直接用 Map 精准捕捉前端传来的 {"status": "xxx"}
     @PutMapping("/{orderId}")
-    @Operation(summary = "修改订单状态", description = "店员端修改订单为Pending/Preparing/Available/Sold_Out/Discarded")
-    public String updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Order order) {
-        try {
-            // 前端传过来的对象里包含了新的 status
-            orderService.updateOrderStatus(orderId, order.getStatus());
-            return "Status updated successfully";
-        } catch (Exception e) {
-            return "Update failed: " + e.getMessage();
+    @Operation(summary = "修改订单状态", description = "店员端修改订单为PENDING/PAID/AWAITING_PICKUP/COMPLETED/CANCELLED")
+    public String updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Map<String, String> payload) {
+        String status = payload.get("status");
+
+        if (status == null || status.trim().isEmpty()) {
+            throw new RuntimeException("订单状态不能为空");
         }
+
+        // 直接更新状态
+        orderService.updateOrderStatus(orderId, status);
+        return "Status updated successfully";
     }
 }
