@@ -50,4 +50,17 @@ public class OrderController {
     public OrderVO getOrderDetails(@PathVariable("orderId") Integer orderId) {
         return orderService.getOrderDetails(orderId);
     }
+
+    // 🔥 新增：供店员端直接修改订单状态的接口
+    @PutMapping("/{orderId}")
+    @Operation(summary = "修改订单状态", description = "店员端修改订单为Pending/Preparing/Available/Sold_Out/Discarded")
+    public String updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Order order) {
+        try {
+            // 前端传过来的对象里包含了新的 status
+            orderService.updateOrderStatus(orderId, order.getStatus());
+            return "Status updated successfully";
+        } catch (Exception e) {
+            return "Update failed: " + e.getMessage();
+        }
+    }
 }

@@ -1,7 +1,7 @@
 package com.example.bibilabo.service.impl;
 
-import com.example.bibilabo.constant.OrderStatus; // 引入订单常量
-import com.example.bibilabo.constant.ProductStatus; // 引入商品常量
+import com.example.bibilabo.constant.OrderStatus;
+import com.example.bibilabo.constant.ProductStatus;
 import com.example.bibilabo.entity.*;
 import com.example.bibilabo.mapper.*;
 import com.example.bibilabo.service.OrderService;
@@ -117,8 +117,13 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public String updateOrderStatus(Integer orderId, String status) {
-        orderMapper.updateStatus(orderId, status);
-        return "订单状态已更新";
+        // 🔥 优化点：判断是否真的更新成功，配合 Controller 层的 catch 返回准确信息
+        int rows = orderMapper.updateStatus(orderId, status);
+        if (rows > 0) {
+            return "订单状态已更新";
+        } else {
+            throw new RuntimeException("订单不存在或更新失败");
+        }
     }
 
     @Override
