@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="pc-layout">
     <div class="brand-top-stripe"></div>
 
@@ -20,7 +20,7 @@
         </div>
 
         <nav class="nav-menu">
-          <div class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Introduction</div>
+          <div v-if="currentRole !== 'ADMIN'" class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Introduction</div>
 
           <template v-if="currentRole === 'ADMIN'">
             <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">Accounts</div>
@@ -45,7 +45,7 @@
           <el-button v-if="!isLogged" class="login-nav-btn" type="success" round @click="go('/login')">Log In</el-button>
 
           <template v-else>
-            <div class="menu-item profile-icon" :class="{ active: route.path.includes('profile') }" @click="goProfile">
+            <div v-if="currentRole !== 'ADMIN'" class="menu-item profile-icon" :class="{ active: route.path.includes('profile') }" @click="goProfile">
               <el-icon><User /></el-icon>
             </div>
             <div class="logout-btn" @click="handleLogout" title="Logout">
