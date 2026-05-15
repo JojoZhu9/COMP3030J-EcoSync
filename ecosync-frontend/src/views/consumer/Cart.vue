@@ -157,8 +157,8 @@
         </div>
 
         <div class="barcode-area">
-          <div class="barcode-bars">|| █| || █||| █ |||</div>
-          <div class="barcode-num">00{{ Date.now().toString().slice(-8) }}</div>
+          <svg ref="receiptBarcodeRef"></svg>
+          <div class="barcode-num">{{ receiptOrderNum }}</div>
         </div>
         <div class="receipt-zigzag-bottom"></div>
       </div>
@@ -176,11 +176,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import {ref, computed, onMounted, nextTick} from 'vue'
 import { ArrowLeft, Delete, Shop, Box, Close, Goods } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
+import JsBarcode from 'jsbarcode' // 引入条码库
 
 const router = useRouter()
 const cartItems = ref<any[]>([])
@@ -190,6 +191,8 @@ const userBalance = ref(0)
 const rawUser = ref<any>({})
 const confirmVisible = ref(false)
 const checkingOut = ref(false)
+const receiptBarcodeRef = ref<HTMLElement | null>(null)
+const receiptOrderNum = ref('')
 
 const getUserId = () => localStorage.getItem('userId')
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
@@ -257,6 +260,22 @@ onMounted(initData)
 const openConfirmDialog = () => {
   if (!userAddress.value) return ElMessage.warning('Set pickup address in profile first')
   confirmVisible.value = true
+
+  // 👇 新增：生成流水号并渲染真实条码
+  receiptOrderNum.value = '00' + Date.now().toString().slice(-8)
+  nextTick(() => {
+    if (receiptBarcodeRef.value) {
+      JsBarcode(receiptBarcodeRef.value, receiptOrderNum.value, {
+        format: "CODE128",
+        displayValue: false,
+        height: 40,
+        width: 2,
+        background: "transparent",
+        lineColor: "#1e293b",
+        margin: 0
+      })
+    }
+  })
 }
 
 const updateCartQuantity = async (item: any, qty: number) => {

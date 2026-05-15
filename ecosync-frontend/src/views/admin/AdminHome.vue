@@ -25,7 +25,7 @@
               </div>
               <h2 class="label-name">{{ prod.productName }}</h2>
               <div class="barcode-box">
-                <div class="barcode-visual">|| ||| || |||| | ||</div>
+                <svg ref="barcodeSvgRef"></svg>
                 <div class="barcode-num">{{ prod.barcode }}</div>
               </div>
               <div class="label-price-row">
@@ -109,6 +109,7 @@ import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { TrendCharts, View } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import JsBarcode from 'jsbarcode'
 
 const route = useRoute()
 const router = useRouter()
@@ -116,9 +117,11 @@ const prod = ref<any>(null)
 const loading = ref(true)
 const saving = ref(false)
 const previewHour = ref(1)
-const discountChartRef = ref<HTMLElement | null>(null)
-let chartInstance: echarts.ECharts | null = null
 
+const discountChartRef = ref<HTMLElement | null>(null)
+const barcodeSvgRef = ref<HTMLElement | null>(null) // 条码渲染的引用节点
+
+let chartInstance: echarts.ECharts | null = null
 const editForm = reactive({ rates: Array(12).fill(1.0) })
 
 const getRiskClass = (h: number) => h <= 3 ? 'risk-critical' : (h <= 6 ? 'risk-warning' : 'risk-stable')
@@ -127,17 +130,17 @@ const updateChartData = () => {
   if (!chartInstance) return
   chartInstance.setOption({
     grid: { top: '10%', left: '3%', right: '3%', bottom: '10%', containLabel: true },
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: Array.from({length:12}, (_, i) => `${i+1}h`) },
-    yAxis: { type: 'value', max: 1.0, min: 0 },
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(15,23,42,0.9)', textStyle: { color: '#fff' }, borderWidth: 0 },
+    xAxis: { type: 'category', data: Array.from({length:12}, (_, i) => `${i+1}h`), axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b', fontWeight: 'bold' } },
+    yAxis: { type: 'value', max: 1.0, min: 0, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
     series: [{
       data: [...editForm.rates],
       type: 'line',
       smooth: true,
       symbolSize: 8,
-      itemStyle: { color: '#007934' },
-      lineStyle: { width: 4 },
-      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(0,121,52,0.3)'}, {offset: 1, color: 'transparent'}]) }
+      itemStyle: { color: '#008163' },
+      lineStyle: { width: 4, shadowColor: 'rgba(0,129,99,0.3)', shadowBlur: 10, shadowOffsetY: 5 },
+      areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(0,129,99,0.3)'}, {offset: 1, color: 'transparent'}]) }
     }]
   })
 }
@@ -150,7 +153,7 @@ const fetchDetail = async () => {
     const res: any = await request.get(`/products/${barcode}`)
     const data = res.data?.data || res.data || res
 
-    // 🔥 修复 1：把图片和状态也一并保存下来，防止 PUT 更新时丢失
+    // 携带所有数据，防止保存时覆盖
     prod.value = {
       barcode: data.barcode,
       productName: data.product_name || data.productName,
@@ -164,10 +167,25 @@ const fetchDetail = async () => {
       const parsed = typeof rawRates === 'string' ? JSON.parse(rawRates) : rawRates
       if (Array.isArray(parsed)) editForm.rates = parsed
     }
+
     nextTick(() => {
+      // 1. 渲染图表
       if (discountChartRef.value) {
         chartInstance = echarts.init(discountChartRef.value)
         updateChartData()
+      }
+
+      // 2. 渲染动态条形码
+      if (barcodeSvgRef.value && prod.value.barcode) {
+        JsBarcode(barcodeSvgRef.value, prod.value.barcode, {
+          format: "CODE128",
+          displayValue: false, // 隐藏默认文字，使用我们自己设计的更美观的文字
+          height: 44,
+          width: 2,
+          background: "transparent",
+          lineColor: "#1e293b",
+          margin: 0
+        })
       }
     })
   } catch (e) { ElMessage.error('Load failed') }
@@ -179,8 +197,7 @@ const saveRule = async () => {
   try {
     await request.put(`/products/${prod.value.barcode}`, {
       ...prod.value,
-      // 🔥 修复 2：严格使用驼峰命名的 discountRates，精准匹配 Java 实体类
-      discountRates: JSON.stringify(editForm.rates)
+      discountRates: JSON.stringify(editForm.rates) // 使用驼峰匹配后端
     })
     ElMessage.success('Strategy Deployed Successfully!')
   } catch (e) { ElMessage.error('Save failed') }
@@ -211,9 +228,8 @@ onUnmounted(() => chartInstance?.dispose())
 .sku-tag { font-family: monospace; font-weight: 900; color: #64748b; font-size: 14px; letter-spacing: 1px; }
 .pulse-tag { animation: pulse 2s infinite; font-weight: 800; }
 .label-name { font-size: 24px; font-weight: 900; color: #1e293b; margin: 20px 0; line-height: 1.3; }
-.barcode-box { text-align: center; margin: 20px 0; opacity: 0.8; }
-.barcode-visual { font-size: 32px; letter-spacing: 2px; line-height: 1; color: #1e293b; }
-.barcode-num { font-family: monospace; font-size: 12px; letter-spacing: 3px; margin-top: 6px; font-weight: bold; }
+.barcode-box { text-align: center; margin: 20px 0; opacity: 0.9; }
+.barcode-num { font-family: 'Courier New', Courier, monospace; font-size: 13px; letter-spacing: 4px; margin-top: 4px; font-weight: bold; color: #64748b;}
 .label-price-row { background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #e2e8f0; }
 .price-label { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 .price-value { color: #1e293b; }

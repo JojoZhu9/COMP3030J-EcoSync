@@ -183,6 +183,16 @@
               Stock: {{ getRemaining(currentProduct) }}
             </el-tag>
           </div>
+          <div class="product-info-sheet">
+            <h2 class="p-name">{{ currentProduct.productName }}</h2>
+            <div class="p-tags-container">
+            </div>
+
+            <div class="p-barcode-section">
+              <svg ref="detailBarcodeRef"></svg>
+              <div class="p-barcode-num">{{ currentProduct.barcode }}</div>
+            </div>
+          </div>
         </div>
         <div class="dialog-action-bar">
           <el-button plain @click="detailVisible = false" class="cancel-btn">Cancel</el-button>
@@ -201,12 +211,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import {ref, onMounted, computed, nextTick} from 'vue'
 import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar } from '@element-plus/icons-vue'
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import JsBarcode from 'jsbarcode' // 引入库
 
 const storeList = ref<any[]>([])
 const selectedStoreId = ref<number | null>(null)
@@ -214,6 +225,7 @@ const productList = ref<any[]>([])
 const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
+const detailBarcodeRef = ref<HTMLElement | null>(null)
 
 // 三个独立的过滤器
 const searchKeyword = ref('')
@@ -383,7 +395,26 @@ const handleStoreChange = (val: number) => {
   fetchProducts()
 }
 
-const showDetail = (prod: any) => { currentProduct.value = prod; detailVisible.value = true; }
+const showDetail = (prod: any) => {
+  currentProduct.value = prod
+  detailVisible.value = true
+
+  // 👇 弹窗打开后，等 DOM 渲染完毕立刻画条码
+  nextTick(() => {
+    if (detailBarcodeRef.value && prod.barcode) {
+      JsBarcode(detailBarcodeRef.value, prod.barcode, {
+        format: "CODE128",
+        displayValue: false,
+        height: 35,
+        width: 1.5, // 商品弹窗的条码弄细一点更精致
+        lineColor: "#1e293b",
+        background: "transparent",
+        margin: 0
+      })
+    }
+  })
+}
+
 const handleDetailBuy = () => { if (currentProduct.value) addToCart(currentProduct.value) }
 
 onMounted(fetchStores)
@@ -594,6 +625,21 @@ onMounted(fetchStores)
 .dialog-action-bar { padding: 16px 24px 24px; background: white; display: flex; gap: 12px; }
 .cancel-btn { flex: 1; border-radius: 12px; font-weight: bold; }
 .main-action-btn { flex: 2; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2); }
+
+.p-barcode-section {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px dashed #e2e8f0;
+}
+.p-barcode-num {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: bold;
+}
 
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(226, 35, 26, 0.4); }
