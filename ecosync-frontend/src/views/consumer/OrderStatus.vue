@@ -113,8 +113,7 @@
                 size="small"
                 round
                 class="action-btn"
-                :loading="shopMoreLoading === order.orderId"
-                @click="handleShopMore(order)"
+                @click="router.push('/home')"
               >
                 <el-icon><ShoppingCart /></el-icon> Shop More
               </el-button>
@@ -129,7 +128,7 @@
         </div>
         <div class="empty-title">No transactions found</div>
         <div class="empty-desc">Start shopping to see your orders here</div>
-        <el-button type="success" round class="empty-action" @click="router.push('/')">
+        <el-button type="success" round class="empty-action" @click="router.push('/home')">
           <el-icon><ShoppingCart /></el-icon> Go Shopping
         </el-button>
       </div>
@@ -143,7 +142,8 @@
 import { ref, onMounted } from 'vue'
 import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid, CircleClose } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -197,7 +197,7 @@ const fetchOrders = async () => {
   }
 }
 
-// 记录当前正在“再来一单/继续加购”的订单ID，用于按钮Loading动画
+// 记录当前正在"再来一单/继续加购"的订单ID，用于按钮Loading动画
 const shopMoreLoading = ref<number | null>(null)
 
 // 处理商品重新加入购物车的逻辑
@@ -226,8 +226,8 @@ const handleShopMore = async (order: any) => {
 
     ElMessage.success('Items returned to cart successfully!')
 
-    // 4. 全部加购成功后，跳转至购物车页面
-    router.push('/cart')
+    // 4. 全部加购成功后，跳转至首页 /home
+    router.push('/home')
 
   } catch (e: any) {
     // 如果某个商品库存不足或失效，捕获异常提示用户

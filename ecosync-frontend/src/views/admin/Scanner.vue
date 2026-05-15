@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { Lock, UserFilled, Key, InfoFilled } from '@element-plus/icons-vue'
 
 const userId = localStorage.getItem('userId') || 'ADMIN_001'

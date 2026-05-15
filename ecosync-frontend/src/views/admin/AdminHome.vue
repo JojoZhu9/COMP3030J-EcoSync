@@ -106,7 +106,7 @@
 import { ref, onMounted, reactive, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { TrendCharts, View } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import JsBarcode from 'jsbarcode'

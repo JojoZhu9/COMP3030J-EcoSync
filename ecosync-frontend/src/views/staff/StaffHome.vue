@@ -1,4 +1,4 @@
-<template>
+<<template>
   <div class="staff-app-container">
     <div class="top-brand-bar">
       <div class="brand-content">
@@ -153,7 +153,13 @@
 
               <el-table-column label="Order Status" width="180" align="center">
                 <template #default="{row}">
-                  <el-select v-model="row.status" size="default" @change="handleOrderUpdate(row)" class="status-select">
+                  <el-select
+                    v-model="row.status"
+                    size="default"
+                    @change="handleOrderUpdate(row)"
+                    :disabled="row.status === 'CANCELLED'"
+                    class="status-select"
+                  >
                     <el-option label="Pending" value="PENDING" />
                     <el-option label="Paid" value="PAID" />
                     <el-option label="Awaiting Pickup" value="AWAITING_PICKUP" />
@@ -183,7 +189,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Box, List, Refresh, ShoppingBag, Timer, Search } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 import ProductEntry from './ProductEntry.vue'
 
@@ -215,6 +221,11 @@ const fetchData = async () => {
 
 // 2. 订单状态更新写入数据库
 const handleOrderUpdate = async (row: any) => {
+  // 防御性检查：如果订单已经是 CANCELLED，则不允许修改
+  if (row.status === 'CANCELLED') {
+    ElMessage.warning('Cancelled orders cannot be modified')
+    return
+  }
   try {
     await request.put(`/orders/${row.orderId}`, {
       status: row.status

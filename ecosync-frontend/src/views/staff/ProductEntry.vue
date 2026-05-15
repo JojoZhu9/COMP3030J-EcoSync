@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 
 const emit = defineEmits(['refresh'])

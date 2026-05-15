@@ -119,7 +119,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { Plus, Search, UserFilled as UserGroup, Lock } from '@element-plus/icons-vue'
 
 const users = ref<any[]>([])

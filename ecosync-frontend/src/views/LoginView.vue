@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { loginApi, registerApi } from '../api/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 import { User, Lock, CircleCheck, ArrowLeft } from '@element-plus/icons-vue'
 

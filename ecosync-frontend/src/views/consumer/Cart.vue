@@ -179,7 +179,8 @@
 import {ref, computed, onMounted, nextTick} from 'vue'
 import { ArrowLeft, Delete, Shop, Box, Close, Goods } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 import JsBarcode from 'jsbarcode' // 引入条码库
 

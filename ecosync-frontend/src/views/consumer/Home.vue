@@ -216,7 +216,7 @@ import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calenda
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
 import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import JsBarcode from 'jsbarcode' // 引入库
 
 const storeList = ref<any[]>([])

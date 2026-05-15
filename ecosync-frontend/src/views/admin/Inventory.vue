@@ -152,7 +152,8 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { Plus, Camera, TrendCharts, Search, Box } from '@element-plus/icons-vue'
 import { Html5Qrcode } from 'html5-qrcode'
 

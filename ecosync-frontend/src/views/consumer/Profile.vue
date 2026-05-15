@@ -40,9 +40,9 @@
         </div>
       </div>
       <div class="wallet-progress">
-        <div class="progress-bar" :style="{ width: Math.min((Number(rawUserData.balance) / 500) * 100, 100) + '%' }"></div>
+        <div class="progress-bar" :style="{ width: progressWidth + '%' }"></div>
       </div>
-      <div class="wallet-hint">Next tier at ¥500.00</div>
+      <div class="wallet-hint">Next tier at ¥{{ nextTierTarget.toFixed(2) }}</div>
     </div>
 
     <div class="settings-body">
@@ -197,10 +197,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, computed } from 'vue'
 import { Location, Phone, Lock, Wallet, User, Key, SwitchButton } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -235,6 +236,21 @@ const pwdRules = reactive({
       }, trigger: 'blur'
     }
   ]
+})
+
+// 动态计算下一个等级的目标金额
+const nextTierTarget = computed(() => {
+  const bal = Number(rawUserData.value.balance) || 0
+  if (bal < 500) return 500
+  if (bal < 1000) return 1000
+  if (bal < 5000) return 5000
+  return Math.ceil((bal + 1) / 5000) * 5000 // 超过5000后每5000一升级
+})
+
+// 计算进度条真实百分比
+const progressWidth = computed(() => {
+  const bal = Number(rawUserData.value.balance) || 0
+  return Math.min((bal / nextTierTarget.value) * 100, 100)
 })
 
 const fetchUser = async () => {
