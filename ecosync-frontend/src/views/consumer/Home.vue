@@ -39,16 +39,28 @@
             />
           </div>
 
-          <!-- 过期时间过滤器 -->
-          <div class="expiry-filter">
+          <!-- 过滤器区域：Available 开关 + 时间区间 -->
+          <div class="filter-area">
+            <!-- Available 开关 -->
             <div
-              v-for="filter in expiryFilters"
-              :key="filter.value"
-              :class="['filter-chip', filter.value, { active: selectedExpiryFilter === filter.value }]"
-              @click="selectedExpiryFilter = selectedExpiryFilter === filter.value ? '' : filter.value"
+              :class="['available-toggle', { active: showAvailableOnly }]"
+              @click="showAvailableOnly = !showAvailableOnly"
             >
-              <el-icon :size="14"><component :is="filter.icon" /></el-icon>
-              <span>{{ filter.label }}</span>
+              <el-icon :size="14"><Check /></el-icon>
+              <span>Available Only</span>
+            </div>
+
+            <!-- 时间区间过滤器 -->
+            <div class="time-filters">
+              <div
+                v-for="filter in timeFilters"
+                :key="filter.value"
+                :class="['time-chip', { active: selectedTimeFilter === filter.value }]"
+                @click="selectedTimeFilter = selectedTimeFilter === filter.value ? '' : filter.value"
+              >
+                <el-icon :size="14"><component :is="filter.icon" /></el-icon>
+                <span>{{ filter.label }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -63,6 +75,9 @@
         <p class="section-subtitle">Real-time dynamic pricing • Only for items within 12h of expiry</p>
         <p class="result-count" v-if="filteredProducts.length !== productList.length">
           Showing {{ filteredProducts.length }} of {{ productList.length }} items
+          <span v-if="showAvailableOnly">• Available</span>
+          <span v-if="selectedTimeFilter">• {{ timeFilters.find(f => f.value === selectedTimeFilter)?.label }}</span>
+          <span v-if="searchKeyword.trim()">• Search: "{{ searchKeyword }}"</span>
         </p>
       </div>
 
@@ -200,12 +215,13 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 
+// 三个独立的过滤器
 const searchKeyword = ref('')
-const selectedExpiryFilter = ref('')
+const showAvailableOnly = ref(false)  // Available 开关
+const selectedTimeFilter = ref('')   // 时间区间
 
-// 过期时间过滤选项：第一个是 Available（未过期）
-const expiryFilters = [
-  { value: 'available', label: 'Available', icon: 'Check' },
+// 时间区间过滤选项
+const timeFilters = [
   { value: '1h', label: '< 1h', icon: 'Timer' },
   { value: '5h', label: '< 5h', icon: 'Clock' },
   { value: '10h', label: '< 10h', icon: 'Clock' },
@@ -222,14 +238,20 @@ const getExpiryHours = (expiryDate: string): number => {
   return diff / (1000 * 60 * 60)
 }
 
+// 三个过滤器叠加生效
 const filteredProducts = computed(() => {
   let result = productList.value
 
-  if (selectedExpiryFilter.value) {
+  // 1. Available 过滤（未过期）
+  if (showAvailableOnly.value) {
+    result = result.filter(p => getExpiryHours(p.expirationTime) > 0)
+  }
+
+  // 2. 时间区间过滤
+  if (selectedTimeFilter.value) {
     result = result.filter(p => {
       const hours = getExpiryHours(p.expirationTime)
-      switch (selectedExpiryFilter.value) {
-        case 'available': return hours > 0  // 未过期
+      switch (selectedTimeFilter.value) {
         case '1h': return hours > 0 && hours <= 1
         case '5h': return hours > 0 && hours <= 5
         case '10h': return hours > 0 && hours <= 10
@@ -239,6 +261,7 @@ const filteredProducts = computed(() => {
     })
   }
 
+  // 3. 名称搜索过滤
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     result = result.filter(p =>
@@ -355,7 +378,8 @@ const addToCart = async (prod: any) => {
 const handleStoreChange = (val: number) => {
   localStorage.setItem('lastStoreId', String(val))
   searchKeyword.value = ''
-  selectedExpiryFilter.value = ''
+  showAvailableOnly.value = false
+  selectedTimeFilter.value = ''
   fetchProducts()
 }
 
@@ -391,37 +415,74 @@ onMounted(fetchStores)
   border-color: #008163; box-shadow: 0 0 0 3px rgba(0, 129, 99, 0.1) !important;
 }
 
-/* 过期时间过滤器 */
-.expiry-filter { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-chip {
-  display: flex; align-items: center; gap: 4px;
-  padding: 6px 14px; border-radius: 20px;
-  background: #f1f5f9; color: #64748b;
-  font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
+/* 过滤器区域：Available 开关 + 时间区间并排 */
+.filter-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Available 开关 */
+.available-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  user-select: none;
+}
+.available-toggle:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+.available-toggle.active {
+  background: #008163;
+  color: white;
+  border-color: #008163;
+  box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2);
+}
+
+/* 时间区间过滤器 */
+.time-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.time-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
   border: 1px solid transparent;
 }
-.filter-chip:hover {
-  background: #e2e8f0; color: #475569;
+.time-chip:hover {
+  background: #e2e8f0;
+  color: #475569;
 }
-
-/* Available 选中态：绿色 */
-.filter-chip.available.active {
-  background: #008163; color: white;
-  border-color: #008163;
-  box-shadow: 0 2px 8px rgba(0, 129, 99, 0.2);
-}
-
-/* 紧急时间选中态：红色系 */
-.filter-chip.active:not(.available) {
-  background: #e2231a; color: white;
+.time-chip.active {
+  background: #e2231a;
+  color: white;
   border-color: #e2231a;
   box-shadow: 0 2px 8px rgba(226, 35, 26, 0.2);
 }
-
-/* > 1d 选中态：蓝色 */
-.filter-chip.active[data-value="1d"] {
-  background: #3b82f6; color: white;
+/* > 1d 特殊颜色 */
+.time-chip.active[data-value="1d"] {
+  background: #3b82f6;
   border-color: #3b82f6;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }

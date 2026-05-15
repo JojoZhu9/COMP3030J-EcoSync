@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <el-row :gutter="20">
+    <el-row :gutter="24">
       <el-col :span="6" v-for="(item, index) in summary" :key="item.title">
         <el-card shadow="never" class="kpi-card" :class="'kpi-' + index">
           <div class="kpi-content">
@@ -20,13 +20,13 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" class="mt-24">
+    <el-row :gutter="24" class="mt-24">
       <el-col :span="14">
-        <el-card shadow="never" class="stat-card">
+        <el-card shadow="never" class="modern-card">
           <template #header>
             <div class="card-header">
               <span class="header-text">User Demographics Distribution</span>
-              <el-tag size="small" effect="plain" type="info">Global Stats</el-tag>
+              <el-tag size="small" effect="plain" type="info" class="brand-tag">Global Stats</el-tag>
             </div>
           </template>
           <div class="distribution-box">
@@ -38,7 +38,7 @@
               <el-progress
                 :percentage="r.value"
                 :color="r.color"
-                :stroke-width="12"
+                :stroke-width="14"
                 :show-text="false"
                 class="brand-progress"
               />
@@ -48,7 +48,7 @@
       </el-col>
 
       <el-col :span="10">
-        <el-card shadow="never" class="stat-card system-info-card">
+        <el-card shadow="never" class="modern-card system-info-card">
           <template #header>
             <div class="card-header">
               <span class="header-text">System Infrastructure</span>
@@ -61,11 +61,11 @@
             <el-descriptions-item label="Database Engine">
               <div class="db-info">
                 <img src="https://www.mysql.com/common/logos/logo-mysql-170x115.png" alt="MySQL" class="db-logo" />
-                <span>v8.0 (SMARTCHAIN_RETAIL_TECH_Main)</span>
+                <span>v8.0 (SMART_RETAIL_MAIN)</span>
               </div>
             </el-descriptions-item>
             <el-descriptions-item label="API Endpoint">
-              <el-tag type="success" effect="dark" class="status-badge">
+              <el-tag type="success" effect="dark" class="status-badge" round>
                 <el-icon><Check /></el-icon> OPERATIONAL
               </el-tag>
             </el-descriptions-item>
@@ -93,9 +93,9 @@ const summary = ref([
 ])
 
 const roleStats = ref([
-  { label: 'Administrators', value: 0, color: '#e2231a' }, // 7-11 Red
-  { label: 'Staff Members', value: 0, color: '#007934' }, // 7-11 Green
-  { label: 'Consumers', value: 0, color: '#ff7900' }      // 7-11 Orange
+  { label: 'Administrators', value: 0, color: '#e2231a' },
+  { label: 'Staff Members', value: 0, color: '#008163' },
+  { label: 'Consumers', value: 0, color: '#EE7203' }
 ])
 
 onMounted(async () => {
@@ -111,174 +111,62 @@ onMounted(async () => {
     roleStats.value[0].value = Math.round((uList.filter((x:any) => x.role === 'ADMIN').length / total) * 100)
     roleStats.value[1].value = Math.round((uList.filter((x:any) => x.role === 'EMPLOYEE').length / total) * 100)
     roleStats.value[2].value = Math.round((uList.filter((x:any) => x.role === 'CONSUMER').length / total) * 100)
-  } catch (error) {
-    console.error('Failed to sync dashboard data', error)
-  }
+  } catch (error) {}
 })
 </script>
 
 <style scoped>
 .mt-24 { margin-top: 24px; }
 
+.modern-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important; min-height: 400px; }
+:deep(.modern-card .el-card__header) { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; background: #fff; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
+.header-text { font-weight: 800; color: #1e293b; font-size: 16px; }
+.brand-tag { font-weight: 800; border-radius: 8px; }
+
 /* KPI Cards Styles */
-.kpi-card {
-  border: none;
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-.kpi-card:hover { transform: translateY(-5px); }
-
-.kpi-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-}
-
-.kpi-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: #94a3b8;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.kpi-value {
-  font-size: 32px;
-  font-weight: 900;
-  color: #1e293b;
-  margin-top: 4px;
-}
-
-.kpi-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
+.kpi-card { border: 1px solid rgba(0,0,0,0.04); border-radius: 16px; position: relative; overflow: hidden; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 4px 15px rgba(0,0,0,0.02) !important; }
+.kpi-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.06) !important; }
+.kpi-content { display: flex; justify-content: space-between; align-items: center; padding: 24px; }
+.kpi-label { font-size: 11px; font-weight: 800; color: #64748b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.kpi-value { font-size: 36px; font-weight: 900; color: #1e293b; line-height: 1; }
+.kpi-icon-box { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
 
 /* Color coding for cards */
-.kpi-0 .kpi-icon-box { background: #f0fdf4; color: #007934; }
-.kpi-0 .kpi-footer-line { background: #007934; }
+.kpi-0 .kpi-icon-box { background: #f0fdf4; color: #008163; }
+.kpi-0 .kpi-footer-line { background: linear-gradient(90deg, #008163, #005a46); }
 
 .kpi-1 .kpi-icon-box { background: #eff6ff; color: #3b82f6; }
-.kpi-1 .kpi-footer-line { background: #3b82f6; }
+.kpi-1 .kpi-footer-line { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
 
-.kpi-2 .kpi-icon-box { background: #fff7ed; color: #ff7900; }
-.kpi-2 .kpi-footer-line { background: #ff7900; }
+.kpi-2 .kpi-icon-box { background: #fff7ed; color: #EE7203; }
+.kpi-2 .kpi-footer-line { background: linear-gradient(90deg, #EE7203, #c2410c); }
 
 .kpi-3 .kpi-icon-box { background: #fef2f2; color: #e2231a; }
-.kpi-3 .kpi-footer-line { background: #e2231a; }
+.kpi-3 .kpi-footer-line { background: linear-gradient(90deg, #e2231a, #b91c1c); }
 
-.kpi-footer-line {
-  height: 4px;
-  width: 100%;
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  opacity: 0.6;
-}
+.kpi-footer-line { height: 5px; width: 100%; position: absolute; bottom: 0; left: 0; }
 
-/* Stat Cards */
-.stat-card {
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  min-height: 400px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.header-text {
-  font-weight: 800;
-  color: #1e293b;
-  font-size: 15px;
-}
-
-.distribution-box {
-  padding: 10px 0;
-}
-
-.chart-row {
-  margin-bottom: 32px;
-}
-
-.row-info {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.role-label { font-weight: 700; color: #475569; }
+.distribution-box { padding: 20px; }
+.chart-row { margin-bottom: 36px; }
+.row-info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 15px; }
+.role-label { font-weight: 800; color: #334155; }
 .role-percentage { font-weight: 900; color: #1e293b; }
-
-.brand-progress :deep(.el-progress-bar__outer) {
-  background-color: #f1f5f9;
-  border-radius: 6px;
-}
+.brand-progress :deep(.el-progress-bar__outer) { background-color: #f1f5f9; border-radius: 8px; }
+.brand-progress :deep(.el-progress-bar__inner) { border-radius: 8px; }
 
 /* System Info Card */
-.system-info-card {
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-}
+.system-info-card { background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%); }
+.live-pulse { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 900; color: #008163; letter-spacing: 1px; }
+.pulse-dot { width: 8px; height: 8px; background: #008163; border-radius: 50%; box-shadow: 0 0 0 rgba(0, 129, 99, 0.4); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 129, 99, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 129, 99, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 129, 99, 0); } }
 
-.live-pulse {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #007934;
-}
+.system-descriptions { padding: 10px; }
+.db-logo { height: 22px; margin-right: 12px; opacity: 0.9; }
+.db-info { display: flex; align-items: center; font-weight: 700; color: #334155; font-size: 13px; }
+.status-badge { font-weight: 800; letter-spacing: 1px; padding: 0 14px; }
+.timestamp { font-family: 'Courier New', Courier, monospace; font-weight: 800; color: #64748b; font-size: 13px; }
 
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: #007934;
-  border-radius: 50%;
-  box-shadow: 0 0 0 rgba(0, 121, 52, 0.4);
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 121, 52, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 121, 52, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 121, 52, 0); }
-}
-
-.db-logo { height: 20px; margin-right: 10px; opacity: 0.8; }
-.db-info { display: flex; align-items: center; font-weight: 600; color: #334155; }
-
-.status-badge {
-  font-weight: 800;
-  letter-spacing: 1px;
-  padding: 0 12px;
-}
-
-.timestamp {
-  font-family: 'Courier New', Courier, monospace;
-  font-weight: bold;
-  color: #64748b;
-}
-
-:deep(.el-descriptions__label) {
-  background-color: #f8fafc !important;
-  color: #64748b;
-  font-weight: 700;
-  width: 140px;
-}
-
-:deep(.el-descriptions__content) {
-  color: #1e293b;
-  font-weight: 500;
-}
+:deep(.el-descriptions__label) { background-color: #f8fafc !important; color: #64748b; font-weight: 800; width: 140px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+:deep(.el-descriptions__content) { color: #1e293b; font-weight: 600; font-size: 14px; }
 </style>

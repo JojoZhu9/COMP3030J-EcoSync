@@ -6,8 +6,11 @@ public class StandardProduct {
     private String barcode;
     private String productName;
     private BigDecimal normalPrice;
-    private String discountRates; // 映射 MySQL 中的 JSON 数组字符串，例如 "[1.0, 0.9, ...]"
+    private String discountRates;
     private String imageUrl;
+
+    // 🔥 新增：商品状态字段，用于实现软删除
+    private String status;
 
     public String getBarcode() { return barcode; }
     public void setBarcode(String barcode) { this.barcode = barcode; }
@@ -23,4 +26,8 @@ public class StandardProduct {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    // 🔥 新增：Getter 和 Setter
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

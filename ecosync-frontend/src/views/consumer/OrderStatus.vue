@@ -107,12 +107,14 @@
               >
                 <el-icon><CircleClose /></el-icon> Cancel
               </el-button>
+
               <el-button
                 type="success"
                 size="small"
                 round
                 class="action-btn"
-                @click="router.push('/')"
+                :loading="shopMoreLoading === order.orderId"
+                @click="handleShopMore(order)"
               >
                 <el-icon><ShoppingCart /></el-icon> Shop More
               </el-button>
@@ -192,6 +194,47 @@ const fetchOrders = async () => {
     console.error("Fetch orders failed", err)
   } finally {
     loading.value = false
+  }
+}
+
+// 记录当前正在“再来一单/继续加购”的订单ID，用于按钮Loading动画
+const shopMoreLoading = ref<number | null>(null)
+
+// 处理商品重新加入购物车的逻辑
+const handleShopMore = async (order: any) => {
+  // 1. 防御性检查：如果没有详情数据则直接返回
+  if (!order.details || order.details.length === 0) {
+    ElMessage.warning('No items found in this order.')
+    return
+  }
+
+  // 开启对应按钮的 loading 动画
+  shopMoreLoading.value = order.orderId
+
+  try {
+    // 2. 遍历该订单中的所有商品，生成加入购物车的 Promise 数组
+    const addCartPromises = order.details.map((item: any) => {
+      return request.post('/cart', {
+        userId: Number(userId),
+        productId: Number(item.productId),
+        quantity: Number(item.quantity) // 保持当时购买的数量
+      })
+    })
+
+    // 3. 并发执行所有加购请求
+    await Promise.all(addCartPromises)
+
+    ElMessage.success('Items returned to cart successfully!')
+
+    // 4. 全部加购成功后，跳转至购物车页面
+    router.push('/cart')
+
+  } catch (e: any) {
+    // 如果某个商品库存不足或失效，捕获异常提示用户
+    ElMessage.error(e.response?.data?.message || e.message || 'Failed to add some items back to cart')
+  } finally {
+    // 无论成功失败，关闭 loading
+    shopMoreLoading.value = null
   }
 }
 
