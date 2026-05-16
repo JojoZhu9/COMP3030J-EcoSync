@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="staff-app-container">
     <div class="top-brand-bar">
       <div class="brand-content">

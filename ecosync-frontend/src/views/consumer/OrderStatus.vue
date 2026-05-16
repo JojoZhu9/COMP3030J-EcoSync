@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="order-status-page">
     <div class="brand-top-header">
       <div class="header-main">

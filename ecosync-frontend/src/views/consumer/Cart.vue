@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="checkout-wrapper">
     <div class="checkout-page">
       <div class="checkout-header">

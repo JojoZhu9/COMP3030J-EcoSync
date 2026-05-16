@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="home-container">
     <el-affix :offset="0">
       <div class="header-filter">

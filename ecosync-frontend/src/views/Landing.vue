@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="landing-container">
     <!-- Hero 轮播 -->
     <section class="hero-carousel">
@@ -89,7 +89,7 @@
       </el-carousel>
     </section>
 
-    <<!-- Features 区域 -->
+    <!-- Features 区域 -->
     <section id="features" class="features-section">
       <div class="section-header">
         <span class="section-tag">CORE VALUES</span>
