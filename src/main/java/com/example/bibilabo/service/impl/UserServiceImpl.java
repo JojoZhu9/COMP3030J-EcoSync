@@ -23,17 +23,17 @@ public class UserServiceImpl implements UserService {
     public String login(String username, String password) {
         User user = userMapper.findByUsername(username);
         if (user == null) {
-            throw new RuntimeException("用户不存在");
+            throw new RuntimeException("User does not exist");
         }
 
         String inputMd5Password = DigestUtils.md5DigestAsHex(password.getBytes());
 
         if (!user.getPasswordHash().equals(inputMd5Password)) {
-            throw new RuntimeException("密码错误");
+            throw new RuntimeException("Incorrect password");
         }
 
         if ("BANNED".equals(user.getStatus())) {
-            throw new RuntimeException("该账户已被封禁，请联系管理员");
+            throw new RuntimeException("This account has been banned, please contact the administrator");
         }
 
         return jwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole());
@@ -42,10 +42,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public String createUser(User user) {
         if (userMapper.findByUsername(user.getUsername()) != null) {
-            throw new RuntimeException("用户名已存在");
+            throw new RuntimeException("Username already taken");
         }
 
         String rawPassword = user.getPasswordHash();
+        if (rawPassword == null || rawPassword.length() < 6) {
+            throw new RuntimeException("Password must be at least 6 characters");
+        }
+
         String md5Password = DigestUtils.md5DigestAsHex(rawPassword.getBytes());
         user.setPasswordHash(md5Password);
 
@@ -57,7 +61,7 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.insert(user);
-        return "用户创建成功，用户ID: " + user.getUserId();
+        return "User created successfully, ID: " + user.getUserId();
     }
 
     @Override
@@ -80,7 +84,7 @@ public class UserServiceImpl implements UserService {
     public String updateUser(User user) {
         User existingUser = userMapper.findById(user.getUserId());
         if (existingUser == null) {
-            throw new RuntimeException("要更新的用户不存在");
+            throw new RuntimeException("User to update does not exist");
         }
 
         // 获取前端传来的密码
@@ -102,12 +106,12 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.update(user);
-        return "用户更新成功";
+        return "User updated successfully";
     }
 
     @Override
     public String deleteUser(Integer userId) {
         userMapper.deleteById(userId);
-        return "用户删除成功";
+        return "User deleted successfully";
     }
 }

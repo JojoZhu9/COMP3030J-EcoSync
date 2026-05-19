@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="home-container">
     <el-affix :offset="0">
       <div class="header-filter">
@@ -28,6 +28,21 @@
             </div>
           </div>
 
+          <!-- 最近店铺 -->
+          <div v-if="nearestStore" class="nearest-store-bar">
+            <el-tag effect="dark" type="success" round class="nearest-tag">
+              <el-icon><MapLocation /></el-icon>
+              Nearest: <strong>{{ nearestStore.storeName }}</strong>
+              <span class="dist">{{ nearestStore.distance.toFixed(1) }} km</span>
+            </el-tag>
+            <el-button link type="primary" size="small" @click="openMapDialog">View Map</el-button>
+          </div>
+          <div v-else class="nearest-store-bar">
+            <el-button size="small" round type="success" plain @click="findNearestStore">
+              <el-icon><MapLocation /></el-icon> Find Nearest Store
+            </el-button>
+          </div>
+
           <!-- 搜索栏 -->
           <div class="search-bar">
             <el-input
@@ -39,16 +54,28 @@
             />
           </div>
 
-          <!-- 过期时间过滤器 -->
-          <div class="expiry-filter">
+          <!-- 过滤器区域：Available 开关 + 时间区间 -->
+          <div class="filter-area">
+            <!-- Available 开关 -->
             <div
-              v-for="filter in expiryFilters"
-              :key="filter.value"
-              :class="['filter-chip', filter.value, { active: selectedExpiryFilter === filter.value }]"
-              @click="selectedExpiryFilter = selectedExpiryFilter === filter.value ? '' : filter.value"
+              :class="['available-toggle', { active: showAvailableOnly }]"
+              @click="showAvailableOnly = !showAvailableOnly"
             >
-              <el-icon :size="14"><component :is="filter.icon" /></el-icon>
-              <span>{{ filter.label }}</span>
+              <el-icon :size="14"><Check /></el-icon>
+              <span>Available Only</span>
+            </div>
+
+            <!-- 时间区间过滤器 -->
+            <div class="time-filters">
+              <div
+                v-for="filter in timeFilters"
+                :key="filter.value"
+                :class="['time-chip', { active: selectedTimeFilter === filter.value }]"
+                @click="selectedTimeFilter = selectedTimeFilter === filter.value ? '' : filter.value"
+              >
+                <el-icon :size="14"><component :is="filter.icon" /></el-icon>
+                <span>{{ filter.label }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -63,6 +90,9 @@
         <p class="section-subtitle">Real-time dynamic pricing • Only for items within 12h of expiry</p>
         <p class="result-count" v-if="filteredProducts.length !== productList.length">
           Showing {{ filteredProducts.length }} of {{ productList.length }} items
+          <span v-if="showAvailableOnly">• Available</span>
+          <span v-if="selectedTimeFilter">• {{ timeFilters.find(f => f.value === selectedTimeFilter)?.label }}</span>
+          <span v-if="searchKeyword.trim()">• Search: "{{ searchKeyword }}"</span>
         </p>
       </div>
 
@@ -141,6 +171,44 @@
       <el-empty v-if="!loading && filteredProducts.length === 0" description="No available items right now." />
     </div>
 
+    <!-- 地图弹窗 -->
+    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog"
+      destroy-on-close
+    >
+      <div v-if="mapStore" class="map-body"
+      >
+        <p class="map-store-name"
+        >{{ mapStore.storeName }}
+        </p>
+        <p class="map-store-addr"
+        >{{ mapStore.address }}, {{ mapStore.city }}
+        </p>
+        <iframe
+          v-if="mapStore.latitude && mapStore.longitude"
+          width="100%" height="350" frameborder="0" scrolling="no"
+          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${mapStore.longitude-0.01}%2C${mapStore.latitude-0.01}%2C${mapStore.longitude+0.01}%2C${mapStore.latitude+0.01}&layer=mapnik&marker=${mapStore.latitude}%2C${mapStore.longitude}`"
+          style="border-radius: 12px; border: 1px solid #e2e8f0;"
+        >
+        </iframe>
+        <el-empty v-else description="No coordinates available for this store" />
+      </div>
+    </el-dialog>
+
+    <!-- 地图弹窗 -->
+    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog" destroy-on-close>
+      <div v-if="mapStore" class="map-body">
+        <p class="map-store-name">{{ mapStore.storeName }}</p>
+        <p class="map-store-addr">{{ mapStore.address }}, {{ mapStore.city }}</p>
+        <iframe
+          v-if="mapStore.latitude && mapStore.longitude"
+          width="100%" height="350" frameborder="0" scrolling="no"
+          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${mapStore.longitude-0.01}%2C${mapStore.latitude-0.01}%2C${mapStore.longitude+0.01}%2C${mapStore.latitude+0.01}&layer=mapnik&marker=${mapStore.latitude}%2C${mapStore.longitude}`"
+          style="border-radius: 12px; border: 1px solid #e2e8f0;"
+        ></iframe>
+        <el-empty v-else description="No coordinates available for this store" />
+      </div>
+    </el-dialog>
+
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" width="420px" center append-to-body class="modern-detail-dialog" :show-close="false">
       <div v-if="currentProduct" class="detail-wrapper">
@@ -168,6 +236,16 @@
               Stock: {{ getRemaining(currentProduct) }}
             </el-tag>
           </div>
+          <div class="product-info-sheet">
+            <h2 class="p-name">{{ currentProduct.productName }}</h2>
+            <div class="p-tags-container">
+            </div>
+
+            <div class="p-barcode-section">
+              <svg ref="detailBarcodeRef"></svg>
+              <div class="p-barcode-num">{{ currentProduct.barcode }}</div>
+            </div>
+          </div>
         </div>
         <div class="dialog-action-bar">
           <el-button plain @click="detailVisible = false" class="cancel-btn">Cancel</el-button>
@@ -186,12 +264,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar } from '@element-plus/icons-vue'
+import {ref, onMounted, computed, nextTick} from 'vue'
+import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar, MapLocation } from '@element-plus/icons-vue'
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
 import request from '@/utils/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
+import JsBarcode from 'jsbarcode' // 引入库
 
 const storeList = ref<any[]>([])
 const selectedStoreId = ref<number | null>(null)
@@ -199,13 +278,18 @@ const productList = ref<any[]>([])
 const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
+const detailBarcodeRef = ref<HTMLElement | null>(null)
+const nearestStore = ref<any>(null)
+const mapDialogVisible = ref(false)
+const mapStore = ref<any>(null)
 
+// 三个独立的过滤器
 const searchKeyword = ref('')
-const selectedExpiryFilter = ref('')
+const showAvailableOnly = ref(false)  // Available 开关
+const selectedTimeFilter = ref('')   // 时间区间
 
-// 过期时间过滤选项：第一个是 Available（未过期）
-const expiryFilters = [
-  { value: 'available', label: 'Available', icon: 'Check' },
+// 时间区间过滤选项
+const timeFilters = [
   { value: '1h', label: '< 1h', icon: 'Timer' },
   { value: '5h', label: '< 5h', icon: 'Clock' },
   { value: '10h', label: '< 10h', icon: 'Clock' },
@@ -222,14 +306,20 @@ const getExpiryHours = (expiryDate: string): number => {
   return diff / (1000 * 60 * 60)
 }
 
+// 三个过滤器叠加生效
 const filteredProducts = computed(() => {
   let result = productList.value
 
-  if (selectedExpiryFilter.value) {
+  // 1. Available 过滤（未过期）
+  if (showAvailableOnly.value) {
+    result = result.filter(p => getExpiryHours(p.expirationTime) > 0)
+  }
+
+  // 2. 时间区间过滤
+  if (selectedTimeFilter.value) {
     result = result.filter(p => {
       const hours = getExpiryHours(p.expirationTime)
-      switch (selectedExpiryFilter.value) {
-        case 'available': return hours > 0  // 未过期
+      switch (selectedTimeFilter.value) {
         case '1h': return hours > 0 && hours <= 1
         case '5h': return hours > 0 && hours <= 5
         case '10h': return hours > 0 && hours <= 10
@@ -239,6 +329,7 @@ const filteredProducts = computed(() => {
     })
   }
 
+  // 3. 名称搜索过滤
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     result = result.filter(p =>
@@ -312,7 +403,8 @@ const fetchProducts = async () => {
         return { ...item, displayPrice: '0.00', normalPrice: 0 }
       }
     }))
-    productList.value = enriched.filter(i => i.status === 'AVAILABLE')
+    const now = new Date()
+    productList.value = enriched.filter(i => i.status === 'AVAILABLE' && new Date(i.expirationTime) > now)
   } catch (e) {
     ElMessage.error('Failed to sync product data')
   } finally {
@@ -347,7 +439,6 @@ const addToCart = async (prod: any) => {
       productId: Number(prod.productId),
       quantity: 1
     })
-    if (prod.remainingStock > 0) prod.remainingStock--
     ElMessage.success('Added to basket')
   } catch (e) { ElMessage.error('Failed to add') }
 }
@@ -355,12 +446,79 @@ const addToCart = async (prod: any) => {
 const handleStoreChange = (val: number) => {
   localStorage.setItem('lastStoreId', String(val))
   searchKeyword.value = ''
-  selectedExpiryFilter.value = ''
+  showAvailableOnly.value = false
+  selectedTimeFilter.value = ''
   fetchProducts()
 }
 
-const showDetail = (prod: any) => { currentProduct.value = prod; detailVisible.value = true; }
+const showDetail = (prod: any) => {
+  currentProduct.value = prod
+  detailVisible.value = true
+
+  // 👇 弹窗打开后，等 DOM 渲染完毕立刻画条码
+  nextTick(() => {
+    if (detailBarcodeRef.value && prod.barcode) {
+      JsBarcode(detailBarcodeRef.value, prod.barcode, {
+        format: "CODE128",
+        displayValue: false,
+        height: 35,
+        width: 1.5, // 商品弹窗的条码弄细一点更精致
+        lineColor: "#1e293b",
+        background: "transparent",
+        margin: 0
+      })
+    }
+  })
+}
+
 const handleDetailBuy = () => { if (currentProduct.value) addToCart(currentProduct.value) }
+
+const toRad = (deg: number) => deg * Math.PI / 180
+
+const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const findNearestStore = () => {
+  if (!navigator.geolocation) {
+    ElMessage.warning('Geolocation is not supported by your browser')
+    return
+  }
+  ElMessage.info('Locating you...')
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const userLat = pos.coords.latitude
+    const userLng = pos.coords.longitude
+    let best: Record<string, unknown> | null = null
+    let bestDist = Infinity
+    for (const s of storeList.value) {
+      const lat = s.latitude
+      const lng = s.longitude
+      if (lat == null || lng == null) continue
+      const d = haversine(userLat, userLng, lat, lng)
+      if (d < bestDist) {
+        bestDist = d
+        best = { ...s, distance: d }
+      }
+    }
+    if (best) {
+      nearestStore.value = best
+      ElMessage.success(`Nearest store: ${best.storeName} (${bestDist.toFixed(1)} km)`)
+    } else {
+      ElMessage.warning('No store with coordinates found')
+    }
+  }, () => {
+    ElMessage.error('Unable to retrieve your location')
+  })
+}
+
+const openMapDialog = () => {
+  mapStore.value = nearestStore.value
+  mapDialogVisible.value = true
+}
 
 onMounted(fetchStores)
 </script>
@@ -391,37 +549,74 @@ onMounted(fetchStores)
   border-color: #008163; box-shadow: 0 0 0 3px rgba(0, 129, 99, 0.1) !important;
 }
 
-/* 过期时间过滤器 */
-.expiry-filter { display: flex; gap: 8px; flex-wrap: wrap; }
-.filter-chip {
-  display: flex; align-items: center; gap: 4px;
-  padding: 6px 14px; border-radius: 20px;
-  background: #f1f5f9; color: #64748b;
-  font-size: 13px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
+/* 过滤器区域：Available 开关 + 时间区间并排 */
+.filter-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Available 开关 */
+.available-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  user-select: none;
+}
+.available-toggle:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+.available-toggle.active {
+  background: #008163;
+  color: white;
+  border-color: #008163;
+  box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2);
+}
+
+/* 时间区间过滤器 */
+.time-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.time-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
   border: 1px solid transparent;
 }
-.filter-chip:hover {
-  background: #e2e8f0; color: #475569;
+.time-chip:hover {
+  background: #e2e8f0;
+  color: #475569;
 }
-
-/* Available 选中态：绿色 */
-.filter-chip.available.active {
-  background: #008163; color: white;
-  border-color: #008163;
-  box-shadow: 0 2px 8px rgba(0, 129, 99, 0.2);
-}
-
-/* 紧急时间选中态：红色系 */
-.filter-chip.active:not(.available) {
-  background: #e2231a; color: white;
+.time-chip.active {
+  background: #e2231a;
+  color: white;
   border-color: #e2231a;
   box-shadow: 0 2px 8px rgba(226, 35, 26, 0.2);
 }
-
-/* > 1d 选中态：蓝色 */
-.filter-chip.active[data-value="1d"] {
-  background: #3b82f6; color: white;
+/* > 1d 特殊颜色 */
+.time-chip.active[data-value="1d"] {
+  background: #3b82f6;
   border-color: #3b82f6;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
@@ -487,6 +682,17 @@ onMounted(fetchStores)
 }
 .disabled-text { font-size: 16px; font-weight: bold; }
 
+/* 最近店铺 */
+.nearest-store-bar { display: flex; align-items: center; gap: 10px; }
+.nearest-tag { font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.nearest-tag .dist { opacity: 0.8; font-weight: 600; }
+
+/* 地图弹窗 */
+.map-body { padding: 10px 0; }
+.map-store-name { font-size: 16px; font-weight: 800; color: #1e293b; margin: 0 0 6px 0; }
+.map-store-addr { font-size: 13px; color: #64748b; margin: 0 0 16px 0; }
+.modern-dialog :deep(.el-dialog) { border-radius: 16px; }
+
 /* 详情弹窗 */
 .modern-detail-dialog :deep(.el-dialog) { border-radius: 20px; overflow: hidden; padding: 0; }
 .modern-detail-dialog :deep(.el-dialog__header) { display: none; }
@@ -533,6 +739,21 @@ onMounted(fetchStores)
 .dialog-action-bar { padding: 16px 24px 24px; background: white; display: flex; gap: 12px; }
 .cancel-btn { flex: 1; border-radius: 12px; font-weight: bold; }
 .main-action-btn { flex: 2; border-radius: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2); }
+
+.p-barcode-section {
+  margin-top: 24px;
+  text-align: center;
+  padding-top: 16px;
+  border-top: 1px dashed #e2e8f0;
+}
+.p-barcode-num {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: bold;
+}
 
 @keyframes pulse {
   0% { box-shadow: 0 0 0 0 rgba(226, 35, 26, 0.4); }

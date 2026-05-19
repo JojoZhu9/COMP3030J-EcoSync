@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="landing-container">
     <!-- Hero 轮播 -->
     <section class="hero-carousel">
@@ -89,7 +89,7 @@
       </el-carousel>
     </section>
 
-    <<!-- Features 区域 -->
+    <!-- Features 区域 -->
     <section id="features" class="features-section">
       <div class="section-header">
         <span class="section-tag">CORE VALUES</span>
@@ -358,7 +358,6 @@ onUnmounted(() => {
 /* ======== Hero 轮播 ======== */
 .hero-carousel {
   position: relative;
-  padding-top: 76px; /* 原有导航栏高度 70px + 顶部彩条 6px */
 }
 
 .hero-particles {

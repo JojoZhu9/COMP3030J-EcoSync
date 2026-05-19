@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="order-status-page">
     <div class="brand-top-header">
       <div class="header-main">
@@ -28,7 +28,7 @@
                 <el-icon><Shop /></el-icon>
               </div>
               <div class="store-text">
-                <span class="store-name">7-Eleven Store #{{ order.storeId }}</span>
+                <span class="store-name">{{ storeMap[order.storeId] || `Store #${order.storeId}` }}</span>
                 <span class="store-sub">{{ formatDate(order.createdAt) }}</span>
               </div>
             </div>
@@ -107,12 +107,13 @@
               >
                 <el-icon><CircleClose /></el-icon> Cancel
               </el-button>
+
               <el-button
                 type="success"
                 size="small"
                 round
                 class="action-btn"
-                @click="router.push('/')"
+                @click="router.push('/home')"
               >
                 <el-icon><ShoppingCart /></el-icon> Shop More
               </el-button>
@@ -127,7 +128,7 @@
         </div>
         <div class="empty-title">No transactions found</div>
         <div class="empty-desc">Start shopping to see your orders here</div>
-        <el-button type="success" round class="empty-action" @click="router.push('/')">
+        <el-button type="success" round class="empty-action" @click="router.push('/home')">
           <el-icon><ShoppingCart /></el-icon> Go Shopping
         </el-button>
       </div>
@@ -141,7 +142,8 @@
 import { ref, onMounted } from 'vue'
 import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid, CircleClose } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -149,6 +151,19 @@ const activeTab = ref('ALL')
 const orders = ref<any[]>([])
 const loading = ref(false)
 const userId = localStorage.getItem('userId') || '12'
+const storeMap = ref<Record<number, string>>({})
+
+const fetchStores = async () => {
+  try {
+    const res: any = await request.get('/stores')
+    const stores = res.data || res || []
+    const map: Record<number, string> = {}
+    stores.forEach((s: any) => {
+      map[s.storeId] = s.storeName || `Store #${s.storeId}`
+    })
+    storeMap.value = map
+  } catch (e) {}
+}
 
 const fetchOrders = async () => {
   loading.value = true
@@ -195,6 +210,47 @@ const fetchOrders = async () => {
   }
 }
 
+// 记录当前正在"再来一单/继续加购"的订单ID，用于按钮Loading动画
+const shopMoreLoading = ref<number | null>(null)
+
+// 处理商品重新加入购物车的逻辑
+const handleShopMore = async (order: any) => {
+  // 1. 防御性检查：如果没有详情数据则直接返回
+  if (!order.details || order.details.length === 0) {
+    ElMessage.warning('No items found in this order.')
+    return
+  }
+
+  // 开启对应按钮的 loading 动画
+  shopMoreLoading.value = order.orderId
+
+  try {
+    // 2. 遍历该订单中的所有商品，生成加入购物车的 Promise 数组
+    const addCartPromises = order.details.map((item: any) => {
+      return request.post('/cart', {
+        userId: Number(userId),
+        productId: Number(item.productId),
+        quantity: Number(item.quantity) // 保持当时购买的数量
+      })
+    })
+
+    // 3. 并发执行所有加购请求
+    await Promise.all(addCartPromises)
+
+    ElMessage.success('Items returned to cart successfully!')
+
+    // 4. 全部加购成功后，跳转至首页 /home
+    router.push('/home')
+
+  } catch (e: any) {
+    // 如果某个商品库存不足或失效，捕获异常提示用户
+    ElMessage.error(e.response?.data?.message || e.message || 'Failed to add some items back to cart')
+  } finally {
+    // 无论成功失败，关闭 loading
+    shopMoreLoading.value = null
+  }
+}
+
 // 取消订单方法 - POST 请求
 const cancelOrder = async (orderId: number) => {
   try {
@@ -220,7 +276,10 @@ const cancelOrder = async (orderId: number) => {
 const formatStatus = (s: string) => s.replace('_', ' ')
 const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
 
-onMounted(fetchOrders)
+onMounted(async () => {
+  await fetchStores()
+  fetchOrders()
+})
 </script>
 
 <style scoped>

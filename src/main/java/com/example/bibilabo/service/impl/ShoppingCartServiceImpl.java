@@ -28,11 +28,11 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
             // 如果有了，数量相加
             int newQuantity = existingItem.getQuantity() + cart.getQuantity();
             shoppingCartMapper.updateQuantity(existingItem.getCartItemId(), newQuantity);
-            return "购物车已有该商品，数量已更新为: " + newQuantity;
+            return "Item already in cart, quantity updated to: " + newQuantity;
         } else {
             // 如果没有，新增记录
             shoppingCartMapper.insert(cart);
-            return "加入购物车成功，购物车项ID: " + cart.getCartItemId();
+            return "Added to cart successfully, cart item ID: " + cart.getCartItemId();
         }
     }
 
@@ -40,21 +40,21 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     public String updateCartItemQuantity(Integer cartItemId, Integer quantity) {
         if (quantity <= 0) {
             shoppingCartMapper.deleteById(cartItemId);
-            return "数量小于等于0，已从购物车移除";
+            return "Quantity is 0 or less, item removed from cart";
         }
         shoppingCartMapper.updateQuantity(cartItemId, quantity);
-        return "购物车商品数量更新成功";
+        return "Cart item quantity updated successfully";
     }
 
     @Override
     public String removeCartItem(Integer cartItemId) {
         shoppingCartMapper.deleteById(cartItemId);
-        return "商品已从购物车移除";
+        return "Item removed from cart";
     }
 
     @Override
     public String clearCart(Integer userId) {
         shoppingCartMapper.clearCartByUserId(userId);
-        return "购物车已清空";
+        return "Cart cleared successfully";
     }
 }

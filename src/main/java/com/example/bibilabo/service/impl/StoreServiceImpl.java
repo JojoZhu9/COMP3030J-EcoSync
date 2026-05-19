@@ -27,18 +27,18 @@ public class StoreServiceImpl implements StoreService {
     @Override
     public String createStore(Store store) {
         storeMapper.insert(store);
-        return "门店添加成功，门店ID: " + store.getStoreId();
+        return "Store added successfully, store ID: " + store.getStoreId();
     }
 
     @Override
     public String updateStore(Store store) {
         storeMapper.update(store);
-        return "门店信息更新成功";
+        return "Store updated successfully";
     }
 
     @Override
     public String deleteStore(Integer storeId) {
         storeMapper.deleteById(storeId);
-        return "门店删除成功";
+        return "Store deleted successfully";
     }
 }

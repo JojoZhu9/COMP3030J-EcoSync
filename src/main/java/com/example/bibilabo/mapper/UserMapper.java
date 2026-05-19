@@ -23,8 +23,8 @@ public interface UserMapper {
     @Options(useGeneratedKeys = true, keyProperty = "userId")
     int insert(User user);
 
-    // 🔥 修改：加入 user_address
-    @Update("UPDATE users SET password_hash = #{passwordHash}, role = #{role}, status = #{status}, " +
+    // 🔥 修改：加入 username 和 user_address
+    @Update("UPDATE users SET username = #{username}, password_hash = #{passwordHash}, role = #{role}, status = #{status}, " +
             "store_id = #{storeId}, balance = #{balance}, phone_number = #{phoneNumber}, user_address = #{userAddress} " +
             "WHERE user_id = #{userId}")
     int update(User user);

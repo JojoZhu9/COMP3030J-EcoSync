@@ -19,8 +19,12 @@ const router = createRouter({
 
     // --- ADMIN ---
     { path: '/admin/accounts', name: 'AccountManage', component: () => import('../views/admin/AccountManage.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
+    { path: '/admin/stores', name: 'StoreManage', component: () => import('../views/admin/StoreManage.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
     { path: '/admin/inventory', name: 'Inventory', component: () => import('../views/admin/Inventory.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
     { path: '/admin/dashboard', name: 'Dashboard', component: () => import('../views/admin/Dashboard.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
+
+    // 🔥 新增：策略详情页面（AdminHome.vue）的路由配置
+    { path: '/admin/strategy', name: 'AdminHome', component: () => import('../views/admin/AdminHome.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
 
     // --- STAFF ---
     { path: '/staff/home', name: 'staffHome', component: () => import('../views/staff/StaffHome.vue'), meta: { requiresAuth: true, role: 'EMPLOYEE' } },

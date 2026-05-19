@@ -1,5 +1,6 @@
 package com.example.bibilabo.controller;
 
+import com.example.bibilabo.entity.CheckoutResult;
 import com.example.bibilabo.entity.Order;
 import com.example.bibilabo.entity.OrderVO;
 import com.example.bibilabo.service.OrderService;
@@ -36,16 +37,15 @@ public class OrderController {
     }
 
     @PostMapping("/checkout")
-    @Operation(summary = "提交自提订单", description = "扣减库存和账户余额，计算JSON阶梯折扣，生成核销自提码")
-    public String checkout(@RequestBody Map<String, Object> payload) {
+    @Operation(summary = "提交自提订单", description = "按店铺自动拆单，扣减库存和账户余额，计算JSON阶梯折扣，生成核销自提码")
+    public CheckoutResult checkout(@RequestBody Map<String, Object> payload) {
         Integer userId = (Integer) payload.get("userId");
         Integer storeId = (Integer) payload.get("storeId");
 
         try {
             return orderService.checkout(userId, storeId);
         } catch (Exception e) {
-            // 让报错抛出去，前端才能捕捉到
-            throw new RuntimeException("下单失败: " + e.getMessage());
+            throw new RuntimeException("Order placement failed: " + e.getMessage());
         }
     }
 
@@ -74,7 +74,7 @@ public class OrderController {
         String status = payload.get("status");
 
         if (status == null || status.trim().isEmpty()) {
-            throw new RuntimeException("订单状态不能为空");
+            throw new RuntimeException("Order status cannot be empty");
         }
 
         // 直接更新状态

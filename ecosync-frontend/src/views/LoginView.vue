@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { loginApi, registerApi } from '../api/user'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 import { User, Lock, CircleCheck, ArrowLeft } from '@element-plus/icons-vue'
 
@@ -86,32 +86,36 @@ const handleSubmit = async () => {
   loading.value = true
   try {
     if (isRegister.value) {
-      if (form.password !== form.rePassword) return ElMessage.error({ message: 'Passwords do not match', duration: 1500 })
+      if (form.password !== form.rePassword) {
+        loading.value = false
+        return ElMessage.error({ message: 'Passwords do not match', duration: 1500 })
+      }
+      if (form.password.length < 6) {
+        loading.value = false
+        return ElMessage.error({ message: 'Password must be at least 6 characters', duration: 1500 })
+      }
       await registerApi({ username: form.username, password: form.password, role: 'CONSUMER' })
       ElMessage.success({ message: 'Registration Successful!', duration: 1500 })
+      form.password = ''; form.rePassword = ''
       isRegister.value = false
     } else {
       const res: any = await loginApi({ username: form.username, password: form.password })
-      const resStr = String(res)
-      if (resStr.includes('成功')) {
-        const token = resStr.match(/Token[:：]\s*([^,，\s"}]+)/)?.[1]
-        if (token) {
-          const payload = parseJwt(token)
-          localStorage.setItem('token', token)
-          localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
-          localStorage.setItem('userId', String(payload.userId || payload.id))
-          window.dispatchEvent(new Event('auth-change'))
-          ElMessage.success({ message: 'Login Successful', duration: 1500 })
-
-          // 修改点：登录成功后跳转到 Introduction (根路径)
-          router.push('/')
-        }
+      const token = res?.token
+      if (token) {
+        const payload = parseJwt(token)
+        localStorage.setItem('token', token)
+        localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
+        localStorage.setItem('userId', String(payload.userId || payload.id))
+        window.dispatchEvent(new Event('auth-change'))
+        ElMessage.success({ message: 'Login Successful', duration: 1500 })
+        router.push('/')
       } else {
         ElMessage.error({ message: 'Login Failed', duration: 1500 })
       }
     }
-  } catch (error) {
-    ElMessage.error({ message: 'Service Error', duration: 1500 })
+  } catch (error: any) {
+    const msg = error.response?.data?.message || error.message || 'Service Error'
+    ElMessage.error({ message: msg, duration: 2000 })
   } finally {
     loading.value = false
   }

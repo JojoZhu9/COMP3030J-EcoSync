@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import router from '../router'
 
 const request = axios.create({
@@ -27,6 +27,10 @@ request.interceptors.response.use(
         ElMessage.error('登录失效')
         router.push('/login').then(() => { isRelogging = false })
       }
+    }
+    // 提取后端返回的详细错误信息
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message
     }
     return Promise.reject(error)
   }

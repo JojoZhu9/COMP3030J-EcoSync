@@ -1,4 +1,4 @@
-<<template>
+<template>
   <div class="checkout-wrapper">
     <div class="checkout-page">
       <div class="checkout-header">
@@ -19,20 +19,23 @@
             <div class="fulfillment-header">
               <span class="label"><el-icon><Shop /></el-icon> PICKUP INFO</span>
             </div>
-            <div class="address-content" v-if="userAddress">
-              <div class="addr-main">{{ userAddress }}</div>
+            <div class="address-content">
+              <div class="addr-main">In-Store Pickup</div>
               <div class="contact-sub">
-                <span class="u-tag">Member</span>
+                <span class="u-tag">{{ rawUser.username || 'Member' }}</span>
                 <span class="u-phone">{{ userPhone || 'No phone' }}</span>
               </div>
-            </div>
-            <div class="address-content empty-addr" v-else>
-              Please set your pickup address in profile.
             </div>
           </div>
 
           <div class="items-container">
-            <div v-for="item in cartItems" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected}">
+            <div v-for="group in cartByStore" :key="group.storeId" class="store-group">
+              <div class="store-group-header">
+                <el-icon><Shop /></el-icon>
+                <span class="store-group-name">{{ group.storeName }}</span>
+                <span class="store-group-addr">{{ group.storeAddress }}</span>
+              </div>
+              <div v-for="item in group.items" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected}">
               <div class="item-check">
                 <el-checkbox v-model="item.selected" size="large" class="custom-checkbox" />
               </div>
@@ -73,9 +76,11 @@
                       v-model="item.quantity"
                       :min="0"
                       :max="item.maxStock || 1"
+                      :step="1"
+                      step-strictly
                       size="default"
                       class="modern-input-number"
-                      @change="(val) => updateCartQuantity(item, val)"
+                      @change="(val: number) => updateCartQuantity(item, val)"
                     />
                   </div>
                 </div>
@@ -83,6 +88,7 @@
                   Only {{ item.maxStock }} units left!
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -127,26 +133,32 @@
         </div>
 
         <div class="receipt-info">
-          <div class="r-row"><span>Customer:</span><span class="r-val">{{ rawUser.userName || 'Member' }}</span></div>
+          <div class="r-row"><span>Customer:</span><span class="r-val">{{ rawUser.username || 'Member' }}</span></div>
           <div class="r-row"><span>Phone:</span><span class="r-val">{{ userPhone }}</span></div>
-          <div class="r-row"><span>Pickup:</span><span class="r-val r-addr">{{ userAddress }}</span></div>
         </div>
 
         <div class="r-divider"></div>
 
-        <div class="r-items">
-          <div v-for="item in selectedItems" :key="item.productId" class="r-item">
-            <div class="r-item-main">
-              <span class="r-name">{{ item.productName }}</span>
-              <span class="r-qty">x{{ item.quantity }}</span>
-            </div>
-            <div class="r-item-price">
-              <span v-if="item.originalPrice && item.pointsPrice < item.originalPrice" class="r-old-price">
-                {{ (item.originalPrice * item.quantity).toFixed(2) }}
-              </span>
-              <span>¥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</span>
+        <div v-for="group in cartByStore.filter(g => g.items.some((i: any) => i.selected))" :key="group.storeId" class="r-store-block">
+          <div class="r-store-name">
+            <el-icon><Shop /></el-icon> {{ group.storeName }}
+          </div>
+          <div class="r-store-addr">{{ group.storeAddress }}</div>
+          <div class="r-items">
+            <div v-for="item in group.items.filter((i: any) => i.selected)" :key="item.productId" class="r-item">
+              <div class="r-item-main">
+                <span class="r-name">{{ item.productName }}</span>
+                <span class="r-qty">x{{ item.quantity }}</span>
+              </div>
+              <div class="r-item-price">
+                <span v-if="item.originalPrice && item.pointsPrice < item.originalPrice" class="r-old-price">
+                  {{ (item.originalPrice * item.quantity).toFixed(2) }}
+                </span>
+                <span>¥{{ (item.pointsPrice * item.quantity).toFixed(2) }}</span>
+              </div>
             </div>
           </div>
+          <div class="r-divider" v-if="cartByStore.filter(g => g.items.some((i: any) => i.selected)).length > 1"></div>
         </div>
 
         <div class="r-divider"></div>
@@ -157,8 +169,7 @@
         </div>
 
         <div class="barcode-area">
-          <div class="barcode-bars">|| █| || █||| █ |||</div>
-          <div class="barcode-num">00{{ Date.now().toString().slice(-8) }}</div>
+          <div class="barcode-placeholder">Order ID will be generated after payment</div>
         </div>
         <div class="receipt-zigzag-bottom"></div>
       </div>
@@ -176,24 +187,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { ArrowLeft, Delete, Shop, Box, Close, Goods } from '@element-plus/icons-vue'
+import {ref, computed, onMounted} from 'vue'
+import { ArrowLeft, Delete, Shop, Close, Goods } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const cartItems = ref<any[]>([])
-const userAddress = ref('')
 const userPhone = ref('')
 const userBalance = ref(0)
 const rawUser = ref<any>({})
 const confirmVisible = ref(false)
 const checkingOut = ref(false)
+const storeList = ref<any[]>([])
 
 const getUserId = () => localStorage.getItem('userId')
 const selectedItems = computed(() => cartItems.value.filter(i => i.selected))
 const totalPrice = computed(() => selectedItems.value.reduce((acc, i) => acc + (i.pointsPrice * i.quantity), 0).toFixed(2))
+
+const cartByStore = computed(() => {
+  const groups: Record<number, any[]> = {}
+  cartItems.value.forEach(item => {
+    const sid = item.storeId || 0
+    if (!groups[sid]) groups[sid] = []
+    groups[sid].push(item)
+  })
+  return Object.entries(groups).map(([storeId, items]) => ({
+    storeId: Number(storeId),
+    storeName: items[0]?.storeName || `Store #${storeId}`,
+    storeAddress: items[0]?.storeAddress || '',
+    items
+  }))
+})
 
 const getImageUrl = (item: any) => {
   const name = item.imageUrl || `${item.barcode}.jpg`
@@ -214,12 +241,15 @@ const initData = async () => {
   const uid = getUserId()
   if (!uid) return router.push('/login')
   try {
-    const userRes: any = await request.get(`/users/${uid}`)
+    const [userRes, storesRes]: any = await Promise.all([
+      request.get(`/users/${uid}`),
+      request.get('/stores')
+    ])
     const userData = userRes.data || userRes
     rawUser.value = userData
-    userAddress.value = userData.userAddress || ''
     userPhone.value = userData.phone_number || userData.phoneNumber || ''
     userBalance.value = Number(userData.balance || 0)
+    storeList.value = storesRes.data || storesRes || []
 
     const cartRes: any = await request.get(`/cart/user/${uid}`)
     const rawItems = cartRes.data || cartRes || []
@@ -233,6 +263,7 @@ const initData = async () => {
         const std = stdRes.data || stdRes
         const normalPrice = Number(std.normalPrice || 0)
         const rate = getDiscountRate(exp.expirationTime, std.discountRates || '[]')
+        const store = storeList.value.find((s: any) => s.storeId === exp.storeId)
 
         return {
           ...item,
@@ -243,10 +274,13 @@ const initData = async () => {
           pointsPrice: +(normalPrice * rate).toFixed(2),
           maxStock: Number(exp.remainingStock),
           selected: true,
-          imageUrl: std.imageUrl || std.image_url || null
+          imageUrl: std.imageUrl || std.image_url || null,
+          storeId: exp.storeId,
+          storeName: store?.storeName || `Store #${exp.storeId}`,
+          storeAddress: store?.address || ''
         }
       } catch {
-        return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false }
+        return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false, storeId: null, storeName: 'Unknown', storeAddress: '' }
       }
     }))
   } catch (e) { ElMessage.error('Data Sync Failed') }
@@ -255,16 +289,21 @@ const initData = async () => {
 onMounted(initData)
 
 const openConfirmDialog = () => {
-  if (!userAddress.value) return ElMessage.warning('Set pickup address in profile first')
+  if (selectedItems.value.length === 0) return ElMessage.warning('Please select items to checkout')
   confirmVisible.value = true
 }
 
-const updateCartQuantity = async (item: any, qty: number) => {
+const updateCartQuantity = async (item: any, rawVal: number) => {
+  const qty = Math.max(0, Math.round(rawVal))
+  if (qty !== item.quantity) {
+    item.quantity = qty
+  }
   if (qty <= 0) {
     await deleteSingleItem(item.cartItemId)
     return
   }
 
+  const previousQty = item.quantity
   try {
     await request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
     const expRes: any = await request.get(`/expiring-products/${item.productId}`)
@@ -277,6 +316,7 @@ const updateCartQuantity = async (item: any, qty: number) => {
       ElMessage.warning('Quantity adjusted due to stock changes')
     }
   } catch (e) {
+    item.quantity = previousQty
     ElMessage.error('Update Failed')
   }
 }
@@ -311,20 +351,20 @@ const updateLocalStorageCart = () => {
 const executePayment = async () => {
   checkingOut.value = true
   const uid = getUserId()
-  const storeId = localStorage.getItem('lastStoreId') || '1'
 
   try {
     const res: any = await request.post('/orders/checkout', {
-      userId: Number(uid),
-      storeId: Number(storeId)
+      userId: Number(uid)
     })
 
-    if (typeof res === 'string' && res.includes('失败')) {
-      throw new Error(res)
+    if (res && res.message && res.message.includes('失败')) {
+      throw new Error(res.message)
     }
 
     localStorage.setItem('cart', '[]')
-    ElMessage.success('Order Successful!')
+    const orderCount = res?.orders?.length || 1
+    const codes = res?.orders?.map((o: any) => o.pickupCode).join(', ')
+    ElMessage.success(`Order Successful! ${orderCount} order(s) created. Pickup codes: ${codes}`)
     confirmVisible.value = false
     router.push('/order-status')
   } catch (e: any) {
@@ -556,6 +596,38 @@ const executePayment = async () => {
 .barcode-area { text-align: center; margin-top: 30px; opacity: 0.7; }
 .barcode-bars { font-size: 24px; letter-spacing: 2px; line-height: 1; color: #1e293b; }
 .barcode-num { font-family: 'Courier New', Courier, monospace; font-size: 12px; letter-spacing: 4px; margin-top: 4px; }
+
+.store-group { margin-bottom: 20px; }
+.store-group-header {
+  display: flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #f0fdf4, #fff);
+  border: 1px dashed #008163;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  color: #008163;
+  font-weight: 800;
+  font-size: 14px;
+}
+.store-group-addr {
+  margin-left: auto;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.r-store-block { margin-bottom: 12px; }
+.r-store-name {
+  font-weight: 800; font-size: 13px; color: #008163;
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 4px;
+}
+.r-store-addr {
+  font-size: 11px; color: #94a3b8; margin-bottom: 10px;
+}
+.barcode-placeholder {
+  font-size: 11px; color: #94a3b8; font-style: italic;
+}
 
 .dialog-actions { display: flex; gap: 16px; margin-top: 24px; }
 .cancel-btn { flex: 1; border: 2px solid #e2e8f0; font-weight: bold; }

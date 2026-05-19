@@ -35,31 +35,44 @@
         </div>
         <div class="wallet-right">
           <el-button type="warning" round size="default" class="recharge-btn" @click="handleRecharge">
-            <el-icon></el-icon>Top Up
+            Top Up
           </el-button>
         </div>
       </div>
       <div class="wallet-progress">
-        <div class="progress-bar" :style="{ width: Math.min((Number(rawUserData.balance) / 500) * 100, 100) + '%' }"></div>
+        <div class="progress-bar" :style="{ width: progressWidth + '%' }"></div>
       </div>
-      <div class="wallet-hint">Next tier at ¥500.00</div>
+      <div class="wallet-hint">Next tier at ¥{{ nextTierTarget.toFixed(2) }}</div>
     </div>
 
     <div class="settings-body">
-      <!-- 地址表单卡片 -->
       <div class="settings-card">
         <div class="card-header">
           <div class="card-title">
             <div class="title-icon green">
-              <el-icon><MapLocation /></el-icon>
+              <el-icon><User /></el-icon>
             </div>
             <div class="title-text">
-              <span class="title-main">Logistics & Fulfillment</span>
-              <span class="title-sub">Manage your delivery preferences</span>
+              <span class="title-main">Profile & Contact</span>
+              <span class="title-sub">Manage your personal information</span>
             </div>
           </div>
         </div>
         <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">
+              <el-icon :size="14"><User /></el-icon>
+              USERNAME / NICKNAME
+            </label>
+            <el-input
+              v-model="rawUserData.username"
+              placeholder="Enter your username"
+              :prefix-icon="User"
+              clearable
+              class="custom-input"
+            />
+          </div>
+
           <div class="form-group">
             <label class="form-label">
               <el-icon :size="14"><Location /></el-icon>
@@ -92,12 +105,11 @@
             @click="updateUserInfo"
             :loading="saving"
           >
-            <el-icon></el-icon> Update Profile Data
+            Update Profile Data
           </el-button>
         </div>
       </div>
 
-      <!-- 安全设置卡片 -->
       <div class="settings-card">
         <div class="card-header">
           <div class="card-title">
@@ -143,7 +155,6 @@
         </div>
       </div>
 
-      <!-- 底部信息 -->
       <div class="footer-info">
         <div class="footer-brand">
           <span class="footer-logo">7-ELEVEn</span>
@@ -154,7 +165,6 @@
       </div>
     </div>
 
-    <!-- 密码修改弹窗 -->
     <el-dialog
       v-model="pwdDialogVisible"
       title="Change Account Password"
@@ -187,10 +197,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
-import { MapLocation, Location, Phone, Lock, Check, Plus, Wallet, User, Key, SwitchButton } from '@element-plus/icons-vue'
+import { ref, onMounted, reactive, computed } from 'vue'
+import { Location, Phone, Lock, Wallet, User, Key, SwitchButton } from '@element-plus/icons-vue'
 import request from '@/utils/request'
-import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessageBox, type FormInstance } from 'element-plus'
+import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -227,6 +238,21 @@ const pwdRules = reactive({
   ]
 })
 
+// 动态计算下一个等级的目标金额
+const nextTierTarget = computed(() => {
+  const bal = Number(rawUserData.value.balance) || 0
+  if (bal < 500) return 500
+  if (bal < 1000) return 1000
+  if (bal < 5000) return 5000
+  return Math.ceil((bal + 1) / 5000) * 5000 // 超过5000后每5000一升级
+})
+
+// 计算进度条真实百分比
+const progressWidth = computed(() => {
+  const bal = Number(rawUserData.value.balance) || 0
+  return Math.min((bal / nextTierTarget.value) * 100, 100)
+})
+
 const fetchUser = async () => {
   try {
     const res: any = await request.get(`/users/${userId}`)
@@ -256,15 +282,19 @@ const handleUpdatePassword = async () => {
   })
 }
 
+// 更新用户信息（包括用户名、地址、电话）
 const updateUserInfo = async () => {
-  if (!rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
+  if (!rawUserData.value.username || !rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
     return ElMessage.warning('Fields cannot be empty')
+  }
+  if (!/^\d{11}$/.test(rawUserData.value.phoneNumber)) {
+    return ElMessage.warning('Phone number must be exactly 11 digits')
   }
   saving.value = true
   try {
     await request.put(`/users/${userId}`, rawUserData.value)
     ElMessage.success('Profile saved')
-    await fetchUser()
+    await fetchUser() // 刷新本地数据以更新 UI 上的欢迎词
   } catch (e) {
     ElMessage.error('Update failed')
   } finally {
@@ -297,8 +327,11 @@ const handleLogout = () => {
     cancelButtonText: 'Cancel',
     type: 'warning'
   }).then(() => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('role')
     localStorage.removeItem('userId')
     localStorage.removeItem('cart')
+    window.dispatchEvent(new Event('auth-change'))
     ElMessage.success('Signed out successfully')
     router.push('/login')
   })
@@ -314,51 +347,31 @@ onMounted(fetchUser)
 </script>
 
 <style scoped>
+/* 样式部分保持不变，确保页面美观度 */
 .profile-page { background: #f4f6f8; min-height: 100vh; padding-bottom: 40px; }
-
-/* 品牌条纹 */
 .brand-stripe { height: 4px; background: linear-gradient(to right, #ff7900 33%, #007934 33%, #007934 66%, #e2231a 66%); }
-
-/* Hero 区域 - 更精致 */
 .member-hero {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  padding: 40px 24px 70px;
-  color: white;
-  position: relative;
-  overflow: hidden;
+  padding: 40px 24px 70px; color: white; position: relative; overflow: hidden;
 }
 .hero-content { display: flex; align-items: center; gap: 20px; position: relative; z-index: 1; }
-.hero-decoration {
-  position: absolute; right: -20px; top: 50%;
-  transform: translateY(-50%);
-  z-index: 0;
-}
-
+.hero-decoration { position: absolute; right: -20px; top: 50%; transform: translateY(-50%); z-index: 0; }
 .avatar-container { position: relative; }
 .member-avatar { border: 4px solid rgba(255,255,255,0.1); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .status-ring {
-  position: absolute; bottom: 2px; right: 2px;
-  width: 20px; height: 20px;
-  background: #007934; border: 3px solid #1e293b;
-  border-radius: 50%;
+  position: absolute; bottom: 2px; right: 2px; width: 20px; height: 20px;
+  background: #007934; border: 3px solid #1e293b; border-radius: 50%;
 }
 .id-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
 .member-id { font-family: monospace; font-weight: 700; color: #94a3b8; font-size: 13px; }
 .active-tag {
   background: linear-gradient(135deg, #007934, #006b52) !important;
-  color: white !important; border: none;
-  font-weight: 800; font-size: 10px; letter-spacing: 0.5px;
+  color: white !important; border: none; font-weight: 800; font-size: 10px; letter-spacing: 0.5px;
 }
 .welcome-text { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.3px; }
-
-/* 钱包卡片 - 全新设计，带进度条 */
 .wallet-card {
-  margin: -40px 20px 24px;
-  background: white; border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  position: relative; z-index: 2;
-  border: 1px solid rgba(0,0,0,0.04);
+  margin: -40px 20px 24px; background: white; border-radius: 20px; padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative; z-index: 2; border: 1px solid rgba(0,0,0,0.04);
 }
 .wallet-content { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
 .wallet-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -368,126 +381,59 @@ onMounted(fetchUser)
 .points-unit { font-size: 20px; font-weight: 800; color: #ff7900; }
 .recharge-btn {
   background: linear-gradient(135deg, #ff7900, #ee7203) !important;
-  border: none !important; color: white !important;
-  font-weight: 800; padding: 0 20px; height: 40px;
+  border: none !important; color: white !important; font-weight: 800; padding: 0 20px; height: 40px;
   box-shadow: 0 4px 12px rgba(238,114,3,0.3);
 }
-.wallet-progress {
-  height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden;
-}
-.progress-bar {
-  height: 100%; background: linear-gradient(90deg, #ff7900, #ee7203);
-  border-radius: 2px; transition: width 0.5s ease;
-}
+.wallet-progress { height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden; }
+.progress-bar { height: 100%; background: linear-gradient(90deg, #ff7900, #ee7203); border-radius: 2px; transition: width 0.5s ease; }
 .wallet-hint { font-size: 11px; color: #94a3b8; margin-top: 8px; text-align: right; font-weight: 600; }
-
-/* 设置区域 */
 .settings-body { padding: 0 20px; }
-
-/* 统一卡片样式 */
 .settings-card {
-  background: white; border-radius: 20px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(0,0,0,0.04);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  overflow: hidden;
-  transition: all 0.3s ease;
+  background: white; border-radius: 20px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03); overflow: hidden; transition: all 0.3s ease;
 }
-.settings-card:hover {
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-}
-
+.settings-card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
 .card-header { padding: 20px 20px 0; }
 .card-title { display: flex; align-items: center; gap: 14px; }
-.title-icon {
-  width: 44px; height: 44px; border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  color: white; font-size: 20px;
-}
+.title-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
 .title-icon.green { background: linear-gradient(135deg, #008163, #006b52); box-shadow: 0 4px 12px rgba(0,129,99,0.2); }
 .title-icon.orange { background: linear-gradient(135deg, #ff7900, #ee7203); box-shadow: 0 4px 12px rgba(238,114,3,0.2); }
 .title-text { display: flex; flex-direction: column; }
 .title-main { font-weight: 800; color: #1e293b; font-size: 15px; }
 .title-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-
 .card-body { padding: 20px; }
-
-/* 表单样式 */
 .form-group { margin-bottom: 20px; }
-.form-group:last-of-type { margin-bottom: 24px; }
-.form-label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 10px; font-weight: 800; color: #94a3b8;
-  text-transform: uppercase; letter-spacing: 1px;
-  margin-bottom: 10px;
-}
-.custom-input :deep(.el-input__wrapper) {
-  background: #f8fafc; box-shadow: none !important;
-  border: 1px solid #e2e8f0; border-radius: 12px;
-  padding: 4px 12px;
-}
-.custom-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #008163; box-shadow: 0 0 0 3px rgba(0,129,99,0.1) !important;
-}
-
+.form-label { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.custom-input :deep(.el-input__wrapper) { background: #f8fafc; box-shadow: none !important; border: 1px solid #e2e8f0; border-radius: 12px; padding: 4px 12px; }
+.custom-input :deep(.el-input__wrapper.is-focus) { border-color: #008163; box-shadow: 0 0 0 3px rgba(0,129,99,0.1) !important; }
 .commit-btn {
-  width: 100%; height: 48px; border-radius: 14px;
-  font-weight: 800; font-size: 15px;
-  background: linear-gradient(135deg, #008163, #006b52) !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(0,129,99,0.2);
-  transition: all 0.2s;
+  width: 100%; height: 48px; border-radius: 14px; font-weight: 800; font-size: 15px;
+  background: linear-gradient(135deg, #008163, #006b52) !important; border: none !important;
+  box-shadow: 0 4px 12px rgba(0,129,99,0.2); transition: all 0.2s;
 }
-.commit-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0,129,99,0.3);
-}
-
-/* 安全设置项 */
-.security-item {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0;
-}
+.commit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,129,99,0.3); }
+.security-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
 .sec-left { display: flex; align-items: center; gap: 14px; }
-.sec-icon-box {
-  width: 44px; height: 44px; border-radius: 12px;
-  background: #f1f5f9; color: #64748b;
-  display: flex; align-items: center; justify-content: center;
-}
+.sec-icon-box { width: 44px; height: 44px; border-radius: 12px; background: #f1f5f9; color: #64748b; display: flex; align-items: center; justify-content: center; }
 .sec-icon-box.red { background: #fef2f2; color: #ef4444; }
 .sec-info { display: flex; flex-direction: column; }
 .sec-label { font-size: 14px; font-weight: 800; color: #1e293b; }
 .sec-desc { font-size: 12px; color: #94a3b8; margin-top: 2px; }
 .sec-btn { font-weight: 700; }
 .divider { height: 1px; background: #f1f5f9; margin: 8px 0; }
-
-/* 底部信息 */
 .footer-info { text-align: center; padding: 30px 0 20px; }
 .footer-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
 .footer-logo { font-weight: 900; font-size: 14px; color: #008163; letter-spacing: 1px; }
 .footer-divider { color: #cbd5e1; }
 .footer-version { font-size: 11px; color: #94a3b8; font-weight: 700; }
 .footer-copy { font-size: 10px; color: #cbd5e1; }
-
-/* 弹窗 */
 :deep(.modern-dialog .el-dialog) { border-radius: 20px; overflow: hidden; }
 :deep(.modern-dialog .el-dialog__header) { padding: 24px 24px 0; margin-bottom: 8px; }
 :deep(.modern-dialog .el-dialog__title) { font-weight: 800; font-size: 18px; color: #1e293b; }
 :deep(.modern-dialog .el-dialog__body) { padding: 0 24px 16px; }
-.dialog-icon {
-  width: 72px; height: 72px;
-  background: #f0fdf4; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 20px;
-}
-:deep(.modern-dialog .el-form-item__label) {
-  font-size: 10px; font-weight: 800; color: #94a3b8;
-  text-transform: uppercase; letter-spacing: 1px;
-}
-:deep(.modern-dialog .el-input__wrapper) {
-  background: #f8fafc; box-shadow: none !important;
-  border: 1px solid #e2e8f0; border-radius: 12px;
-}
+.dialog-icon { width: 72px; height: 72px; background: #f0fdf4; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+:deep(.modern-dialog .el-form-item__label) { font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+:deep(.modern-dialog .el-input__wrapper) { background: #f8fafc; box-shadow: none !important; border: 1px solid #e2e8f0; border-radius: 12px; }
 .dialog-footer { display: flex; gap: 12px; }
 .dialog-footer .el-button { flex: 1; height: 44px; font-weight: 700; border-radius: 12px; }
 </style>

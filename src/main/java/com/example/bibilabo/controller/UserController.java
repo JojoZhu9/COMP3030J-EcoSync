@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,15 +22,14 @@ public class UserController {
 
     @PostMapping("/login")
     @Operation(summary = "用户登录 (获取Token)", description = "提交账户密码，验证成功后返回 JWT Token 供后续接口鉴权使用")
-    public String login(@RequestBody Map<String, String> payload) {
+    public Map<String, Object> login(@RequestBody Map<String, String> payload) {
         String username = payload.get("username");
         String password = payload.get("password");
-        try {
-            String token = userService.login(username, password);
-            return "登录成功，Token: " + token;
-        } catch (Exception e) {
-            return "登录失败: " + e.getMessage();
-        }
+        String token = userService.login(username, password);
+        Map<String, Object> map = new HashMap<>();
+        map.put("token", token);
+        map.put("message", "Login successful");
+        return map;
     }
 
     @GetMapping
