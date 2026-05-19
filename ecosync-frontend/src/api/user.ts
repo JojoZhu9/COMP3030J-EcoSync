@@ -16,9 +16,7 @@ export const registerApi = (data: any) => {
     method: 'post',
     data: {
       username: data.username,
-      password: data.password,
-      passwordHash: data.passwordHash,
-      rawPassword: data.rawPassword,
+      passwordHash: data.password,
       role: data.role
     }
   })

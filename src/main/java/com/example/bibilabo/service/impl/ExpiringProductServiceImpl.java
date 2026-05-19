@@ -37,19 +37,19 @@ public class ExpiringProductServiceImpl implements ExpiringProductService {
             product.setStatus(ProductStatus.AVAILABLE);
         }
         expiringProductMapper.insert(product);
-        return "临期商品上架成功，批次ID: " + product.getProductId();
+        return "Product listed successfully, batch ID: " + product.getProductId();
     }
 
     @Override
     public String updateProduct(ExpiringProduct product) {
         expiringProductMapper.update(product);
-        return "临期商品信息更新成功";
+        return "Product updated successfully";
     }
 
     @Override
     public String deleteProduct(Integer productId) {
         expiringProductMapper.deleteById(productId);
-        return "临期商品删除成功";
+        return "Product deleted successfully";
     }
 
     @Override

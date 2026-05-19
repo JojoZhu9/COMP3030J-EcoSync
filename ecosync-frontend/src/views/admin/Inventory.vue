@@ -24,14 +24,22 @@
           clearable
           class="search-input"
         />
-        <el-radio-group v-model="priceFilter" class="custom-radio">
-          <el-radio-button label="ALL">All Items</el-radio-button>
-          <el-radio-button label="UNDER_20">Under ¥20</el-radio-button>
-          <el-radio-button label="OVER_20">Above ¥20</el-radio-button>
-        </el-radio-group>
+        <div class="toolbar-right">
+          <el-button v-if="selectedProducts.length" type="danger" plain round size="small" @click="handleBatchDelete"
+          >
+            Delete Selected ({{ selectedProducts.length }})
+          </el-button>
+          <el-radio-group v-model="priceFilter" class="custom-radio">
+            <el-radio-button label="ALL">All Items</el-radio-button>
+            <el-radio-button label="UNDER_20">Under ¥20</el-radio-button>
+            <el-radio-button label="OVER_20">Above ¥20</el-radio-button>
+          </el-radio-group>
+        </div>
       </div>
 
-      <el-table :data="filteredProducts" v-loading="loading" class="custom-table" stripe border height="600">
+      <el-table :data="filteredProducts" v-loading="loading" class="custom-table" stripe border height="600" @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="55" align="center" />
+
         <el-table-column label="Barcode" width="160" align="center">
           <template #default="{ row }">
             <span class="barcode-text">{{ row.barcode }}</span>
@@ -41,11 +49,14 @@
         <el-table-column label="Product Preview" width="140" align="center">
           <template #default="{ row }">
             <el-image
-              class="product-avatar"
+              class="product-avatar cursor-pointer"
               :src="row.image_url || row.imageUrl ? `/uploads/products/${row.image_url || row.imageUrl}` : `/uploads/products/${row.barcode}.jpg`"
               fit="cover"
+              :preview-src-list="[row.image_url || row.imageUrl ? `/uploads/products/${row.image_url || row.imageUrl}` : `/uploads/products/${row.barcode}.jpg`]"
+              :initial-index="0"
+              preview-teleported
             >
-              <template #error><div class="image-slot-error"><el-icon><Box/></el-icon></div></template>
+              <template #error><div class="image-slot-error"><el-icon><Box /></el-icon></div></template>
             </el-image>
           </template>
         </el-table-column>
@@ -100,10 +111,20 @@
         <div class="form-panel">
           <el-form ref="formRef" :model="newP" :rules="rules" label-position="top">
             <el-form-item label="Product Image">
-              <el-upload class="product-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleFileChange">
-                <img v-if="imgPreview" :src="imgPreview" class="preview-img" />
-                <el-icon v-else class="uploader-icon"><Plus /></el-icon>
-              </el-upload>
+              <div class="image-preview-wrap">
+                <el-upload v-if="!imgPreview" class="product-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleFileChange"
+                >
+                  <el-icon class="uploader-icon"><Plus /></el-icon>
+                </el-upload>
+                <div v-else class="preview-with-delete"
+                >
+                  <img :src="imgPreview" class="preview-img" />
+                  <el-button class="delete-img-btn" circle size="small" type="danger" @click="removeImage"
+                  >
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </div>
+              </div>
             </el-form-item>
             <el-row :gutter="20">
               <el-col :span="14">
@@ -114,8 +135,8 @@
                 </el-form-item>
               </el-col>
               <el-col :span="10">
-                <el-form-item label="Standard Price">
-                  <el-input-number v-model="newP.normal_price" :precision="2" class="modern-input-num" style="width:100%" />
+                <el-form-item label="Standard Price" prop="normal_price">
+                  <el-input-number v-model="newP.normal_price" :precision="2" :min="0.01" class="modern-input-num" style="width:100%" />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -126,7 +147,7 @@
             <div class="matrix-grid">
               <div v-for="h in 12" :key="h" class="discount-input-group">
                 <span class="hour-label">{{ h }}h</span>
-                <el-input-number v-model="newP.discount_rates[h-1]" :min="0.1" :max="1.0" :step="0.05" size="small" controls-position="right" style="width: 75px" />
+                <el-input-number v-model="newP.discount_rates[h-1]" :min="0.1" :max="1.0" :step="0.05" size="small" controls-position="right" style="width: 75px" @blur="validateSingleDecay(h-1)" />
               </div>
             </div>
           </el-form>
@@ -154,7 +175,7 @@ import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { ElMessageBox, type FormInstance } from 'element-plus'
 import { ElMessage } from '@/utils/message'
-import { Plus, Camera, TrendCharts, Search, Box } from '@element-plus/icons-vue'
+import { Plus, Camera, TrendCharts, Search, Box, Delete } from '@element-plus/icons-vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
 const router = useRouter()
@@ -165,6 +186,7 @@ const submitLoading = ref(false)
 const showAdd = ref(false)
 const imgFile = ref<File | null>(null)
 const imgPreview = ref('')
+const selectedProducts = ref<any[]>([])
 
 const searchQuery = ref('')
 const priceFilter = ref('ALL')
@@ -176,9 +198,32 @@ const newP = ref({
   discount_rates: Array(12).fill(1.0)
 })
 
+const validateBarcode = (_rule: any, value: string, callback: any) => {
+  if (!value) return callback(new Error('Barcode required'))
+  if (!/^\d{13}$/.test(value)) return callback(new Error('Barcode must be exactly 13 digits'))
+  callback()
+}
+
+const validatePrice = (_rule: any, value: number, callback: any) => {
+  if (value == null || value === undefined) return callback(new Error('Price required'))
+  if (value <= 0) return callback(new Error('Price must be greater than 0'))
+  callback()
+}
+
+const validateDecay = (_rule: any, _value: any, callback: any) => {
+  for (const rate of newP.value.discount_rates) {
+    if (rate < 0.1 || rate > 1.0) {
+      return callback(new Error('Each decay rate must be between 0.1 and 1.0'))
+    }
+  }
+  callback()
+}
+
 const rules = reactive({
-  barcode: [{ required: true, message: 'Barcode required', trigger: 'blur' }],
-  product_name: [{ required: true, message: 'Name required', trigger: 'blur' }]
+  barcode: [{ required: true, validator: validateBarcode, trigger: 'blur' }],
+  product_name: [{ required: true, message: 'Name required', trigger: 'blur' }],
+  normal_price: [{ required: true, validator: validatePrice, trigger: 'change' }],
+  discount_rates: [{ validator: validateDecay, trigger: 'change' }]
 })
 
 const filteredProducts = computed(() => {
@@ -225,18 +270,80 @@ const handleFileChange = (file: any) => {
   imgPreview.value = URL.createObjectURL(file.raw)
 }
 
+const removeImage = () => {
+  imgFile.value = null
+  imgPreview.value = ''
+}
+
+const validateSingleDecay = (index: number) => {
+  const v = newP.value.discount_rates[index]
+  if (v < 0.1) newP.value.discount_rates[index] = 0.1
+  if (v > 1.0) newP.value.discount_rates[index] = 1.0
+}
+
+const processImage = async (file: File, barcode: string): Promise<File> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')!
+      let { width, height } = img
+      const maxDim = 1200
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round(height * maxDim / width)
+          width = maxDim
+        } else {
+          width = Math.round(width * maxDim / height)
+          height = maxDim
+        }
+      }
+      canvas.width = width
+      canvas.height = height
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, width, height)
+      ctx.drawImage(img, 0, 0, width, height)
+
+      const toBlob = (quality: number): Promise<Blob | null> => new Promise((res) => canvas.toBlob((b) => res(b), 'image/jpeg', quality))
+
+      const tryCompress = async () => {
+        let quality = 0.92
+        let blob = await toBlob(quality)
+        while (blob && blob.size > 1024 * 1024 && quality > 0.3) {
+          quality -= 0.1
+          blob = await toBlob(quality)
+        }
+        if (!blob) blob = await toBlob(0.8)
+        const newFile = new File([blob!], `${barcode}.jpg`, { type: 'image/jpeg' })
+        resolve(newFile)
+      }
+      tryCompress()
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve(file)
+    }
+    img.src = url
+  })
+}
+
 const submitAdd = async () => {
   if (!formRef.value) return
   await formRef.value.validate(async (valid) => {
     if (!valid) return
     submitLoading.value = true
-    const fd = new FormData()
-    if (imgFile.value) fd.append('image', imgFile.value)
-    fd.append('barcode', newP.value.barcode)
-    fd.append('product_name', newP.value.product_name)
-    fd.append('normal_price', newP.value.normal_price.toString())
-    fd.append('discount_rates', JSON.stringify(newP.value.discount_rates))
     try {
+      const fd = new FormData()
+      if (imgFile.value) {
+        const processed = await processImage(imgFile.value, newP.value.barcode)
+        fd.append('image', processed)
+      }
+      fd.append('barcode', newP.value.barcode)
+      fd.append('product_name', newP.value.product_name)
+      fd.append('normal_price', newP.value.normal_price.toString())
+      fd.append('discount_rates', JSON.stringify(newP.value.discount_rates))
       await request.post('/products', fd)
       ElMessage.success('Product registered!')
       showAdd.value = false
@@ -246,19 +353,15 @@ const submitAdd = async () => {
   })
 }
 
-// 【删除提示优化】：明确告知用户外键约束导致无法删除
 const handleDelete = (row: any) => {
   ElMessageBox.confirm(`Delete [${row.product_name || row.productName || row.barcode}]?`, 'Warning', { type: 'error' }).then(async () => {
     try {
       await request.delete(`/products/${row.barcode}`)
       ElMessage.success('Deleted')
       fetchData()
-    } catch (e) {
-      ElMessageBox.alert(
-        `<strong>Cannot delete product!</strong><br><br>This product is currently linked to active inventory or historical orders.<br><br><span style="color:#64748b;font-size:12px;">* Database Foreign Key constraints prevent hard deletion to protect transaction history. Please archive or disable it instead.</span>`,
-        'Database Protection Triggered',
-        { type: 'error', dangerouslyUseHTMLString: true }
-      )
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || 'Delete failed'
+      ElMessage.error(msg)
     }
   }).catch(() => {})
 }
@@ -283,6 +386,38 @@ const stopScanner = async () => {
 }
 
 const getBarColor = (rate: number) => rate > 0.8 ? '#008163' : (rate > 0.5 ? '#EE7203' : '#e2231a')
+
+const handleSelectionChange = (rows: any[]) => {
+  selectedProducts.value = rows
+}
+
+const handleBatchDelete = async () => {
+  if (!selectedProducts.value.length) return
+  const count = selectedProducts.value.length
+  try {
+    await ElMessageBox.confirm(
+      `Delete ${count} selected product${count > 1 ? 's' : ''}?`,
+      'Batch Delete',
+      { type: 'error' }
+    )
+    let success = 0
+    let failed = 0
+    for (const row of selectedProducts.value) {
+      try {
+        await request.delete(`/products/${row.barcode}`)
+        success++
+      } catch (e) {
+        failed++
+      }
+    }
+    if (success) ElMessage.success(`${success} product${success > 1 ? 's' : ''} deleted`)
+    if (failed) ElMessage.warning(`${failed} could not be deleted (linked to inventory/orders)`)
+    fetchData()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error('Batch delete failed')
+  }
+}
+
 onMounted(fetchData)
 onUnmounted(stopScanner)
 </script>
@@ -304,6 +439,7 @@ onUnmounted(stopScanner)
 
 /* 工具栏 */
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #fdfdfd; border-bottom: 1px solid #f1f5f9; }
+.toolbar-right { display: flex; align-items: center; gap: 12px; }
 .search-input { width: 340px; }
 .search-input :deep(.el-input__wrapper) { background: #f8fafc; border-radius: 10px; box-shadow: 0 0 0 1px #e2e8f0 inset; padding: 6px 12px; }
 .search-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px rgba(0,129,99,0.4) inset; }
@@ -313,6 +449,7 @@ onUnmounted(stopScanner)
 :deep(.el-table th.el-table__cell) { background-color: #f8fafc !important; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
 .barcode-text { font-family: monospace; font-weight: 800; color: #64748b; font-size: 14px; letter-spacing: 1px; }
 .product-avatar { width: 44px; height: 44px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+.cursor-pointer { cursor: pointer; }
 .image-slot-error { font-size: 18px; color: #cbd5e1; }
 .product-name-txt { font-weight: 700; color: #1e293b; font-size: 14px; }
 .price-tag { color: #EE7203; font-weight: 900; font-size: 16px; }
@@ -342,9 +479,12 @@ onUnmounted(stopScanner)
 .form-panel { flex: 1.2; }
 :deep(.el-form-item__label) { font-weight: 800; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px !important; }
 .modern-input :deep(.el-input__wrapper), .modern-input-num :deep(.el-input__wrapper) { background: #f8fafc; border-radius: 10px; box-shadow: 0 0 0 1px #e2e8f0 inset; }
+.image-preview-wrap { display: flex; align-items: center; }
 .product-uploader { border: 2px dashed #cbd5e1; border-radius: 12px; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; background: #f8fafc; }
 .product-uploader:hover { border-color: #008163; background: #f0fdf4; }
+.preview-with-delete { position: relative; width: 100px; height: 100px; }
 .preview-img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+.delete-img-btn { position: absolute; top: -8px; right: -8px; z-index: 2; }
 .uploader-icon { font-size: 24px; color: #94a3b8; }
 
 .matrix-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }

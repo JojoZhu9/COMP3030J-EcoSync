@@ -28,6 +28,21 @@
             </div>
           </div>
 
+          <!-- 最近店铺 -->
+          <div v-if="nearestStore" class="nearest-store-bar">
+            <el-tag effect="dark" type="success" round class="nearest-tag">
+              <el-icon><MapLocation /></el-icon>
+              Nearest: <strong>{{ nearestStore.storeName }}</strong>
+              <span class="dist">{{ nearestStore.distance.toFixed(1) }} km</span>
+            </el-tag>
+            <el-button link type="primary" size="small" @click="openMapDialog">View Map</el-button>
+          </div>
+          <div v-else class="nearest-store-bar">
+            <el-button size="small" round type="success" plain @click="findNearestStore">
+              <el-icon><MapLocation /></el-icon> Find Nearest Store
+            </el-button>
+          </div>
+
           <!-- 搜索栏 -->
           <div class="search-bar">
             <el-input
@@ -156,6 +171,44 @@
       <el-empty v-if="!loading && filteredProducts.length === 0" description="No available items right now." />
     </div>
 
+    <!-- 地图弹窗 -->
+    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog"
+      destroy-on-close
+    >
+      <div v-if="mapStore" class="map-body"
+      >
+        <p class="map-store-name"
+        >{{ mapStore.storeName }}
+        </p>
+        <p class="map-store-addr"
+        >{{ mapStore.address }}, {{ mapStore.city }}
+        </p>
+        <iframe
+          v-if="mapStore.latitude && mapStore.longitude"
+          width="100%" height="350" frameborder="0" scrolling="no"
+          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${mapStore.longitude-0.01}%2C${mapStore.latitude-0.01}%2C${mapStore.longitude+0.01}%2C${mapStore.latitude+0.01}&layer=mapnik&marker=${mapStore.latitude}%2C${mapStore.longitude}`"
+          style="border-radius: 12px; border: 1px solid #e2e8f0;"
+        >
+        </iframe>
+        <el-empty v-else description="No coordinates available for this store" />
+      </div>
+    </el-dialog>
+
+    <!-- 地图弹窗 -->
+    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog" destroy-on-close>
+      <div v-if="mapStore" class="map-body">
+        <p class="map-store-name">{{ mapStore.storeName }}</p>
+        <p class="map-store-addr">{{ mapStore.address }}, {{ mapStore.city }}</p>
+        <iframe
+          v-if="mapStore.latitude && mapStore.longitude"
+          width="100%" height="350" frameborder="0" scrolling="no"
+          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${mapStore.longitude-0.01}%2C${mapStore.latitude-0.01}%2C${mapStore.longitude+0.01}%2C${mapStore.latitude+0.01}&layer=mapnik&marker=${mapStore.latitude}%2C${mapStore.longitude}`"
+          style="border-radius: 12px; border: 1px solid #e2e8f0;"
+        ></iframe>
+        <el-empty v-else description="No coordinates available for this store" />
+      </div>
+    </el-dialog>
+
     <!-- 详情弹窗 -->
     <el-dialog v-model="detailVisible" width="420px" center append-to-body class="modern-detail-dialog" :show-close="false">
       <div v-if="currentProduct" class="detail-wrapper">
@@ -212,7 +265,7 @@
 
 <script setup lang="ts">
 import {ref, onMounted, computed, nextTick} from 'vue'
-import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar } from '@element-plus/icons-vue'
+import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar, MapLocation } from '@element-plus/icons-vue'
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
 import request from '@/utils/request'
@@ -226,6 +279,9 @@ const loading = ref(false)
 const detailVisible = ref(false)
 const currentProduct = ref<any>(null)
 const detailBarcodeRef = ref<HTMLElement | null>(null)
+const nearestStore = ref<any>(null)
+const mapDialogVisible = ref(false)
+const mapStore = ref<any>(null)
 
 // 三个独立的过滤器
 const searchKeyword = ref('')
@@ -347,7 +403,8 @@ const fetchProducts = async () => {
         return { ...item, displayPrice: '0.00', normalPrice: 0 }
       }
     }))
-    productList.value = enriched.filter(i => i.status === 'AVAILABLE')
+    const now = new Date()
+    productList.value = enriched.filter(i => i.status === 'AVAILABLE' && new Date(i.expirationTime) > now)
   } catch (e) {
     ElMessage.error('Failed to sync product data')
   } finally {
@@ -382,7 +439,6 @@ const addToCart = async (prod: any) => {
       productId: Number(prod.productId),
       quantity: 1
     })
-    if (prod.remainingStock > 0) prod.remainingStock--
     ElMessage.success('Added to basket')
   } catch (e) { ElMessage.error('Failed to add') }
 }
@@ -416,6 +472,53 @@ const showDetail = (prod: any) => {
 }
 
 const handleDetailBuy = () => { if (currentProduct.value) addToCart(currentProduct.value) }
+
+const toRad = (deg: number) => deg * Math.PI / 180
+
+const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+const findNearestStore = () => {
+  if (!navigator.geolocation) {
+    ElMessage.warning('Geolocation is not supported by your browser')
+    return
+  }
+  ElMessage.info('Locating you...')
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const userLat = pos.coords.latitude
+    const userLng = pos.coords.longitude
+    let best: Record<string, unknown> | null = null
+    let bestDist = Infinity
+    for (const s of storeList.value) {
+      const lat = s.latitude
+      const lng = s.longitude
+      if (lat == null || lng == null) continue
+      const d = haversine(userLat, userLng, lat, lng)
+      if (d < bestDist) {
+        bestDist = d
+        best = { ...s, distance: d }
+      }
+    }
+    if (best) {
+      nearestStore.value = best
+      ElMessage.success(`Nearest store: ${best.storeName} (${bestDist.toFixed(1)} km)`)
+    } else {
+      ElMessage.warning('No store with coordinates found')
+    }
+  }, () => {
+    ElMessage.error('Unable to retrieve your location')
+  })
+}
+
+const openMapDialog = () => {
+  mapStore.value = nearestStore.value
+  mapDialogVisible.value = true
+}
 
 onMounted(fetchStores)
 </script>
@@ -578,6 +681,17 @@ onMounted(fetchStores)
   color: #94a3b8 !important; cursor: not-allowed !important; box-shadow: none !important;
 }
 .disabled-text { font-size: 16px; font-weight: bold; }
+
+/* 最近店铺 */
+.nearest-store-bar { display: flex; align-items: center; gap: 10px; }
+.nearest-tag { font-weight: 800; display: flex; align-items: center; gap: 6px; }
+.nearest-tag .dist { opacity: 0.8; font-weight: 600; }
+
+/* 地图弹窗 */
+.map-body { padding: 10px 0; }
+.map-store-name { font-size: 16px; font-weight: 800; color: #1e293b; margin: 0 0 6px 0; }
+.map-store-addr { font-size: 13px; color: #64748b; margin: 0 0 16px 0; }
+.modern-dialog :deep(.el-dialog) { border-radius: 16px; }
 
 /* 详情弹窗 */
 .modern-detail-dialog :deep(.el-dialog) { border-radius: 20px; overflow: hidden; padding: 0; }

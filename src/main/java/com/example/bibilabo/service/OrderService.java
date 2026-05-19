@@ -1,13 +1,14 @@
 package com.example.bibilabo.service;
 
+import com.example.bibilabo.entity.CheckoutResult;
 import com.example.bibilabo.entity.Order;
 import com.example.bibilabo.entity.OrderVO;
 
 import java.util.List;
 
 public interface OrderService {
-    // 下单现在只需要知道是谁在哪个店提货
-    String checkout(Integer userId, Integer storeId);
+    // 下单按店铺拆单，返回多个订单信息
+    CheckoutResult checkout(Integer userId, Integer storeId);
 
     List<Order> getUserOrders(Integer userId);
 

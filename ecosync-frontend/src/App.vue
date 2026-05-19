@@ -25,6 +25,7 @@
           <template v-if="currentRole === 'ADMIN'">
             <div class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Home Page</div>
             <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">Accounts</div>
+            <div class="menu-item" :class="{ active: route.path.includes('stores') }" @click="go('/admin/stores')">Stores</div>
             <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">Inventory</div>
             <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">Analytics</div>
           </template>

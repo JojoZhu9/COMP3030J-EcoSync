@@ -28,7 +28,7 @@
                 <el-icon><Shop /></el-icon>
               </div>
               <div class="store-text">
-                <span class="store-name">7-Eleven Store #{{ order.storeId }}</span>
+                <span class="store-name">{{ storeMap[order.storeId] || `Store #${order.storeId}` }}</span>
                 <span class="store-sub">{{ formatDate(order.createdAt) }}</span>
               </div>
             </div>
@@ -151,6 +151,19 @@ const activeTab = ref('ALL')
 const orders = ref<any[]>([])
 const loading = ref(false)
 const userId = localStorage.getItem('userId') || '12'
+const storeMap = ref<Record<number, string>>({})
+
+const fetchStores = async () => {
+  try {
+    const res: any = await request.get('/stores')
+    const stores = res.data || res || []
+    const map: Record<number, string> = {}
+    stores.forEach((s: any) => {
+      map[s.storeId] = s.storeName || `Store #${s.storeId}`
+    })
+    storeMap.value = map
+  } catch (e) {}
+}
 
 const fetchOrders = async () => {
   loading.value = true
@@ -263,7 +276,10 @@ const cancelOrder = async (orderId: number) => {
 const formatStatus = (s: string) => s.replace('_', ' ')
 const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
 
-onMounted(fetchOrders)
+onMounted(async () => {
+  await fetchStores()
+  fetchOrders()
+})
 </script>
 
 <style scoped>

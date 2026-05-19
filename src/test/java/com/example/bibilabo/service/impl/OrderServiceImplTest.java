@@ -52,7 +52,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("购物车为空"));
+        assertTrue(ex.getMessage().contains("Cart is empty"));
     }
 
     @Test
@@ -61,7 +61,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("购物车为空"));
+        assertTrue(ex.getMessage().contains("Cart is empty"));
     }
 
     @Test
@@ -79,7 +79,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("已下架或售罄"));
+        assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("已下架或售罄"));
+        assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
     }
 
     @Test
@@ -113,7 +113,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("库存不足"));
+        assertTrue(ex.getMessage().contains("Insufficient stock"));
     }
 
     @Test
@@ -133,15 +133,20 @@ class OrderServiceImplTest {
         stdProduct.setNormalPrice(new BigDecimal("10.00"));
         stdProduct.setDiscountRates("[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]");
 
+        User user = new User();
+        user.setUserId(12);
+        user.setBalance(new BigDecimal("1.00"));
+
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
         when(expiringProductMapper.findById(1)).thenReturn(product);
         when(expiringProductMapper.decreaseStock(1, 1)).thenReturn(1);
         when(standardProductMapper.findByBarcode("6901234560001")).thenReturn(stdProduct);
+        when(userMapper.findById(12)).thenReturn(user);
         when(userMapper.decreaseBalance(eq(12), any(BigDecimal.class))).thenReturn(0);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1));
-        assertTrue(ex.getMessage().contains("余额不足"));
+        assertTrue(ex.getMessage().contains("Insufficient balance"));
     }
 
     // ========== checkout 折扣计算（核心逻辑） ==========
@@ -151,10 +156,15 @@ class OrderServiceImplTest {
         cartItem.setProductId(1);
         cartItem.setQuantity(1);
 
+        User user = new User();
+        user.setUserId(12);
+        user.setBalance(new BigDecimal("9999.00"));
+
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
         when(expiringProductMapper.findById(1)).thenReturn(product);
         when(expiringProductMapper.decreaseStock(1, 1)).thenReturn(1);
         when(standardProductMapper.findByBarcode("6901234560001")).thenReturn(stdProduct);
+        when(userMapper.findById(12)).thenReturn(user);
         when(userMapper.decreaseBalance(eq(12), any(BigDecimal.class))).thenReturn(1);
     }
 
@@ -186,10 +196,11 @@ class OrderServiceImplTest {
                         "[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]")
         );
 
-        String result = orderService.checkout(12, 1);
+        CheckoutResult result = orderService.checkout(12, 1);
 
-        assertTrue(result.contains("下单成功"));
-        assertTrue(result.contains("PICKUP-"));
+        assertTrue(result.getMessage().contains("Order placed successfully"));
+        assertFalse(result.getOrders().isEmpty());
+        assertTrue(result.getOrders().get(0).getPickupCode().contains("PICKUP-"));
 
         verify(orderMapper).updateTotalAmount(eq(99), amountCaptor.capture());
         BigDecimal actualAmount = amountCaptor.getValue().setScale(2, RoundingMode.HALF_UP);
@@ -269,7 +280,7 @@ class OrderServiceImplTest {
         when(orderMapper.completeOrderByPickupCode("PICKUP-ABC123")).thenReturn(1);
 
         String result = orderService.confirmPickup("PICKUP-ABC123");
-        assertTrue(result.contains("核销成功"));
+        assertTrue(result.contains("Pickup verified successfully"));
     }
 
     @Test
@@ -277,7 +288,7 @@ class OrderServiceImplTest {
         when(orderMapper.completeOrderByPickupCode("INVALID")).thenReturn(0);
 
         String result = orderService.confirmPickup("INVALID");
-        assertTrue(result.contains("无效"));
+        assertTrue(result.contains("Invalid"));
     }
 
     // ========== getOrderDetails ==========
@@ -288,7 +299,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.getOrderDetails(999));
-        assertEquals("订单不存在", ex.getMessage());
+        assertEquals("Order does not exist", ex.getMessage());
     }
 
     @Test

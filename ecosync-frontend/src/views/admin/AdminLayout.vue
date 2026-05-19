@@ -34,6 +34,11 @@
             <span>Account Control</span>
           </el-menu-item>
 
+          <el-menu-item index="/admin/stores">
+            <el-icon><Shop /></el-icon>
+            <span>Store Management</span>
+          </el-menu-item>
+
           <div class="menu-section-label">System</div>
 
           <el-menu-item index="/admin/scan">
@@ -82,7 +87,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
-import { DataLine, Box, UserFilled as UserGroup, Setting, SwitchButton, ArrowRight } from '@element-plus/icons-vue'
+import { DataLine, Box, UserFilled as UserGroup, Shop, Setting, SwitchButton, ArrowRight } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const currentAdmin = ref('Admin User')

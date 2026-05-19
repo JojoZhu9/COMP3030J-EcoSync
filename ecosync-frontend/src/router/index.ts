@@ -19,6 +19,7 @@ const router = createRouter({
 
     // --- ADMIN ---
     { path: '/admin/accounts', name: 'AccountManage', component: () => import('../views/admin/AccountManage.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
+    { path: '/admin/stores', name: 'StoreManage', component: () => import('../views/admin/StoreManage.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
     { path: '/admin/inventory', name: 'Inventory', component: () => import('../views/admin/Inventory.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
     { path: '/admin/dashboard', name: 'Dashboard', component: () => import('../views/admin/Dashboard.vue'), meta: { requiresAuth: true, role: 'ADMIN' } },
 

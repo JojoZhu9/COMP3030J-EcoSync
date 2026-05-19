@@ -60,7 +60,7 @@ public class StandardProductController {
         }
 
         productService.createProduct(product);
-        return "商品添加成功，条码: " + barcode;
+        return "Product added successfully, barcode: " + barcode;
     }
 
     @PutMapping("/{barcode}")
@@ -68,14 +68,14 @@ public class StandardProductController {
     public String update(@Parameter(description = "商品条码") @PathVariable String barcode, @RequestBody StandardProduct product) {
         product.setBarcode(barcode);
         productService.updateProduct(product);
-        return "商品更新成功";
+        return "Product updated successfully";
     }
 
     @DeleteMapping("/{barcode}")
     @Operation(summary = "删除标准商品", description = "从基础库中彻底移除该商品（注意可能受外键约束影响）")
     public String delete(@Parameter(description = "商品条码") @PathVariable String barcode) {
         productService.deleteProduct(barcode);
-        return "商品删除成功";
+        return "Product deleted successfully";
     }
 
     private String getExtension(String filename) {

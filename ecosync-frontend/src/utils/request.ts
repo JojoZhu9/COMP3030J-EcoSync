@@ -28,6 +28,10 @@ request.interceptors.response.use(
         router.push('/login').then(() => { isRelogging = false })
       }
     }
+    // 提取后端返回的详细错误信息
+    if (error.response?.data?.message) {
+      error.message = error.response.data.message
+    }
     return Promise.reject(error)
   }
 )

@@ -1,18 +1,23 @@
 import request from '@/utils/request'
 
 export const storeApi = {
-  // 修正后：去掉开头的 /api，因为 baseURL 已经包含了它
   getAll: () => {
-    return request({
-      url: '/stores', // 最终会拼接成 /api/stores
-      method: 'get'
-    })
+    return request({ url: '/stores', method: 'get' })
   },
 
   getById: (id: number) => {
-    return request({
-      url: `/stores/${id}`,
-      method: 'get'
-    })
+    return request({ url: `/stores/${id}`, method: 'get' })
+  },
+
+  create: (data: any) => {
+    return request({ url: '/stores', method: 'post', data })
+  },
+
+  update: (id: number, data: any) => {
+    return request({ url: `/stores/${id}`, method: 'put', data })
+  },
+
+  delete: (id: number) => {
+    return request({ url: `/stores/${id}`, method: 'delete' })
   }
 }

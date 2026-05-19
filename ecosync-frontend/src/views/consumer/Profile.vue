@@ -287,6 +287,9 @@ const updateUserInfo = async () => {
   if (!rawUserData.value.username || !rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
     return ElMessage.warning('Fields cannot be empty')
   }
+  if (!/^\d{11}$/.test(rawUserData.value.phoneNumber)) {
+    return ElMessage.warning('Phone number must be exactly 11 digits')
+  }
   saving.value = true
   try {
     await request.put(`/users/${userId}`, rawUserData.value)
@@ -324,8 +327,11 @@ const handleLogout = () => {
     cancelButtonText: 'Cancel',
     type: 'warning'
   }).then(() => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('role')
     localStorage.removeItem('userId')
     localStorage.removeItem('cart')
+    window.dispatchEvent(new Event('auth-change'))
     ElMessage.success('Signed out successfully')
     router.push('/login')
   })

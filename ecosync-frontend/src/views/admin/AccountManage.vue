@@ -56,6 +56,16 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="Store" width="180" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.role === 'EMPLOYEE' && row.storeId" effect="light" round class="store-tag">
+              {{ storeNameMap[row.storeId] || 'Store #' + row.storeId }}
+            </el-tag>
+            <span v-else-if="row.role === 'EMPLOYEE'" class="no-store">Unassigned</span>
+            <span v-else class="no-store">—</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="Account Status" width="150" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'BANNED' ? 'danger' : 'success'" effect="light" round class="status-tag">
@@ -64,7 +74,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Actions" width="220" align="center">
+        <el-table-column label="Actions" width="280" align="center">
           <template #default="{ row }">
             <template v-if="row.role !== 'ADMIN'">
               <el-button
@@ -76,7 +86,7 @@
               >
                 {{ row.status === 'BANNED' ? 'Unban' : 'Suspend' }}
               </el-button>
-
+              <el-button v-if="row.role === 'EMPLOYEE'" plain size="small" round type="primary" @click="openMigrateDialog(row)">Migrate</el-button>
               <el-button plain size="small" round type="danger" @click="handleDelete(row)">Delete</el-button>
             </template>
             <span v-else class="admin-lock-text"><el-icon><Lock /></el-icon> System Protected</span>
@@ -105,11 +115,32 @@
             <el-option label="Store Employee (EMPLOYEE)" value="EMPLOYEE" />
           </el-select>
         </el-form-item>
+
+        <el-form-item v-if="form.role === 'EMPLOYEE'" label="Assign Store">
+          <el-select v-model="form.storeId" style="width: 100%" class="dialog-select" clearable placeholder="Select a store">
+            <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
           <el-button round @click="showAdd = false">Cancel</el-button>
           <el-button round type="success" class="brand-btn" :loading="submitting" @click="createUser">Register Account</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showMigrate" title="Migrate Employee Store" width="400px" class="modern-dialog" destroy-on-close>
+      <p style="margin-bottom: 16px; color: #475569;">
+        Migrating employee <strong>{{ migrateTarget?.username }}</strong> to a new store:
+      </p>
+      <el-select v-model="migrateStoreId" style="width: 100%" placeholder="Select target store">
+        <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
+      </el-select>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button round @click="showMigrate = false">Cancel</el-button>
+          <el-button round type="success" class="brand-btn" :loading="migrateLoading" @click="submitMigrate">Confirm Migrate</el-button>
         </div>
       </template>
     </el-dialog>
@@ -119,20 +150,34 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { storeApi } from '@/api/store'
 import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { Plus, Search, UserFilled as UserGroup, Lock } from '@element-plus/icons-vue'
 
 const users = ref<any[]>([])
+const stores = ref<any[]>([])
 const loading = ref(false)
 const showAdd = ref(false)
+const showMigrate = ref(false)
 const submitting = ref(false)
+const migrateLoading = ref(false)
+const migrateTarget = ref<any>(null)
 
 // 新增搜索与过滤状态
 const searchQuery = ref('')
 const roleFilter = ref('ALL') // 'ALL' | 'ADMIN' | 'EMPLOYEE'
 
-const form = ref({ username: '', passwordHash: '', role: 'EMPLOYEE', phoneNumber: '0000000000' })
+const form = ref({ username: '', passwordHash: '', role: 'EMPLOYEE', phoneNumber: '0000000000', storeId: null as number | null })
+const migrateStoreId = ref<number | null>(null)
+
+const storeNameMap = computed(() => {
+  const map: Record<number, string> = {}
+  for (const s of stores.value) {
+    map[s.storeId || s.store_id] = s.storeName || s.store_name
+  }
+  return map
+})
 
 const filteredUsers = computed(() => {
   let result = users.value
@@ -153,8 +198,14 @@ const filteredUsers = computed(() => {
 })
 
 const openAddDialog = () => {
-  form.value = { username: '', passwordHash: '', role: 'EMPLOYEE', phoneNumber: '0000000000' }
+  form.value = { username: '', passwordHash: '', role: 'EMPLOYEE', phoneNumber: '0000000000', storeId: null }
   showAdd.value = true
+}
+
+const openMigrateDialog = (row: any) => {
+  migrateTarget.value = row
+  migrateStoreId.value = row.storeId || null
+  showMigrate.value = true
 }
 
 const fetchUsers = async () => {
@@ -212,7 +263,37 @@ const handleDelete = (row: any) => {
   })
 }
 
-onMounted(fetchUsers)
+const fetchStores = async () => {
+  try {
+    const res: any = await storeApi.getAll()
+    stores.value = res.data || res
+  } catch (e) {
+    ElMessage.error('Failed to load stores')
+  }
+}
+
+const submitMigrate = async () => {
+  if (!migrateTarget.value || !migrateStoreId.value) {
+    return ElMessage.warning('Please select a target store')
+  }
+  migrateLoading.value = true
+  try {
+    const id = migrateTarget.value.userId || migrateTarget.value.user_id
+    await request.put(`/users/${id}`, { ...migrateTarget.value, storeId: migrateStoreId.value })
+    ElMessage.success('Employee migrated successfully')
+    showMigrate.value = false
+    fetchUsers()
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || 'Migration failed')
+  } finally {
+    migrateLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchUsers()
+  fetchStores()
+})
 </script>
 
 <style scoped>
@@ -251,6 +332,8 @@ onMounted(fetchUsers)
 .status-tag { font-weight: 800; letter-spacing: 1px; }
 
 .admin-lock-text { font-size: 12px; color: #94a3b8; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.store-tag { font-weight: 700; background: #f0f9ff !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; }
+.no-store { font-size: 12px; color: #94a3b8; font-weight: 600; }
 
 /* 弹窗样式 */
 :deep(.modern-dialog) { border-radius: 20px; overflow: hidden; }

@@ -10,10 +10,16 @@
         </el-select>
       </el-form-item>
       <el-form-item label="Expiration Date" required>
-        <el-date-picker v-model="form.expirationTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" style="width: 100%" />
+        <el-date-picker
+          v-model="form.expirationTime"
+          type="datetime"
+          value-format="YYYY-MM-DDTHH:mm:ss"
+          style="width: 100%"
+          :disabled-date="disabledDate"
+        />
       </el-form-item>
       <el-form-item label="Stock Quantity">
-        <el-input-number v-model="form.remainingStock" :min="1" style="width: 100%" />
+        <el-input-number v-model="form.remainingStock" :min="1" :step="1" step-strictly style="width: 100%" />
       </el-form-item>
       <el-button type="success" style="width: 100%; background: #007934; border: none; font-weight: bold;" @click="submit" :loading="busy">
         Confirm Listing
@@ -40,18 +46,36 @@ const form = reactive({
   createdBy: Number(localStorage.getItem('userId') || 1)
 })
 
+const disabledDate = (time: Date) => {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  return time.getTime() < now.getTime()
+}
+
 const fetchLibrary = async () => {
   const res: any = await request.get('/products')
   library.value = res.data || res
 }
 
 const submit = async () => {
-  if(!form.barcode || !form.expirationTime) return ElMessage.warning("Incomplete data")
+  if (!form.barcode || !form.expirationTime) return ElMessage.warning('Incomplete data')
+
+  const selected = new Date(form.expirationTime)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  if (selected.getTime() < now.getTime()) {
+    return ElMessage.warning('Expiration date cannot be in the past')
+  }
+
+  if (!Number.isInteger(form.remainingStock) || form.remainingStock < 1) {
+    return ElMessage.warning('Stock quantity must be a positive integer')
+  }
+
   busy.value = true
   try {
     await request.post('/expiring-products', form)
-    ElMessage.success("Listed Successfully")
-    form.barcode = ''; form.expirationTime = '';
+    ElMessage.success('Listed Successfully')
+    form.barcode = ''; form.expirationTime = ''; form.remainingStock = 1
     emit('refresh')
   } finally {
     busy.value = false

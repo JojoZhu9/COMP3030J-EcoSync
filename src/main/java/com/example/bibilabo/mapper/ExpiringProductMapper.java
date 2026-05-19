@@ -38,4 +38,7 @@ public interface ExpiringProductMapper {
 
     @Delete("DELETE FROM expiring_products WHERE product_id = #{productId}")
     int deleteById(Integer productId);
+
+    @Delete("DELETE FROM expiring_products WHERE barcode = #{barcode}")
+    int deleteByBarcode(String barcode);
 }

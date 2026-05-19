@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -27,87 +26,126 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String checkout(Integer userId, Integer storeId) {
+    public CheckoutResult checkout(Integer userId, Integer ignoredStoreId) {
 
         List<ShoppingCart> cartItems = cartMapper.findByUserId(userId);
         if (cartItems == null || cartItems.isEmpty()) {
-            throw new RuntimeException("购物车为空，无法下单");
+            throw new RuntimeException("Cart is empty, cannot place order");
         }
-
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
-        // 1. 生成唯一核销码，并预创建订单
-        String pickupCode = "PICKUP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setStoreId(storeId);
-        order.setPickupCode(pickupCode);
-        order.setTotalAmount(BigDecimal.ZERO);
-        // 使用常量接口替换硬编码
-        order.setStatus(OrderStatus.AWAITING_PICKUP);
-        orderMapper.insert(order);
 
         ObjectMapper mapper = new ObjectMapper();
 
-        // 2. 遍历购物车，处理每件商品
+        // 1. 先遍历一遍：校验库存、按店铺分组、预计算价格
+        Map<Integer, List<ShoppingCart>> itemsByStore = new LinkedHashMap<>();
+        Map<Integer, BigDecimal> storeTotals = new HashMap<>();
+        BigDecimal overallTotal = BigDecimal.ZERO;
+
         for (ShoppingCart item : cartItems) {
             ExpiringProduct expProduct = expiringProductMapper.findById(item.getProductId());
-            // 使用常量接口替换硬编码
             if (expProduct == null || !ProductStatus.AVAILABLE.equals(expProduct.getStatus())) {
-                throw new RuntimeException("商品已下架或售罄");
+                throw new RuntimeException("Product is unavailable or sold out");
+            }
+            if (expProduct.getRemainingStock() < item.getQuantity()) {
+                throw new RuntimeException("Insufficient stock for product: " + expProduct.getBarcode());
             }
 
-            int stockUpdated = expiringProductMapper.decreaseStock(expProduct.getProductId(), item.getQuantity());
-            if (stockUpdated == 0) {
-                throw new RuntimeException("商品库存不足: " + expProduct.getBarcode());
-            }
+            Integer actualStoreId = expProduct.getStoreId();
+            itemsByStore.computeIfAbsent(actualStoreId, k -> new ArrayList<>()).add(item);
 
             StandardProduct stdProduct = standardProductMapper.findByBarcode(expProduct.getBarcode());
+            BigDecimal itemPrice = calculateItemPrice(expProduct, stdProduct, mapper);
+            BigDecimal subTotal = itemPrice.multiply(new BigDecimal(item.getQuantity()));
+            storeTotals.merge(actualStoreId, subTotal, BigDecimal::add);
+            overallTotal = overallTotal.add(subTotal);
+        }
 
-            // 🌟 解析 JSON 折扣数组逻辑
-            BigDecimal discount = BigDecimal.ONE;
-            try {
-                // 将字符串 "[1.0, 0.9, ...]" 转换为 List<BigDecimal>
-                List<BigDecimal> discountRates = mapper.readValue(stdProduct.getDiscountRates(), new TypeReference<List<BigDecimal>>(){});
+        // 2. 预检查余额
+        User user = userMapper.findById(userId);
+        if (user == null || user.getBalance().compareTo(overallTotal) < 0) {
+            throw new RuntimeException("Insufficient balance, need to pay: ¥" + overallTotal);
+        }
 
-                long diffMillis = expProduct.getExpirationTime().getTime() - System.currentTimeMillis();
-                int hoursLeft = (int) Math.max(0, diffMillis / (1000 * 60 * 60));
+        // 3. 逐店铺创建订单、扣库存、写明细
+        List<OrderResult> createdOrders = new ArrayList<>();
 
-                // 只有距离过期小于12小时才打折
-                if (hoursLeft < 12) {
-                    // 数组第0位是倒数第12小时，第11位是最后1小时
-                    int index = 11 - hoursLeft;
-                    index = Math.max(0, Math.min(index, discountRates.size() - 1));
-                    discount = discountRates.get(index);
+        for (Map.Entry<Integer, List<ShoppingCart>> entry : itemsByStore.entrySet()) {
+            Integer storeId = entry.getKey();
+            List<ShoppingCart> items = entry.getValue();
+
+            String pickupCode = "PICKUP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            Order order = new Order();
+            order.setUserId(userId);
+            order.setStoreId(storeId);
+            order.setPickupCode(pickupCode);
+            order.setTotalAmount(BigDecimal.ZERO);
+            order.setStatus(OrderStatus.AWAITING_PICKUP);
+            orderMapper.insert(order);
+
+            BigDecimal storeTotal = BigDecimal.ZERO;
+
+            for (ShoppingCart item : items) {
+                ExpiringProduct expProduct = expiringProductMapper.findById(item.getProductId());
+
+                int stockUpdated = expiringProductMapper.decreaseStock(expProduct.getProductId(), item.getQuantity());
+                if (stockUpdated == 0) {
+                    throw new RuntimeException("Insufficient stock for product: " + expProduct.getBarcode());
                 }
-            } catch (Exception e) {
-                System.err.println("折扣解析失败，按原价结算: " + e.getMessage());
+
+                StandardProduct stdProduct = standardProductMapper.findByBarcode(expProduct.getBarcode());
+                BigDecimal itemPrice = calculateItemPrice(expProduct, stdProduct, mapper);
+                BigDecimal subTotal = itemPrice.multiply(new BigDecimal(item.getQuantity()));
+                storeTotal = storeTotal.add(subTotal);
+
+                OrderItem orderItem = new OrderItem();
+                orderItem.setOrderId(order.getOrderId());
+                orderItem.setProductId(item.getProductId());
+                orderItem.setQuantity(item.getQuantity());
+                orderItem.setActualPrice(itemPrice);
+                orderItemMapper.insert(orderItem);
             }
 
-            BigDecimal itemPrice = stdProduct.getNormalPrice().multiply(discount);
-            BigDecimal subTotal = itemPrice.multiply(new BigDecimal(item.getQuantity()));
-            totalAmount = totalAmount.add(subTotal);
+            orderMapper.updateTotalAmount(order.getOrderId(), storeTotal);
 
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrderId(order.getOrderId());
-            orderItem.setProductId(item.getProductId());
-            orderItem.setQuantity(item.getQuantity());
-            orderItem.setActualPrice(itemPrice);
-            orderItemMapper.insert(orderItem);
+            OrderResult result = new OrderResult();
+            result.setOrderId(order.getOrderId());
+            result.setStoreId(storeId);
+            result.setPickupCode(pickupCode);
+            result.setTotalAmount(storeTotal);
+            createdOrders.add(result);
         }
 
-        // 3. 更新总金额并扣款
-        orderMapper.updateTotalAmount(order.getOrderId(), totalAmount);
-
-        int balanceUpdated = userMapper.decreaseBalance(userId, totalAmount);
+        // 4. 扣款并清空购物车
+        int balanceUpdated = userMapper.decreaseBalance(userId, overallTotal);
         if (balanceUpdated == 0) {
-            throw new RuntimeException("余额不足，需要支付: ¥" + totalAmount);
+            throw new RuntimeException("Insufficient balance, need to pay: ¥" + overallTotal);
         }
 
-        // 4. 清空购物车
         cartMapper.clearCartByUserId(userId);
 
-        return "下单成功！自提码: " + pickupCode + "，共消费: ¥" + totalAmount;
+        CheckoutResult result = new CheckoutResult();
+        result.setOrders(createdOrders);
+        result.setMessage("Order placed successfully! Total: ¥" + overallTotal);
+        return result;
+    }
+
+    private BigDecimal calculateItemPrice(ExpiringProduct expProduct, StandardProduct stdProduct, ObjectMapper mapper) {
+        BigDecimal discount = BigDecimal.ONE;
+        try {
+            List<BigDecimal> discountRates = mapper.readValue(stdProduct.getDiscountRates(), new TypeReference<List<BigDecimal>>(){});
+            if (discountRates == null || discountRates.isEmpty()) {
+                return stdProduct.getNormalPrice();
+            }
+            long diffMillis = expProduct.getExpirationTime().getTime() - System.currentTimeMillis();
+            int hoursLeft = (int) Math.max(0, diffMillis / (1000 * 60 * 60));
+            if (hoursLeft < 12) {
+                int index = 11 - hoursLeft;
+                index = Math.max(0, Math.min(index, discountRates.size() - 1));
+                discount = discountRates.get(index);
+            }
+        } catch (Exception e) {
+            System.err.println("Discount parse failed, fallback to full price: " + e.getMessage());
+        }
+        return stdProduct.getNormalPrice().multiply(discount);
     }
 
     @Override
@@ -117,11 +155,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void updateOrderStatus(Integer orderId, String status) {
-        // 🔥 优化点：判断是否真的更新成功，配合 Controller 层的 catch 返回准确信息
         int rows = orderMapper.updateStatus(orderId, status);
-        if (rows > 0) {
-        } else {
-            throw new RuntimeException("订单不存在或更新失败");
+        if (rows == 0) {
+            throw new RuntimeException("Order does not exist or update failed");
         }
     }
 
@@ -129,23 +165,20 @@ public class OrderServiceImpl implements OrderService {
     public String confirmPickup(String pickupCode) {
         int updated = orderMapper.completeOrderByPickupCode(pickupCode);
         if (updated > 0) {
-            return "自提核销成功！";
+            return "Pickup verified successfully!";
         }
-        return "无效的自提码或该订单已核销";
+        return "Invalid pickup code or order already verified";
     }
 
     @Override
     public OrderVO getOrderDetails(Integer orderId) {
-        // 1. 查询订单主表信息
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new RuntimeException("Order does not exist");
         }
 
-        // 2. 查询该订单关联的所有明细信息
         List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
 
-        // 3. 组装成 OrderVO
         OrderVO vo = new OrderVO();
         vo.setOrderId(order.getOrderId());
         vo.setUserId(order.getUserId());
@@ -155,8 +188,7 @@ public class OrderServiceImpl implements OrderService {
         vo.setStatus(order.getStatus());
         vo.setCreatedAt(order.getCreatedAt());
         vo.setCompletedAt(order.getCompletedAt());
-
-        vo.setItems(items); // 塞入商品明细
+        vo.setItems(items);
 
         return vo;
     }
@@ -164,32 +196,27 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String cancelOrder(Integer orderId) {
-        // 1. 查询订单
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new RuntimeException("Order does not exist");
         }
 
-        // 2. 只有 AWAITING_PICKUP 才能取消
         if (!OrderStatus.AWAITING_PICKUP.equals(order.getStatus())) {
-            throw new RuntimeException("只有待自提的订单才能取消");
+            throw new RuntimeException("Only awaiting pickup orders can be cancelled");
         }
 
-        // 3. 查询订单明细，回滚库存
         List<OrderItem> items = orderItemMapper.findByOrderId(orderId);
         for (OrderItem item : items) {
             expiringProductMapper.increaseStock(item.getProductId(), item.getQuantity());
         }
 
-        // 4. 退款到用户余额
         userMapper.increaseBalance(order.getUserId(), order.getTotalAmount());
 
-        // 5. 更新订单状态为 CANCELLED
         int rows = orderMapper.updateStatus(orderId, OrderStatus.CANCELLED);
         if (rows == 0) {
-            throw new RuntimeException("取消订单失败");
+            throw new RuntimeException("Failed to cancel order");
         }
 
-        return "订单已取消，金额已退回余额";
+        return "Order cancelled, amount refunded to balance";
     }
 }

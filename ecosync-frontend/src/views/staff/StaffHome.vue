@@ -85,8 +85,11 @@
 
                   <el-table-column label="Status" width="140" align="center">
                     <template #default="{row}">
-                      <el-tag :type="row.remainingStock <= 0 ? 'info' : 'success'" round effect="light" class="status-tag">
-                        {{ row.remainingStock <= 0 ? 'Sold Out' : 'Available' }}
+                      <el-tag
+                        :type="isExpired(row) ? 'danger' : (row.remainingStock <= 0 ? 'info' : 'success')"
+                        round effect="light" class="status-tag"
+                      >
+                        {{ isExpired(row) ? 'Expired' : (row.remainingStock <= 0 ? 'Sold Out' : 'Available') }}
                       </el-tag>
                     </template>
                   </el-table-column>
@@ -121,7 +124,42 @@
               </div>
             </template>
 
-            <el-table :data="orderList" class="custom-table" border highlight-current-row height="620">
+            <!-- Pickup Identifier 自动核销 -->
+            <div class="verify-bar">
+              <el-input
+                v-model="pickupCodeInput"
+                placeholder="Enter Pickup Identifier to verify..."
+                clearable
+                class="verify-input"
+                @keyup.enter="verifyByPickupCode"
+              >
+                <template #prefix><el-icon><Ticket /></el-icon></template>
+              </el-input>
+              <el-button type="success" class="verify-btn" :loading="verifying" @click="verifyByPickupCode">
+                <el-icon><Check /></el-icon> Verify
+              </el-button>
+            </div>
+
+            <!-- 搜索 & 筛选 -->
+            <div class="table-toolbar">
+              <el-input
+                v-model="orderSearchQuery"
+                placeholder="Search by order ID, customer or pickup code..."
+                :prefix-icon="Search"
+                clearable
+                class="search-input"
+              />
+              <el-radio-group v-model="orderStatusFilter" class="custom-radio">
+                <el-radio-button label="ALL">All</el-radio-button>
+                <el-radio-button label="PENDING">Pending</el-radio-button>
+                <el-radio-button label="PAID">Paid</el-radio-button>
+                <el-radio-button label="AWAITING_PICKUP">Awaiting Pickup</el-radio-button>
+                <el-radio-button label="COMPLETED">Completed</el-radio-button>
+                <el-radio-button label="CANCELLED">Cancelled</el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <el-table :data="filteredOrderList" class="custom-table" border highlight-current-row height="540">
               <el-table-column type="expand">
                 <template #default="{ row }">
                   <div class="order-detail-wrapper">
@@ -139,8 +177,12 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="Order ID" width="100" align="center">
-                <template #default="{row}"><span class="order-id-col">#{{ row.orderId }}</span></template>
+              <el-table-column label="Order ID" width="120" align="center">
+                <template #default="{row}"><span class="order-id-col">ORD-{{ row.orderId }}</span></template>
+              </el-table-column>
+
+              <el-table-column label="Customer" width="140" align="center">
+                <template #default="{row}"><span class="customer-col">{{ row.customerName || 'Unknown' }}</span></template>
               </el-table-column>
 
               <el-table-column label="Pickup Identifier" width="200" align="center">
@@ -188,7 +230,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Box, List, Refresh, ShoppingBag, Timer, Search } from '@element-plus/icons-vue'
+import { Box, List, Refresh, ShoppingBag, Timer, Search, Ticket, Check } from '@element-plus/icons-vue'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 import ProductEntry from './ProductEntry.vue'
@@ -199,10 +241,17 @@ const loadingOrders = ref(false)
 const library = ref<any[]>([])
 const allExpiringProducts = ref<any[]>([])
 const orderList = ref<any[]>([])
+const userMap = ref<Record<number, string>>({})
 
 // === 新增：过滤与搜索相关的状态 ===
 const searchQuery = ref('')
 const statusFilter = ref('ALL') // 'ALL' | 'AVAILABLE' | 'SOLD_OUT'
+
+// === Order Monitor 搜索、筛选、核销 ===
+const orderSearchQuery = ref('')
+const orderStatusFilter = ref('ALL')
+const pickupCodeInput = ref('')
+const verifying = ref(false)
 
 // 1. 数据获取
 const fetchData = async () => {
@@ -237,6 +286,18 @@ const handleOrderUpdate = async (row: any) => {
   }
 }
 
+const fetchUsers = async () => {
+  try {
+    const res: any = await request.get('/users')
+    const users = res.data || res || []
+    const map: Record<number, string> = {}
+    users.forEach((u: any) => {
+      map[u.userId] = u.username || `User #${u.userId}`
+    })
+    userMap.value = map
+  } catch (e) {}
+}
+
 // 3. 订单同步
 const syncAllOrders = async () => {
   loadingOrders.value = true
@@ -259,8 +320,8 @@ const syncAllOrders = async () => {
           const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
           return { ...item, productName: prod?.productName || 'Unknown Product' }
         })
-        return { ...order, items: enrichedItems }
-      } catch (e) { return { ...order, items: [] } }
+        return { ...order, items: enrichedItems, customerName: userMap.value[order.userId] || `User #${order.userId}` }
+      } catch (e) { return { ...order, items: [], customerName: userMap.value[order.userId] || `User #${order.userId}` } }
     }))
 
     orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
@@ -273,6 +334,55 @@ const syncAllOrders = async () => {
 const formatDateTime = (val: string) => {
   if (!val) return 'N/A'
   return val.replace('T', ' ').substring(0, 16)
+}
+
+const isExpired = (row: any) => {
+  const expiry = new Date(row.expirationTime || row.expirationDate)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  return expiry.getTime() < now.getTime()
+}
+
+// 订单列表：搜索 + 筛选
+const filteredOrderList = computed(() => {
+  let result = orderList.value
+
+  if (orderSearchQuery.value.trim()) {
+    const q = orderSearchQuery.value.toLowerCase()
+    result = result.filter(o =>
+      String(o.orderId).includes(q) ||
+      (o.customerName || '').toLowerCase().includes(q) ||
+      (o.pickupCode || '').toLowerCase().includes(q)
+    )
+  }
+
+  if (orderStatusFilter.value !== 'ALL') {
+    result = result.filter(o => o.status === orderStatusFilter.value)
+  }
+
+  return result
+})
+
+const verifyByPickupCode = async () => {
+  const code = pickupCodeInput.value.trim()
+  if (!code) return ElMessage.warning('Please enter a Pickup Identifier')
+
+  const target = orderList.value.find(o => o.pickupCode === code)
+  if (!target) return ElMessage.error('No order found with this identifier')
+  if (target.status === 'COMPLETED') return ElMessage.info('This order is already completed')
+  if (target.status === 'CANCELLED') return ElMessage.warning('This order has been cancelled')
+
+  verifying.value = true
+  try {
+    await request.put(`/orders/${target.orderId}`, { status: 'COMPLETED' })
+    target.status = 'COMPLETED'
+    ElMessage.success('Order verified and marked as Completed')
+    pickupCodeInput.value = ''
+  } catch (e) {
+    ElMessage.error('Verification failed')
+  } finally {
+    verifying.value = false
+  }
 }
 
 // 基础关联数据
@@ -308,7 +418,7 @@ const filteredStockList = computed(() => {
 
 onMounted(() => {
   fetchData()
-  syncAllOrders()
+  fetchUsers().then(() => syncAllOrders())
 })
 </script>
 
@@ -374,7 +484,8 @@ onMounted(() => {
 .status-tag { font-weight: 800; letter-spacing: 0.5px; }
 
 /* 订单单元格样式 */
-.order-id-col { font-weight: 800; color: #64748b; }
+.order-id-col { font-weight: 800; color: #64748b; font-family: monospace; }
+.customer-col { font-weight: 700; color: #334155; font-size: 13px; }
 .amount-text { color: #EE7203; font-weight: 900; font-size: 16px; }
 .code-badge { background: #f1f5f9; color: #008163; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-weight: 900; font-size: 14px; border: 1px dashed #cbd5e1; }
 .status-select :deep(.el-input__wrapper) { border-radius: 8px; font-weight: 600; }
@@ -387,4 +498,11 @@ onMounted(() => {
 .inner-price { color: #EE7203; font-weight: 700; }
 
 .side-panel { background: white; padding: 24px; border-radius: 16px; height: 100%; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+
+/* 核销栏 */
+.verify-bar { display: flex; gap: 12px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; }
+.verify-input { flex: 1; }
+.verify-input :deep(.el-input__wrapper) { background: #fff; border-radius: 10px; box-shadow: 0 0 0 1px #e2e8f0 inset; }
+.verify-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px rgba(0,129,99,0.4) inset; }
+.verify-btn { background: #008163 !important; border: none !important; font-weight: 700; border-radius: 10px; padding: 0 20px; }
 </style>

@@ -358,7 +358,6 @@ onUnmounted(() => {
 /* ======== Hero 轮播 ======== */
 .hero-carousel {
   position: relative;
-  padding-top: 76px; /* 原有导航栏高度 70px + 顶部彩条 6px */
 }
 
 .hero-particles {

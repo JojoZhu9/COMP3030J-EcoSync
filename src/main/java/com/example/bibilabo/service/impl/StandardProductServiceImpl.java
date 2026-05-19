@@ -1,6 +1,7 @@
 package com.example.bibilabo.service.impl;
 
 import com.example.bibilabo.entity.StandardProduct;
+import com.example.bibilabo.mapper.ExpiringProductMapper;
 import com.example.bibilabo.mapper.StandardProductMapper;
 import com.example.bibilabo.service.StandardProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,9 @@ public class StandardProductServiceImpl implements StandardProductService {
 
     @Autowired
     private StandardProductMapper productMapper;
+
+    @Autowired
+    private ExpiringProductMapper expiringProductMapper;
 
     @Override
     public List<StandardProduct> getAllProducts() {
@@ -35,6 +39,7 @@ public class StandardProductServiceImpl implements StandardProductService {
 
     @Override
     public void deleteProduct(String barcode) {
+        expiringProductMapper.deleteByBarcode(barcode);
         productMapper.deleteByBarcode(barcode);
     }
 }
