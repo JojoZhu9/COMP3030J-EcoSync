@@ -5,6 +5,7 @@ import com.example.bibilabo.entity.Order;
 import com.example.bibilabo.entity.OrderVO;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface OrderService {
     // 下单按店铺拆单，返回多个订单信息
@@ -12,8 +13,8 @@ public interface OrderService {
 
     List<Order> getUserOrders(Integer userId);
 
-    // 🔥 新增：更新订单状态
-    void updateOrderStatus(Integer orderId, String status);
+    // 新增：更新订单状态（异步）
+    CompletableFuture<String> updateOrderStatus(Integer orderId, String status);
 
     // 店员扫码核销
     String confirmPickup(String pickupCode);

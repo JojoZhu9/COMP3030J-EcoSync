@@ -5,9 +5,11 @@ import com.example.bibilabo.entity.ExpiringProduct;
 import com.example.bibilabo.mapper.ExpiringProductMapper;
 import com.example.bibilabo.service.ExpiringProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ExpiringProductServiceImpl implements ExpiringProductService {
@@ -41,9 +43,10 @@ public class ExpiringProductServiceImpl implements ExpiringProductService {
     }
 
     @Override
-    public String updateProduct(ExpiringProduct product) {
+    @Async("taskExecutor")
+    public CompletableFuture<String> updateProduct(ExpiringProduct product) {
         expiringProductMapper.update(product);
-        return "Product updated successfully";
+        return CompletableFuture.completedFuture("Product updated successfully");
     }
 
     @Override

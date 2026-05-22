@@ -8,11 +8,13 @@ import com.example.bibilabo.service.OrderService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -156,11 +158,21 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public void updateOrderStatus(Integer orderId, String status) {
+    @Async("taskExecutor")
+    public CompletableFuture<String> updateOrderStatus(Integer orderId, String status) {
+        Order order = orderMapper.findById(orderId);
+        if (order == null) {
+            throw new RuntimeException("Order does not exist");
+        }
+        // 已完成的订单不允许修改状态
+        if (OrderStatus.COMPLETED.equals(order.getStatus())) {
+            throw new RuntimeException("Completed orders cannot be modified");
+        }
         int rows = orderMapper.updateStatus(orderId, status);
         if (rows == 0) {
             throw new RuntimeException("Order does not exist or update failed");
         }
+        return CompletableFuture.completedFuture("Status updated successfully");
     }
 
     @Override

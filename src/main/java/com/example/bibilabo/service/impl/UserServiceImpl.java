@@ -5,10 +5,12 @@ import com.example.bibilabo.mapper.UserMapper;
 import com.example.bibilabo.service.UserService;
 import com.example.bibilabo.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -79,9 +81,10 @@ public class UserServiceImpl implements UserService {
         return userMapper.findByUsername(username);
     }
 
-    // 🔥 核心漏洞修复：安全地更新用户信息（包括新加的 userAddress），并防止密码反复加密
+    // 核心漏洞修复：安全地更新用户信息（包括新加的 userAddress），并防止密码反复加密
     @Override
-    public String updateUser(User user) {
+    @Async("taskExecutor")
+    public CompletableFuture<String> updateUser(User user) {
         User existingUser = userMapper.findById(user.getUserId());
         if (existingUser == null) {
             throw new RuntimeException("User to update does not exist");
@@ -106,7 +109,7 @@ public class UserServiceImpl implements UserService {
         }
 
         userMapper.update(user);
-        return "User updated successfully";
+        return CompletableFuture.completedFuture("User updated successfully");
     }
 
     @Override

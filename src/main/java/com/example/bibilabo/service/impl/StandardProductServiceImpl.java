@@ -5,8 +5,10 @@ import com.example.bibilabo.mapper.ExpiringProductMapper;
 import com.example.bibilabo.mapper.StandardProductMapper;
 import com.example.bibilabo.service.StandardProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class StandardProductServiceImpl implements StandardProductService {
@@ -33,8 +35,10 @@ public class StandardProductServiceImpl implements StandardProductService {
     }
 
     @Override
-    public void updateProduct(StandardProduct product) {
+    @Async("taskExecutor")
+    public CompletableFuture<String> updateProduct(StandardProduct product) {
         productMapper.update(product);
+        return CompletableFuture.completedFuture("Product updated successfully");
     }
 
     @Override

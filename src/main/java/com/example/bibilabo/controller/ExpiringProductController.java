@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/expiring-products")
@@ -44,7 +45,7 @@ public class ExpiringProductController {
 
     @PutMapping("/{id}")
     @Operation(summary = "更新临期商品状态", description = "手动修改库存量或将状态改为报损/售罄")
-    public String update(@Parameter(description = "商品批次ID") @PathVariable("id") Integer id, @RequestBody ExpiringProduct product) {
+    public CompletableFuture<String> update(@Parameter(description = "商品批次ID") @PathVariable("id") Integer id, @RequestBody ExpiringProduct product) {
         product.setProductId(id);
         return expiringProductService.updateProduct(product);
     }

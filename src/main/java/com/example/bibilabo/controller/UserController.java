@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/users")
@@ -58,7 +59,7 @@ public class UserController {
 
     @PutMapping("/{id}")
     @Operation(summary = "更新用户信息", description = "修改密码、更新默认地址及联系方式")
-    public String update(@Parameter(description = "用户ID") @PathVariable("id") Integer id, @RequestBody User user) {
+    public CompletableFuture<String> update(@Parameter(description = "用户ID") @PathVariable("id") Integer id, @RequestBody User user) {
         user.setUserId(id);
         return userService.updateUser(user);
     }

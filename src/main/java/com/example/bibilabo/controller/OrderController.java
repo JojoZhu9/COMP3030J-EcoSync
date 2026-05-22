@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -67,18 +68,17 @@ public class OrderController {
         return orderService.getOrderDetails(orderId);
     }
 
-    // 🔥 修改点：放弃使用 Order 对象接收，直接用 Map 精准捕捉前端传来的 {"status": "xxx"}
+    // 修改点：放弃使用 Order 对象接收，直接用 Map 精准捕捉前端传来的 {"status": "xxx"}
     @PutMapping("/{orderId}")
     @Operation(summary = "修改订单状态", description = "店员端修改订单为PENDING/PAID/AWAITING_PICKUP/COMPLETED/CANCELLED")
-    public String updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Map<String, String> payload) {
+    public CompletableFuture<String> updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Map<String, String> payload) {
         String status = payload.get("status");
 
         if (status == null || status.trim().isEmpty()) {
             throw new RuntimeException("Order status cannot be empty");
         }
 
-        // 直接更新状态
-        orderService.updateOrderStatus(orderId, status);
-        return "Status updated successfully";
+        // 异步更新状态
+        return orderService.updateOrderStatus(orderId, status);
     }
 }

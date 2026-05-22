@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/products")
@@ -65,10 +66,9 @@ public class StandardProductController {
 
     @PutMapping("/{barcode}")
     @Operation(summary = "更新标准商品", description = "修改已有商品的名称或正常售价")
-    public String update(@Parameter(description = "商品条码") @PathVariable String barcode, @RequestBody StandardProduct product) {
+    public CompletableFuture<String> update(@Parameter(description = "商品条码") @PathVariable String barcode, @RequestBody StandardProduct product) {
         product.setBarcode(barcode);
-        productService.updateProduct(product);
-        return "Product updated successfully";
+        return productService.updateProduct(product);
     }
 
     @DeleteMapping("/{barcode}")
