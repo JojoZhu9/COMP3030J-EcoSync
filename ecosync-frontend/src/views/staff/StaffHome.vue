@@ -199,7 +199,7 @@
                     v-model="row.status"
                     size="default"
                     @change="handleOrderUpdate(row)"
-                    :disabled="row.status === 'CANCELLED'"
+                    :disabled="row.status === 'CANCELLED' || row.status === 'COMPLETED'"
                     class="status-select"
                   >
                     <el-option label="Pending" value="PENDING" />
@@ -270,9 +270,9 @@ const fetchData = async () => {
 
 // 2. 订单状态更新写入数据库
 const handleOrderUpdate = async (row: any) => {
-  // 防御性检查：如果订单已经是 CANCELLED，则不允许修改
-  if (row.status === 'CANCELLED') {
-    ElMessage.warning('Cancelled orders cannot be modified')
+  // 防御性检查：如果订单已经是 CANCELLED 或 COMPLETED，则不允许修改
+  if (row.status === 'CANCELLED' || row.status === 'COMPLETED') {
+    ElMessage.warning('This order cannot be modified')
     return
   }
   try {

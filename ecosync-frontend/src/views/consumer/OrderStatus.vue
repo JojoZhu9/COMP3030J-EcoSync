@@ -358,7 +358,7 @@ onMounted(async () => {
   display: flex; align-items: center;
 }
 .status-badge.AWAITING_PICKUP { background: #fef3c7; color: #d97706; }
-.status-badge.COMPLETED { background: #d1fae5; color: #059669; }
+.status-badge.COMPLETED { background: #f1f5f9; color: #64748b; }
 .status-badge.CANCELLED { background: #fee2e2; color: #dc2626; }
 
 .details-box {
