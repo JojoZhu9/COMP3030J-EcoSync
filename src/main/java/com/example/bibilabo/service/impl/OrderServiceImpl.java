@@ -35,19 +35,21 @@ public class OrderServiceImpl implements OrderService {
 
         ObjectMapper mapper = new ObjectMapper();
 
-        // 1. 先遍历一遍：校验库存、按店铺分组、预计算价格
+        // 1. 先遍历一遍：加锁校验库存、按店铺分组、预计算价格
         Map<Integer, List<ShoppingCart>> itemsByStore = new LinkedHashMap<>();
         Map<Integer, BigDecimal> storeTotals = new HashMap<>();
+        Map<Integer, ExpiringProduct> lockedProducts = new HashMap<>();
         BigDecimal overallTotal = BigDecimal.ZERO;
 
         for (ShoppingCart item : cartItems) {
-            ExpiringProduct expProduct = expiringProductMapper.findById(item.getProductId());
+            ExpiringProduct expProduct = expiringProductMapper.findByIdForUpdate(item.getProductId());
             if (expProduct == null || !ProductStatus.AVAILABLE.equals(expProduct.getStatus())) {
                 throw new RuntimeException("Product is unavailable or sold out");
             }
             if (expProduct.getRemainingStock() < item.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for product: " + expProduct.getBarcode());
             }
+            lockedProducts.put(item.getProductId(), expProduct);
 
             Integer actualStoreId = expProduct.getStoreId();
             itemsByStore.computeIfAbsent(actualStoreId, k -> new ArrayList<>()).add(item);
@@ -59,8 +61,8 @@ public class OrderServiceImpl implements OrderService {
             overallTotal = overallTotal.add(subTotal);
         }
 
-        // 2. 预检查余额
-        User user = userMapper.findById(userId);
+        // 2. 预检查余额（加锁）
+        User user = userMapper.findByIdForUpdate(userId);
         if (user == null || user.getBalance().compareTo(overallTotal) < 0) {
             throw new RuntimeException("Insufficient balance, need to pay: ¥" + overallTotal);
         }
@@ -84,7 +86,7 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal storeTotal = BigDecimal.ZERO;
 
             for (ShoppingCart item : items) {
-                ExpiringProduct expProduct = expiringProductMapper.findById(item.getProductId());
+                ExpiringProduct expProduct = lockedProducts.get(item.getProductId());
 
                 int stockUpdated = expiringProductMapper.decreaseStock(expProduct.getProductId(), item.getQuantity());
                 if (stockUpdated == 0) {

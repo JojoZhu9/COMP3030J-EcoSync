@@ -38,6 +38,12 @@
                 <el-form-item label="Confirm Password">
                   <el-input v-model="form.rePassword" type="password" placeholder="Repeat password" show-password :prefix-icon="CircleCheck" />
                 </el-form-item>
+                <el-form-item label="Phone Number">
+                  <el-input v-model="form.phone" placeholder="11-digit phone number" maxlength="11" :prefix-icon="Phone" />
+                </el-form-item>
+                <el-form-item label="Address">
+                  <el-input v-model="form.address" placeholder="Enter your address" :prefix-icon="MapLocation" />
+                </el-form-item>
               </div>
 
               <el-button type="success" @click="handleSubmit" :loading="loading" class="submit-btn">
@@ -63,12 +69,12 @@ import { reactive, ref } from 'vue'
 import { loginApi, registerApi } from '../api/user'
 import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
-import { User, Lock, CircleCheck, ArrowLeft } from '@element-plus/icons-vue'
+import { User, Lock, CircleCheck, ArrowLeft, Phone, MapLocation } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const loading = ref(false)
 const isRegister = ref(false)
-const form = reactive({ username: '', password: '', rePassword: '' })
+const form = reactive({ username: '', password: '', rePassword: '', phone: '', address: '' })
 
 const toggleMode = () => { isRegister.value = !isRegister.value }
 
@@ -94,7 +100,15 @@ const handleSubmit = async () => {
         loading.value = false
         return ElMessage.error({ message: 'Password must be at least 6 characters', duration: 1500 })
       }
-      await registerApi({ username: form.username, password: form.password, role: 'CONSUMER' })
+      if (!/^\d{11}$/.test(form.phone)) {
+        loading.value = false
+        return ElMessage.error({ message: 'Phone number must be exactly 11 digits', duration: 1500 })
+      }
+      if (!form.address.trim()) {
+        loading.value = false
+        return ElMessage.error({ message: 'Please enter your address', duration: 1500 })
+      }
+      await registerApi({ username: form.username, password: form.password, role: 'CONSUMER', phone: form.phone, address: form.address })
       ElMessage.success({ message: 'Registration Successful!', duration: 1500 })
       form.password = ''; form.rePassword = ''
       isRegister.value = false

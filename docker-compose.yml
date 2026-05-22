@@ -6,12 +6,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-ecosync123}
       MYSQL_DATABASE: 711ex
-      TZ: Asia/Shanghai                    # 新增：MySQL 容器时区
+      TZ: Asia/Shanghai # 新增：MySQL 容器时区
     ports:
       - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - /etc/localtime:/etc/localtime:ro   # 新增：挂载宿主机时区
+      - /etc/localtime:/etc/localtime:ro # 新增：挂载宿主机时区
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       start_period: 120s
@@ -30,7 +30,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-ecosync123}
-      TZ: Asia/Shanghai                     # 新增：应用容器时区
+      TZ: Asia/Shanghai # 新增：应用容器时区
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: "false"
     depends_on:
       mysql:
         condition: service_healthy
@@ -38,7 +39,7 @@ services:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
-      - /etc/localtime:/etc/localtime:ro    # 新增：挂载宿主机时区
+      - /etc/localtime:/etc/localtime:ro # 新增：挂载宿主机时区
 
   frontend:
     build: ./ecosync-frontend

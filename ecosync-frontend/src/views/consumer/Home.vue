@@ -268,6 +268,7 @@ import {ref, onMounted, computed, nextTick} from 'vue'
 import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar, MapLocation } from '@element-plus/icons-vue'
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
+import { cartApi } from '@/api/cart'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/message'
 import JsBarcode from 'jsbarcode' // 引入库
@@ -434,13 +435,24 @@ const addToCart = async (prod: any) => {
   if (isExpired(prod.expirationTime)) return ElMessage.warning('This item has expired!')
   const userId = localStorage.getItem('userId') || '4'
   try {
+    const cartRes: any = await cartApi.getByUserId(Number(userId))
+    const cartItems = cartRes.data || cartRes || []
+    const existingItem = cartItems.find((item: any) => item.productId === prod.productId)
+    const existingQty = existingItem ? Number(existingItem.quantity || 0) : 0
+    const stock = Number(prod.remainingStock || 0)
+    if (existingQty >= stock) {
+      return ElMessage.warning(`Only ${stock} in stock. You already have ${existingQty} in your basket.`)
+    }
     await request.post('/cart', {
       userId: Number(userId),
       productId: Number(prod.productId),
       quantity: 1
     })
     ElMessage.success('Added to basket')
-  } catch (e) { ElMessage.error('Failed to add') }
+  } catch (e: any) {
+    if (e?.message?.includes('Only')) return
+    ElMessage.error('Failed to add')
+  }
 }
 
 const handleStoreChange = (val: number) => {

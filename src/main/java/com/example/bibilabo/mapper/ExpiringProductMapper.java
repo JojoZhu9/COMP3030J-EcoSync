@@ -13,6 +13,9 @@ public interface ExpiringProductMapper {
     @Select("SELECT * FROM expiring_products WHERE product_id = #{productId}")
     ExpiringProduct findById(Integer productId);
 
+    @Select("SELECT * FROM expiring_products WHERE product_id = #{productId} FOR UPDATE")
+    ExpiringProduct findByIdForUpdate(@Param("productId") Integer productId);
+
     // 常用业务查询：根据门店ID查找所有正在售卖的临期商品
     @Select("SELECT * FROM expiring_products WHERE store_id = #{storeId} AND status = 'AVAILABLE'")
     List<ExpiringProduct> findAvailableByStore(Integer storeId);

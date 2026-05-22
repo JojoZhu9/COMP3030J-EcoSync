@@ -14,6 +14,9 @@ public interface UserMapper {
     @Select("SELECT * FROM users WHERE user_id = #{userId}")
     User findById(Integer userId);
 
+    @Select("SELECT * FROM users WHERE user_id = #{userId} FOR UPDATE")
+    User findByIdForUpdate(@Param("userId") Integer userId);
+
     @Select("SELECT * FROM users WHERE username = #{username}")
     User findByUsername(String username);
 
