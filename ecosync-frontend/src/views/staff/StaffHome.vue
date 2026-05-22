@@ -51,7 +51,7 @@
                   />
                   <el-radio-group v-model="statusFilter" class="custom-radio">
                     <el-radio-button label="ALL">All Items</el-radio-button>
-                    <el-radio-button label="AVAILABLE">Available</el-radio-button>
+                    <el-radio-button label="AVAILABLE">In Stock</el-radio-button>
                     <el-radio-button label="SOLD_OUT">Sold Out</el-radio-button>
                   </el-radio-group>
                 </div>
@@ -89,7 +89,7 @@
                         :type="isExpired(row) ? 'danger' : (row.remainingStock <= 0 ? 'info' : 'success')"
                         round effect="light" class="status-tag"
                       >
-                        {{ isExpired(row) ? 'Expired' : (row.remainingStock <= 0 ? 'Sold Out' : 'Available') }}
+                        {{ isExpired(row) ? 'Expired' : (row.remainingStock <= 0 ? 'Sold Out' : 'In Stock') }}
                       </el-tag>
                     </template>
                   </el-table-column>
