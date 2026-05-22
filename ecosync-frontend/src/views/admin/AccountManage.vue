@@ -56,9 +56,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Store" width="180" align="center">
+        <el-table-column label="Store" min-width="180" align="center">
           <template #default="{ row }">
-            <el-tag v-if="row.role === 'EMPLOYEE' && row.storeId" effect="light" round class="store-tag">
+            <el-tag v-if="row.role === 'EMPLOYEE' && row.storeId" effect="light" round class="store-tag" :title="storeNameMap[row.storeId] || 'Store #' + row.storeId">
               {{ storeNameMap[row.storeId] || 'Store #' + row.storeId }}
             </el-tag>
             <span v-else-if="row.role === 'EMPLOYEE'" class="no-store">Unassigned</span>
@@ -332,7 +332,7 @@ onMounted(() => {
 .status-tag { font-weight: 800; letter-spacing: 1px; }
 
 .admin-lock-text { font-size: 12px; color: #94a3b8; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px; }
-.store-tag { font-weight: 700; background: #f0f9ff !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; }
+.store-tag { font-weight: 700; background: #f0f9ff !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; }
 .no-store { font-size: 12px; color: #94a3b8; font-weight: 600; }
 
 /* 弹窗样式 */
