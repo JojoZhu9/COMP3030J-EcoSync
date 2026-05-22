@@ -54,17 +54,8 @@
             />
           </div>
 
-          <!-- 过滤器区域：Available 开关 + 时间区间 -->
+          <!-- 过滤器区域：时间区间 + 库存筛选 -->
           <div class="filter-area">
-            <!-- Available 开关 -->
-            <div
-              :class="['available-toggle', { active: showAvailableOnly }]"
-              @click="showAvailableOnly = !showAvailableOnly"
-            >
-              <el-icon :size="14"><Check /></el-icon>
-              <span>Available Only</span>
-            </div>
-
             <!-- 时间区间过滤器 -->
             <div class="time-filters">
               <div
@@ -76,6 +67,14 @@
                 <el-icon :size="14"><component :is="filter.icon" /></el-icon>
                 <span>{{ filter.label }}</span>
               </div>
+            </div>
+            <!-- 库存筛选开关 -->
+            <div
+              :class="['stock-chip', { active: inStockOnly }]"
+              @click="inStockOnly = !inStockOnly"
+            >
+              <el-icon :size="14"><Box /></el-icon>
+              <span>In Stock Only</span>
             </div>
           </div>
         </div>
@@ -90,7 +89,6 @@
         <p class="section-subtitle">Real-time dynamic pricing • Only for items within 12h of expiry</p>
         <p class="result-count" v-if="filteredProducts.length !== productList.length">
           Showing {{ filteredProducts.length }} of {{ productList.length }} items
-          <span v-if="showAvailableOnly">• Available</span>
           <span v-if="selectedTimeFilter">• {{ timeFilters.find(f => f.value === selectedTimeFilter)?.label }}</span>
           <span v-if="searchKeyword.trim()">• Search: "{{ searchKeyword }}"</span>
         </p>
@@ -265,7 +263,7 @@
 
 <script setup lang="ts">
 import {ref, onMounted, computed, nextTick} from 'vue'
-import { LocationFilled, Goods, Plus, Shop, Timer, Search, Check, Clock, Calendar, MapLocation } from '@element-plus/icons-vue'
+import { LocationFilled, Goods, Plus, Shop, Timer, Search, Clock, Calendar, MapLocation, Box } from '@element-plus/icons-vue'
 import { storeApi } from '@/api/store'
 import { expiringApi, standardApi } from '@/api/product'
 import { cartApi } from '@/api/cart'
@@ -284,10 +282,10 @@ const nearestStore = ref<any>(null)
 const mapDialogVisible = ref(false)
 const mapStore = ref<any>(null)
 
-// 三个独立的过滤器
+// 过滤器
 const searchKeyword = ref('')
-const showAvailableOnly = ref(false)  // Available 开关
 const selectedTimeFilter = ref('')   // 时间区间
+const inStockOnly = ref(true)        // 默认只显示有库存的商品
 
 // 时间区间过滤选项
 const timeFilters = [
@@ -307,16 +305,11 @@ const getExpiryHours = (expiryDate: string): number => {
   return diff / (1000 * 60 * 60)
 }
 
-// 三个过滤器叠加生效
+// 过滤器叠加生效
 const filteredProducts = computed(() => {
   let result = productList.value
 
-  // 1. Available 过滤（未过期）
-  if (showAvailableOnly.value) {
-    result = result.filter(p => getExpiryHours(p.expirationTime) > 0)
-  }
-
-  // 2. 时间区间过滤
+  // 1. 时间区间过滤
   if (selectedTimeFilter.value) {
     result = result.filter(p => {
       const hours = getExpiryHours(p.expirationTime)
@@ -330,13 +323,18 @@ const filteredProducts = computed(() => {
     })
   }
 
-  // 3. 名称搜索过滤
+  // 2. 名称搜索过滤
   if (searchKeyword.value.trim()) {
     const kw = searchKeyword.value.toLowerCase()
     result = result.filter(p =>
       (p.productName || '').toLowerCase().includes(kw) ||
       (p.barcode || '').toLowerCase().includes(kw)
     )
+  }
+
+  // 3. 库存筛选
+  if (inStockOnly.value) {
+    result = result.filter(p => getRemaining(p) > 0)
   }
 
   return result
@@ -458,7 +456,6 @@ const addToCart = async (prod: any) => {
 const handleStoreChange = (val: number) => {
   localStorage.setItem('lastStoreId', String(val))
   searchKeyword.value = ''
-  showAvailableOnly.value = false
   selectedTimeFilter.value = ''
   fetchProducts()
 }
@@ -561,39 +558,12 @@ onMounted(fetchStores)
   border-color: #008163; box-shadow: 0 0 0 3px rgba(0, 129, 99, 0.1) !important;
 }
 
-/* 过滤器区域：Available 开关 + 时间区间并排 */
+/* 过滤器区域：时间区间 */
 .filter-area {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-}
-
-/* Available 开关 */
-.available-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 24px;
-  background: #f1f5f9;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 2px solid transparent;
-  user-select: none;
-}
-.available-toggle:hover {
-  background: #e2e8f0;
-  color: #475569;
-}
-.available-toggle.active {
-  background: #008163;
-  color: white;
-  border-color: #008163;
-  box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2);
 }
 
 /* 时间区间过滤器 */
@@ -631,6 +601,32 @@ onMounted(fetchStores)
   background: #3b82f6;
   border-color: #3b82f6;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+/* 库存筛选开关 */
+.stock-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+.stock-chip:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+.stock-chip.active {
+  background: #008163;
+  color: white;
+  border-color: #008163;
+  box-shadow: 0 2px 8px rgba(0, 129, 99, 0.2);
 }
 
 .product-grid { padding: 24px; max-width: 1200px; margin: 0 auto; }
