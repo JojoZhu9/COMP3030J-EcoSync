@@ -6,11 +6,11 @@
           <div class="header-main">
             <div class="title-icon"><el-icon><Lock /></el-icon></div>
             <div class="title-text-box">
-              <span class="main-title">Admin Security Console</span>
-              <span class="sub-title">System access & privileges management</span>
+              <span class="main-title">{{ $t('admin.scanner.adminSecurityConsole') }}</span>
+              <span class="sub-title">{{ $t('admin.scanner.systemAccessPrivileges') }}</span>
             </div>
           </div>
-          <el-tag size="small" effect="dark" class="level-tag" round>Level: SuperUser</el-tag>
+          <el-tag size="small" effect="dark" class="level-tag" round>{{ $t('admin.scanner.levelSuperUser') }}</el-tag>
         </div>
       </template>
 
@@ -18,22 +18,22 @@
 
       <el-form label-position="top" class="settings-form">
         <div class="form-section-readonly">
-          <el-form-item label="Active Administrator ID">
+          <el-form-item :label="$t('admin.scanner.activeAdministratorId')">
             <el-input :value="userId" disabled class="id-input modern-input">
               <template #prefix><el-icon><UserFilled /></el-icon></template>
             </el-input>
-            <p class="input-hint">Unique system identifier for audit logs.</p>
+            <p class="input-hint">{{ $t('admin.scanner.auditLogsHint') }}</p>
           </el-form-item>
         </div>
 
         <el-divider border-style="dashed" />
 
-        <el-form-item label="Update Access Credentials">
+        <el-form-item :label="$t('admin.scanner.updateAccessCredentials')">
           <el-input
             v-model="newPass"
             type="password"
             show-password
-            placeholder="Enter new secure password (leave blank to keep current)"
+            :placeholder="$t('admin.scanner.passwordPlaceholder')"
             class="brand-input modern-input"
           >
             <template #prefix><el-icon><Key /></el-icon></template>
@@ -42,8 +42,8 @@
 
         <div class="permission-box">
           <div class="permission-info">
-            <span class="p-title">System Broadcast Privilege</span>
-            <span class="p-desc">Allow this account to push global shelf notifications.</span>
+            <span class="p-title">{{ $t('admin.scanner.systemBroadcastPrivilege') }}</span>
+            <span class="p-desc">{{ $t('admin.scanner.broadcastDesc') }}</span>
           </div>
           <el-switch
             v-model="hasNotice"
@@ -53,10 +53,10 @@
 
         <div class="action-wrapper">
           <el-button type="success" class="save-btn" @click="handleUpdate">
-            UPDATE CORE CONFIGURATION
+            {{ $t('admin.scanner.updateCoreConfiguration') }}
           </el-button>
           <p class="security-note">
-            <el-icon><InfoFilled /></el-icon> All changes are logged for security compliance.
+            <el-icon><InfoFilled /></el-icon> {{ $t('admin.scanner.securityNote') }}
           </p>
         </div>
       </el-form>
@@ -66,16 +66,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from '@/utils/message'
 import { Lock, UserFilled, Key, InfoFilled } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const userId = localStorage.getItem('userId') || 'ADMIN_001'
 const newPass = ref('')
 const hasNotice = ref(true)
 
 const handleUpdate = () => {
   ElMessage({
-    message: 'Administrator security profile synchronized successfully.',
+    message: t('admin.scanner.profileSynchronized'),
     type: 'success',
     duration: 3000
   })

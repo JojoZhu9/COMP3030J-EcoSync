@@ -7,11 +7,11 @@
           <div class="store-module">
             <div class="store-indicator">
               <el-icon class="icon-pulse"><LocationFilled /></el-icon>
-              <span class="label">Store</span>
+              <span class="label">{{ $t('consumer.home.store') }}</span>
             </div>
             <el-select
               v-model="selectedStoreId"
-              placeholder="Select Store"
+              :placeholder="$t('consumer.home.selectStore')"
               @change="handleStoreChange"
               class="brand-select store-selector-expanded"
             >
@@ -32,14 +32,14 @@
           <div v-if="nearestStore" class="nearest-store-bar">
             <el-tag effect="dark" type="success" round class="nearest-tag">
               <el-icon><MapLocation /></el-icon>
-              Nearest: <strong>{{ nearestStore.storeName }}</strong>
-              <span class="dist">{{ nearestStore.distance.toFixed(1) }} km</span>
+              {{ $t('consumer.home.nearest') }} <strong>{{ nearestStore.storeName }}</strong>
+              <span class="dist">{{ nearestStore.distance.toFixed(1) }} {{ $t('consumer.home.km') }}</span>
             </el-tag>
-            <el-button link type="primary" size="small" @click="openMapDialog">View Map</el-button>
+            <el-button link type="primary" size="small" @click="openMapDialog">{{ $t('consumer.home.viewMap') }}</el-button>
           </div>
           <div v-else class="nearest-store-bar">
             <el-button size="small" round type="success" plain @click="findNearestStore">
-              <el-icon><MapLocation /></el-icon> Find Nearest Store
+              <el-icon><MapLocation /></el-icon> {{ $t('consumer.home.findNearestStore') }}
             </el-button>
           </div>
 
@@ -47,7 +47,7 @@
           <div class="search-bar">
             <el-input
               v-model="searchKeyword"
-              placeholder="Search products..."
+              :placeholder="$t('consumer.home.searchPlaceholder')"
               clearable
               :prefix-icon="Search"
               class="search-input"
@@ -74,7 +74,7 @@
               @click="inStockOnly = !inStockOnly"
             >
               <el-icon :size="14"><Box /></el-icon>
-              <span>In Stock Only</span>
+              <span>{{ $t('consumer.home.inStockOnly') }}</span>
             </div>
           </div>
         </div>
@@ -84,13 +84,13 @@
     <div class="product-grid">
       <div class="grid-header">
         <h3 class="section-title">
-          <span class="brand-text">7-Eleven</span> Eco-Flash
+          <span class="brand-text">7-Eleven</span> {{ $t('consumer.home.ecoFlashTitle').replace('7-Eleven ', '') }}
         </h3>
-        <p class="section-subtitle">Real-time dynamic pricing • Only for items within 12h of expiry</p>
+        <p class="section-subtitle">{{ $t('consumer.home.ecoFlashSubtitle') }}</p>
         <p class="result-count" v-if="filteredProducts.length !== productList.length">
-          Showing {{ filteredProducts.length }} of {{ productList.length }} items
-          <span v-if="selectedTimeFilter">• {{ timeFilters.find(f => f.value === selectedTimeFilter)?.label }}</span>
-          <span v-if="searchKeyword.trim()">• Search: "{{ searchKeyword }}"</span>
+          {{ $t('consumer.home.showingResults', { count: filteredProducts.length, total: productList.length }) }}
+          <span v-if="selectedTimeFilter">{{ ' ' + $t('consumer.home.filterSuffix', { label: timeFilters.find(f => f.value === selectedTimeFilter)?.label }) }}</span>
+          <span v-if="searchKeyword.trim()">{{ ' ' + $t('consumer.home.searchSuffix', { keyword: searchKeyword }) }}</span>
         </p>
       </div>
 
@@ -110,7 +110,7 @@
                 @click="showDetail(prod)"
               >
                 <div v-if="isExpired(prod.expirationTime)" class="expired-overlay">
-                  <span class="expired-text">EXPIRED</span>
+                  <span class="expired-text">{{ $t('consumer.home.expired') }}</span>
                 </div>
 
                 <div class="image-box">
@@ -123,7 +123,7 @@
                   </el-image>
 
                   <div class="stock-tag" :class="{ 'urgent': getRemaining(prod) < 5 && getRemaining(prod) > 0 }">
-                    {{ getRemaining(prod) > 0 ? `Only ${getRemaining(prod)} left` : 'Sold Out' }}
+                    {{ getRemaining(prod) > 0 ? $t('consumer.home.onlyXLeft', { count: getRemaining(prod) }) : $t('consumer.home.soldOut') }}
                   </div>
 
                   <div class="expiry-timer-tag" :class="{ 'bg-gray': isExpired(prod.expirationTime), 'bg-urgent': getExpiryHours(prod.expirationTime) <= 1 && !isExpired(prod.expirationTime) }">
@@ -156,7 +156,7 @@
                       :disabled="getBtnConfig(prod).disabled"
                     >
                       <el-icon v-if="!getBtnConfig(prod).disabled"><Plus /></el-icon>
-                      <span v-else class="disabled-text">{{ getBtnConfig(prod).text === 'Out of Stock' ? '0' : '-' }}</span>
+                      <span v-else class="disabled-text">{{ getBtnConfig(prod).text === $t('consumer.home.outOfStock') ? '0' : '-' }}</span>
                     </el-button>
                   </div>
                 </div>
@@ -166,11 +166,11 @@
         </template>
       </el-skeleton>
 
-      <el-empty v-if="!loading && filteredProducts.length === 0" description="No available items right now." />
+      <el-empty v-if="!loading && filteredProducts.length === 0" :description="$t('consumer.home.noAvailableItems')" />
     </div>
 
     <!-- 地图弹窗 -->
-    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog"
+    <el-dialog v-model="mapDialogVisible" :title="$t('consumer.home.storeLocation')" width="600px" class="modern-dialog"
       destroy-on-close
     >
       <div v-if="mapStore" class="map-body"
@@ -188,22 +188,7 @@
           style="border-radius: 12px; border: 1px solid #e2e8f0;"
         >
         </iframe>
-        <el-empty v-else description="No coordinates available for this store" />
-      </div>
-    </el-dialog>
-
-    <!-- 地图弹窗 -->
-    <el-dialog v-model="mapDialogVisible" title="Store Location" width="600px" class="modern-dialog" destroy-on-close>
-      <div v-if="mapStore" class="map-body">
-        <p class="map-store-name">{{ mapStore.storeName }}</p>
-        <p class="map-store-addr">{{ mapStore.address }}, {{ mapStore.city }}</p>
-        <iframe
-          v-if="mapStore.latitude && mapStore.longitude"
-          width="100%" height="350" frameborder="0" scrolling="no"
-          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${mapStore.longitude-0.01}%2C${mapStore.latitude-0.01}%2C${mapStore.longitude+0.01}%2C${mapStore.latitude+0.01}&layer=mapnik&marker=${mapStore.latitude}%2C${mapStore.longitude}`"
-          style="border-radius: 12px; border: 1px solid #e2e8f0;"
-        ></iframe>
-        <el-empty v-else description="No coordinates available for this store" />
+        <el-empty v-else :description="$t('consumer.home.noCoordinates')" />
       </div>
     </el-dialog>
 
@@ -213,7 +198,7 @@
         <div class="product-hero-full" :class="{ 'hero-expired': isExpired(currentProduct.expirationTime) }">
           <el-image :src="getImageUrl(currentProduct)" fit="cover" class="hero-image-full" />
           <div v-if="isExpired(currentProduct.expirationTime)" class="hero-expired-overlay">
-            <span class="hero-expired-text">EXPIRED</span>
+            <span class="hero-expired-text">{{ $t('consumer.home.expired') }}</span>
           </div>
         </div>
 
@@ -228,10 +213,10 @@
           <el-divider border-style="dashed" />
           <div class="p-tags-container">
             <el-tag :type="isExpired(currentProduct.expirationTime) ? 'info' : 'danger'" effect="light" round>
-              {{ isExpired(currentProduct.expirationTime) ? 'ALREADY EXPIRED' : getTimeRemaining(currentProduct.expirationTime) }}
+              {{ isExpired(currentProduct.expirationTime) ? $t('consumer.home.alreadyExpired') : getTimeRemaining(currentProduct.expirationTime) }}
             </el-tag>
             <el-tag type="warning" effect="plain" round v-if="getRemaining(currentProduct) > 0">
-              Stock: {{ getRemaining(currentProduct) }}
+              {{ $t('consumer.home.stockLabel', { count: getRemaining(currentProduct) }) }}
             </el-tag>
           </div>
           <div class="product-info-sheet">
@@ -246,7 +231,7 @@
           </div>
         </div>
         <div class="dialog-action-bar">
-          <el-button plain @click="detailVisible = false" class="cancel-btn">Cancel</el-button>
+          <el-button plain @click="detailVisible = false" class="cancel-btn">{{ $t('common.cancel') }}</el-button>
           <el-button
             :type="getBtnConfig(currentProduct).type"
             class="main-action-btn"
@@ -269,7 +254,10 @@ import { expiringApi, standardApi } from '@/api/product'
 import { cartApi } from '@/api/cart'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/message'
-import JsBarcode from 'jsbarcode' // 引入库
+import { useI18n } from 'vue-i18n'
+import JsBarcode from 'jsbarcode'
+
+const { t } = useI18n()
 
 const storeList = ref<any[]>([])
 const selectedStoreId = ref<number | null>(null)
@@ -288,12 +276,12 @@ const selectedTimeFilter = ref('')   // 时间区间
 const inStockOnly = ref(true)        // 默认只显示有库存的商品
 
 // 时间区间过滤选项
-const timeFilters = [
-  { value: '1h', label: '< 1h', icon: 'Timer' },
-  { value: '5h', label: '< 5h', icon: 'Clock' },
-  { value: '10h', label: '< 10h', icon: 'Clock' },
-  { value: '1d', label: '> 1d', icon: 'Calendar' }
-]
+const timeFilters = computed(() => [
+  { value: '1h', label: t('consumer.home.timeFilter1h'), icon: Timer },
+  { value: '5h', label: t('consumer.home.timeFilter5h'), icon: Clock },
+  { value: '10h', label: t('consumer.home.timeFilter10h'), icon: Clock },
+  { value: '1d', label: t('consumer.home.timeFilter1d'), icon: Calendar }
+])
 
 const currentStoreName = computed(() => {
   const store = storeList.value.find(s => s.storeId === selectedStoreId.value)
@@ -363,20 +351,20 @@ const isExpired = (expiryDate: string) => {
 }
 
 const getBtnConfig = (prod: any) => {
-  if (!prod) return { type: 'info', text: 'Loading', disabled: true }
-  if (isExpired(prod.expirationTime)) return { type: 'info', text: 'Expired', disabled: true }
-  if (Number(prod.remainingStock || 0) <= 0) return { type: 'info', text: 'Out of Stock', disabled: true }
-  return { type: 'success', text: 'Add to Basket', disabled: false }
+  if (!prod) return { type: 'info', text: t('consumer.home.loading'), disabled: true }
+  if (isExpired(prod.expirationTime)) return { type: 'info', text: t('consumer.home.expired'), disabled: true }
+  if (Number(prod.remainingStock || 0) <= 0) return { type: 'info', text: t('consumer.home.outOfStock'), disabled: true }
+  return { type: 'success', text: t('consumer.home.addToBasket'), disabled: false }
 }
 
 const getTimeRemaining = (expiryDate: string) => {
   const diff = new Date(expiryDate).getTime() - Date.now()
-  if (diff <= 0) return 'Expired'
+  if (diff <= 0) return t('consumer.home.expired')
   const h = Math.floor(diff / (1000 * 60 * 60))
   const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  if (h >= 24) return `${Math.floor(h/24)}d left`
-  if (h > 0) return `${h}h ${m}m left`
-  return `${m}m left`
+  if (h >= 24) return t('consumer.home.daysLeft', { days: Math.floor(h/24) })
+  if (h > 0) return t('consumer.home.hoursMinsLeft', { h, m })
+  return t('consumer.home.minsLeft', { m })
 }
 
 const fetchProducts = async () => {
@@ -405,7 +393,7 @@ const fetchProducts = async () => {
     const now = new Date()
     productList.value = enriched.filter(i => i.status === 'AVAILABLE' && new Date(i.expirationTime) > now)
   } catch (e) {
-    ElMessage.error('Failed to sync product data')
+    ElMessage.error(t('consumer.home.productSyncFailed'))
   } finally {
     loading.value = false
   }
@@ -426,11 +414,11 @@ const fetchStores = async () => {
       selectedStoreId.value = saved ? Number(saved) : storeList.value[0].storeId
       fetchProducts()
     }
-  } catch (e) { ElMessage.error('Store Sync Failed') }
+  } catch (e) { ElMessage.error(t('consumer.home.storeSyncFailed')) }
 }
 
 const addToCart = async (prod: any) => {
-  if (isExpired(prod.expirationTime)) return ElMessage.warning('This item has expired!')
+  if (isExpired(prod.expirationTime)) return ElMessage.warning(t('consumer.home.itemExpiredWarning'))
   const userId = localStorage.getItem('userId') || '4'
   try {
     const cartRes: any = await cartApi.getByUserId(Number(userId))
@@ -439,17 +427,17 @@ const addToCart = async (prod: any) => {
     const existingQty = existingItem ? Number(existingItem.quantity || 0) : 0
     const stock = Number(prod.remainingStock || 0)
     if (existingQty >= stock) {
-      return ElMessage.warning(`Only ${stock} in stock. You already have ${existingQty} in your basket.`)
+      return ElMessage.warning(t('consumer.home.stockLimitWarning', { stock, existing: existingQty }))
     }
     await request.post('/cart', {
       userId: Number(userId),
       productId: Number(prod.productId),
       quantity: 1
     })
-    ElMessage.success('Added to basket')
+    ElMessage.success(t('consumer.home.addedToBasket'))
   } catch (e: any) {
     if (e?.message?.includes('Only')) return
-    ElMessage.error('Failed to add')
+    ElMessage.error(t('consumer.home.addFailed'))
   }
 }
 
@@ -471,7 +459,7 @@ const showDetail = (prod: any) => {
         format: "CODE128",
         displayValue: false,
         height: 35,
-        width: 1.5, // 商品弹窗的条码弄细一点更精致
+        width: 1.5,
         lineColor: "#1e293b",
         background: "transparent",
         margin: 0
@@ -494,10 +482,10 @@ const haversine = (lat1: number, lon1: number, lat2: number, lon2: number) => {
 
 const findNearestStore = () => {
   if (!navigator.geolocation) {
-    ElMessage.warning('Geolocation is not supported by your browser')
+    ElMessage.warning(t('consumer.home.geoNotSupported'))
     return
   }
-  ElMessage.info('Locating you...')
+  ElMessage.info(t('consumer.home.locating'))
   navigator.geolocation.getCurrentPosition((pos) => {
     const userLat = pos.coords.latitude
     const userLng = pos.coords.longitude
@@ -515,12 +503,12 @@ const findNearestStore = () => {
     }
     if (best) {
       nearestStore.value = best
-      ElMessage.success(`Nearest store: ${best.storeName} (${bestDist.toFixed(1)} km)`)
+      ElMessage.success(t('consumer.home.nearestStoreFound', { name: best.storeName, dist: bestDist.toFixed(1) }))
     } else {
-      ElMessage.warning('No store with coordinates found')
+      ElMessage.warning(t('consumer.home.noStoreWithCoords'))
     }
   }, () => {
-    ElMessage.error('Unable to retrieve your location')
+    ElMessage.error(t('consumer.home.locationError'))
   })
 }
 

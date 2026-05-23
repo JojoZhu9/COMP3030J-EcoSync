@@ -6,13 +6,13 @@
           <div class="header-left">
             <div class="title-icon"><el-icon><UserGroup /></el-icon></div>
             <div class="title-text-box">
-              <span class="main-title">Account Management Center</span>
-              <span class="sub-title">Manage internal staff and admin credentials</span>
+              <span class="main-title">{{ $t('admin.accountManage.accountManagementCenter') }}</span>
+              <span class="sub-title">{{ $t('admin.accountManage.manageInternalStaff') }}</span>
             </div>
-            <el-tag effect="light" type="success" round class="count-badge">Total: {{ filteredUsers.length }}</el-tag>
+            <el-tag effect="light" type="success" round class="count-badge">{{ $t('admin.accountManage.total', { count: filteredUsers.length }) }}</el-tag>
           </div>
           <el-button type="success" class="brand-btn" @click="openAddDialog">
-            <el-icon style="margin-right: 6px;"><Plus /></el-icon> Add Account
+            <el-icon style="margin-right: 6px;"><Plus /></el-icon> {{ $t('admin.accountManage.addAccount') }}
           </el-button>
         </div>
       </template>
@@ -20,26 +20,26 @@
       <div class="table-toolbar">
         <el-input
           v-model="searchQuery"
-          placeholder="Search by UID or Username..."
+          :placeholder="$t('admin.accountManage.searchPlaceholder')"
           :prefix-icon="Search"
           clearable
           class="search-input"
         />
         <el-radio-group v-model="roleFilter" class="custom-radio">
-          <el-radio-button label="ALL">All Roles</el-radio-button>
-          <el-radio-button label="ADMIN">Admins</el-radio-button>
-          <el-radio-button label="EMPLOYEE">Employees</el-radio-button>
+          <el-radio-button label="ALL">{{ $t('admin.accountManage.allRoles') }}</el-radio-button>
+          <el-radio-button label="ADMIN">{{ $t('admin.accountManage.admins') }}</el-radio-button>
+          <el-radio-button label="EMPLOYEE">{{ $t('admin.accountManage.employees') }}</el-radio-button>
         </el-radio-group>
       </div>
 
       <el-table :data="filteredUsers" v-loading="loading" class="custom-table" stripe border height="600">
-        <el-table-column label="UID" width="100" align="center">
+        <el-table-column :label="$t('admin.accountManage.uid')" width="100" align="center">
           <template #default="{ row }">
             <span class="uid-text">#{{ row.userId || row.user_id }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="username" label="Username" min-width="180">
+        <el-table-column prop="username" :label="$t('admin.accountManage.username')" min-width="180">
           <template #default="{ row }">
             <div class="username-cell">
               <el-avatar :size="32" class="user-avatar">{{ row.username?.charAt(0).toUpperCase() }}</el-avatar>
@@ -48,7 +48,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="System Role" width="160" align="center">
+        <el-table-column :label="$t('admin.accountManage.systemRole')" width="160" align="center">
           <template #default="{ row }">
             <el-tag :class="['role-tag', row.role?.toLowerCase()]" effect="dark" round>
               {{ row.role }}
@@ -56,25 +56,25 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Store" min-width="180" align="center">
+        <el-table-column :label="$t('admin.accountManage.store')" min-width="180" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.role === 'EMPLOYEE' && row.storeId" effect="light" round class="store-tag" :title="storeNameMap[row.storeId] || 'Store #' + row.storeId">
               {{ storeNameMap[row.storeId] || 'Store #' + row.storeId }}
             </el-tag>
-            <span v-else-if="row.role === 'EMPLOYEE'" class="no-store">Unassigned</span>
+            <span v-else-if="row.role === 'EMPLOYEE'" class="no-store">{{ $t('admin.accountManage.unassigned') }}</span>
             <span v-else class="no-store">—</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Account Status" width="150" align="center">
+        <el-table-column :label="$t('admin.accountManage.accountStatus')" width="150" align="center">
           <template #default="{ row }">
             <el-tag :type="row.status === 'BANNED' ? 'danger' : 'success'" effect="light" round class="status-tag">
-              {{ row.status === 'BANNED' ? 'BANNED' : 'ACTIVE' }}
+              {{ row.status === 'BANNED' ? $t('admin.accountManage.banned') : $t('admin.accountManage.active') }}
             </el-tag>
           </template>
         </el-table-column>
 
-        <el-table-column label="Actions" width="280" align="center">
+        <el-table-column :label="$t('admin.accountManage.actions')" width="280" align="center">
           <template #default="{ row }">
             <template v-if="row.role !== 'ADMIN'">
               <el-button
@@ -84,63 +84,63 @@
                 :type="row.status === 'BANNED' ? 'success' : 'warning'"
                 @click="toggleBan(row)"
               >
-                {{ row.status === 'BANNED' ? 'Unban' : 'Suspend' }}
+                {{ row.status === 'BANNED' ? $t('admin.accountManage.unban') : $t('admin.accountManage.suspend') }}
               </el-button>
-              <el-button v-if="row.role === 'EMPLOYEE'" plain size="small" round type="primary" @click="openMigrateDialog(row)">Migrate</el-button>
-              <el-button plain size="small" round type="danger" @click="handleDelete(row)">Delete</el-button>
+              <el-button v-if="row.role === 'EMPLOYEE'" plain size="small" round type="primary" @click="openMigrateDialog(row)">{{ $t('admin.accountManage.migrate') }}</el-button>
+              <el-button plain size="small" round type="danger" @click="handleDelete(row)">{{ $t('admin.accountManage.delete') }}</el-button>
             </template>
-            <span v-else class="admin-lock-text"><el-icon><Lock /></el-icon> System Protected</span>
+            <span v-else class="admin-lock-text"><el-icon><Lock /></el-icon> {{ $t('admin.accountManage.systemProtected') }}</span>
           </template>
         </el-table-column>
 
         <template #empty>
-          <el-empty description="No accounts found matching criteria" />
+          <el-empty :description="$t('admin.accountManage.noAccountsFound')" />
         </template>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showAdd" title="Register Internal Account" width="450px" class="modern-dialog" destroy-on-close>
+    <el-dialog v-model="showAdd" :title="$t('admin.accountManage.registerInternalAccount')" width="450px" class="modern-dialog" destroy-on-close>
       <el-form :model="form" label-position="top">
-        <el-form-item label="Account Username">
-          <el-input v-model="form.username" placeholder="Enter unique username" class="dialog-input" />
+        <el-form-item :label="$t('admin.accountManage.accountUsername')">
+          <el-input v-model="form.username" :placeholder="$t('admin.accountManage.enterUniqueUsername')" class="dialog-input" />
         </el-form-item>
 
-        <el-form-item label="Secure Password">
-          <el-input v-model="form.passwordHash" type="password" show-password placeholder="Enter secure password" class="dialog-input" />
+        <el-form-item :label="$t('admin.accountManage.securePassword')">
+          <el-input v-model="form.passwordHash" type="password" show-password :placeholder="$t('admin.accountManage.enterSecurePassword')" class="dialog-input" />
         </el-form-item>
 
-        <el-form-item label="Assign System Role">
+        <el-form-item :label="$t('admin.accountManage.assignSystemRole')">
           <el-select v-model="form.role" style="width: 100%" class="dialog-select">
-            <el-option label="Administrator (ADMIN)" value="ADMIN" />
-            <el-option label="Store Employee (EMPLOYEE)" value="EMPLOYEE" />
+            <el-option :label="$t('admin.accountManage.administratorAdmin')" value="ADMIN" />
+            <el-option :label="$t('admin.accountManage.storeEmployee')" value="EMPLOYEE" />
           </el-select>
         </el-form-item>
 
-        <el-form-item v-if="form.role === 'EMPLOYEE'" label="Assign Store">
-          <el-select v-model="form.storeId" style="width: 100%" class="dialog-select" clearable placeholder="Select a store">
+        <el-form-item v-if="form.role === 'EMPLOYEE'" :label="$t('admin.accountManage.assignStore')">
+          <el-select v-model="form.storeId" style="width: 100%" class="dialog-select" clearable :placeholder="$t('admin.accountManage.selectStore')">
             <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button round @click="showAdd = false">Cancel</el-button>
-          <el-button round type="success" class="brand-btn" :loading="submitting" @click="createUser">Register Account</el-button>
+          <el-button round @click="showAdd = false">{{ $t('admin.accountManage.cancel') }}</el-button>
+          <el-button round type="success" class="brand-btn" :loading="submitting" @click="createUser">{{ $t('admin.accountManage.registerAccount') }}</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showMigrate" title="Migrate Employee Store" width="400px" class="modern-dialog" destroy-on-close>
+    <el-dialog v-model="showMigrate" :title="$t('admin.accountManage.migrateEmployeeStore')" width="400px" class="modern-dialog" destroy-on-close>
       <p style="margin-bottom: 16px; color: #475569;">
-        Migrating employee <strong>{{ migrateTarget?.username }}</strong> to a new store:
+        {{ $t('admin.accountManage.migratingEmployee', { name: migrateTarget?.username }) }}
       </p>
-      <el-select v-model="migrateStoreId" style="width: 100%" placeholder="Select target store">
+      <el-select v-model="migrateStoreId" style="width: 100%" :placeholder="$t('admin.accountManage.selectTargetStore')">
         <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
       </el-select>
       <template #footer>
         <div class="dialog-footer">
-          <el-button round @click="showMigrate = false">Cancel</el-button>
-          <el-button round type="success" class="brand-btn" :loading="migrateLoading" @click="submitMigrate">Confirm Migrate</el-button>
+          <el-button round @click="showMigrate = false">{{ $t('admin.accountManage.cancel') }}</el-button>
+          <el-button round type="success" class="brand-btn" :loading="migrateLoading" @click="submitMigrate">{{ $t('admin.accountManage.confirmMigrate') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -149,11 +149,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import request from '@/utils/request'
 import { storeApi } from '@/api/store'
 import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { Plus, Search, UserFilled as UserGroup, Lock } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const users = ref<any[]>([])
 const stores = ref<any[]>([])
@@ -164,9 +167,8 @@ const submitting = ref(false)
 const migrateLoading = ref(false)
 const migrateTarget = ref<any>(null)
 
-// 新增搜索与过滤状态
 const searchQuery = ref('')
-const roleFilter = ref('ALL') // 'ALL' | 'ADMIN' | 'EMPLOYEE'
+const roleFilter = ref('ALL')
 
 const form = ref({ username: '', passwordHash: '', role: 'EMPLOYEE', phoneNumber: '0000000000', storeId: null as number | null })
 const migrateStoreId = ref<number | null>(null)
@@ -214,7 +216,7 @@ const fetchUsers = async () => {
     const res: any = await request.get('/users')
     users.value = res.data || res
   } catch (e) {
-    ElMessage.error('Data synchronization failed')
+    ElMessage.error(t('admin.accountManage.dataSyncFailed'))
   } finally {
     loading.value = false
   }
@@ -222,16 +224,16 @@ const fetchUsers = async () => {
 
 const createUser = async () => {
   if (!form.value.username || !form.value.passwordHash) {
-    return ElMessage.warning('Information incomplete')
+    return ElMessage.warning(t('admin.accountManage.informationIncomplete'))
   }
   submitting.value = true
   try {
     await request.post('/users', form.value)
-    ElMessage.success('Account created successfully')
+    ElMessage.success(t('admin.accountManage.accountCreated'))
     showAdd.value = false
     fetchUsers()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || 'Registration failed')
+    ElMessage.error(e.response?.data?.message || t('admin.accountManage.registrationFailed'))
   } finally {
     submitting.value = false
   }
@@ -240,26 +242,27 @@ const createUser = async () => {
 const toggleBan = async (row: any) => {
   const id = row.userId || row.user_id
   const isBanning = row.status !== 'BANNED'
-  const actionText = isBanning ? 'suspend' : 'unban'
+  const actionKey = isBanning ? 'admin.accountManage.suspendConfirm' : 'admin.accountManage.unbanConfirm'
+  const actionName = isBanning ? t('admin.accountManage.suspend') : t('admin.accountManage.unban')
   try {
-    await ElMessageBox.confirm(`Are you sure you want to ${actionText} user "${row.username}"?`, 'Confirm Action', { type: 'warning' })
+    await ElMessageBox.confirm(t(actionKey, { name: row.username }), t('admin.accountManage.confirmAction'), { type: 'warning' })
     const updateData = { ...row, status: isBanning ? 'BANNED' : 'NORMAL' }
     await request.put(`/users/${id}`, updateData)
-    ElMessage.success(`${actionText.charAt(0).toUpperCase() + actionText.slice(1)} successful`)
+    ElMessage.success(t('admin.accountManage.actionSuccessful', { action: actionName }))
     fetchUsers()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error(`Failed to ${actionText} user`)
+    if (e !== 'cancel') ElMessage.error(t('admin.accountManage.actionFailed', { action: actionName }))
   }
 }
 
 const handleDelete = (row: any) => {
   const id = row.userId || row.user_id
-  ElMessageBox.confirm(`Are you sure you want to completely delete user ${row.username}?`, 'Warning', { type: 'error' }).then(async () => {
+  ElMessageBox.confirm(t('admin.accountManage.deleteUserConfirm', { name: row.username }), t('admin.accountManage.confirmAction'), { type: 'error' }).then(async () => {
     try {
       await request.delete(`/users/${id}`)
-      ElMessage.success('Deleted successfully')
+      ElMessage.success(t('admin.accountManage.deleted'))
       fetchUsers()
-    } catch (e) { ElMessage.error('Deletion failed') }
+    } catch (e) { ElMessage.error(t('admin.accountManage.deletionFailed')) }
   })
 }
 
@@ -268,23 +271,23 @@ const fetchStores = async () => {
     const res: any = await storeApi.getAll()
     stores.value = res.data || res
   } catch (e) {
-    ElMessage.error('Failed to load stores')
+    ElMessage.error(t('admin.accountManage.failedToLoadStores'))
   }
 }
 
 const submitMigrate = async () => {
   if (!migrateTarget.value || !migrateStoreId.value) {
-    return ElMessage.warning('Please select a target store')
+    return ElMessage.warning(t('admin.accountManage.selectTargetStoreWarning'))
   }
   migrateLoading.value = true
   try {
     const id = migrateTarget.value.userId || migrateTarget.value.user_id
     await request.put(`/users/${id}`, { ...migrateTarget.value, storeId: migrateStoreId.value })
-    ElMessage.success('Employee migrated successfully')
+    ElMessage.success(t('admin.accountManage.migrated'))
     showMigrate.value = false
     fetchUsers()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || 'Migration failed')
+    ElMessage.error(e.response?.data?.message || t('admin.accountManage.migrationFailed'))
   } finally {
     migrateLoading.value = false
   }
@@ -312,13 +315,11 @@ onMounted(() => {
 
 .brand-btn { background: #008163 !important; border: none; font-weight: 700; border-radius: 10px; height: 40px; padding: 0 20px; box-shadow: 0 4px 12px rgba(0,129,99,0.2); }
 
-/* 工具栏 */
 .table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #fdfdfd; border-bottom: 1px solid #f1f5f9; }
 .search-input { width: 340px; }
 .search-input :deep(.el-input__wrapper) { background: #f8fafc; border-radius: 10px; box-shadow: 0 0 0 1px #e2e8f0 inset; padding: 6px 12px; }
 .search-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px rgba(0,129,99,0.4) inset; }
 
-/* 表格样式 */
 .custom-table { width: 100%; border-radius: 0 0 16px 16px; }
 :deep(.el-table th.el-table__cell) { background-color: #f8fafc !important; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
 .uid-text { font-family: monospace; font-weight: 900; color: #64748b; font-size: 14px; }
@@ -335,7 +336,6 @@ onMounted(() => {
 .store-tag { font-weight: 700; background: #f0f9ff !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; }
 .no-store { font-size: 12px; color: #94a3b8; font-weight: 600; }
 
-/* 弹窗样式 */
 :deep(.modern-dialog) { border-radius: 20px; overflow: hidden; }
 :deep(.modern-dialog .el-dialog__header) { padding: 24px; border-bottom: 1px solid #f1f5f9; margin-right: 0; }
 :deep(.modern-dialog .el-dialog__title) { font-weight: 800; color: #1e293b; font-size: 18px; }

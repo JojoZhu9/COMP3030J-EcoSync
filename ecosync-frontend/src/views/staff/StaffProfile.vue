@@ -5,7 +5,7 @@
       <div class="id-card">
         <div class="id-card-header">
           <div class="brand-logo">7-ELEVEn</div>
-          <div class="badge-tag">STAFF IDENTITY</div>
+          <div class="badge-tag">{{ $t('staff.profile.staffIdentity') }}</div>
         </div>
 
         <div class="id-card-body">
@@ -15,8 +15,8 @@
           </div>
 
           <div class="user-main-info">
-            <h2 class="user-name">{{ staff.username || 'Loading...' }}</h2>
-            <div class="emp-id">Employee ID: <span>#{{ staff.userId || staff.user_id || '---' }}</span></div>
+            <h2 class="user-name">{{ staff.username || $t('staff.profile.loading') }}</h2>
+            <div class="emp-id">{{ $t('staff.profile.employeeId') }}: <span>#{{ staff.userId || staff.user_id || '---' }}</span></div>
             <el-tag type="success" effect="dark" round class="role-display">{{ staff.role || 'STAFF' }}</el-tag>
           </div>
 
@@ -24,26 +24,26 @@
 
           <div class="store-info-section">
             <div class="info-group">
-              <span class="info-label">Assigned Store</span>
+              <span class="info-label">{{ $t('staff.profile.assignedStore') }}</span>
               <span class="info-val store-highlight">
                 <el-icon><Shop /></el-icon>
-                {{ store.storeName || store.store_name || 'Loading...' }}
+                {{ store.storeName || store.store_name || $t('staff.profile.loading') }}
               </span>
             </div>
 
             <div class="info-row">
               <div class="info-group half">
-                <span class="info-label">City</span>
+                <span class="info-label">{{ $t('staff.profile.city') }}</span>
                 <span class="info-val">{{ store.city || '---' }}</span>
               </div>
               <div class="info-group half">
-                <span class="info-label">Status</span>
-                <span class="info-val success-text">Active</span>
+                <span class="info-label">{{ $t('staff.profile.status') }}</span>
+                <span class="info-val success-text">{{ $t('staff.profile.active') }}</span>
               </div>
             </div>
 
             <div class="info-group">
-              <span class="info-label">Full Address</span>
+              <span class="info-label">{{ $t('staff.profile.fullAddress') }}</span>
               <span class="info-val address-text">
                 <el-icon><Location /></el-icon> {{ store.address || '---' }}
               </span>
@@ -53,7 +53,7 @@
 
         <div class="id-card-footer">
           <div class="barcode-bars">|| █| || █||| █ |||</div>
-          <div class="barcode-num">ID: {{ staff.userId || '0000' }} - SECURE PASS</div>
+          <div class="barcode-num">ID: {{ staff.userId || '0000' }} - {{ $t('staff.profile.securePass') }}</div>
         </div>
       </div>
     </div>
@@ -62,9 +62,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { UserFilled, Location, Shop } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
+const { t } = useI18n()
 const loading = ref(true)
 const staff = ref<any>({})
 const store = ref<any>({})

@@ -1,80 +1,103 @@
 <template>
-  <div class="pc-layout">
-    <div class="brand-top-stripe"></div>
+  <el-config-provider :locale="elementLocale">
+    <div class="pc-layout">
+      <div class="brand-top-stripe"></div>
 
-    <template v-if="route.name === 'login'">
-      <router-view />
-    </template>
+      <template v-if="route.name === 'login'">
+        <router-view />
+      </template>
 
-    <template v-else>
-      <header class="top-navbar" :class="roleClass">
-        <div class="nav-left">
-          <div class="brand-logo" @click="go('/')">
-            <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
+      <template v-else>
+        <header class="top-navbar" :class="roleClass">
+          <div class="nav-left">
+            <div class="brand-logo" @click="go('/')">
+              <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
+            </div>
+            <span class="logo-text divider">|</span>
+            <span class="logo-text">Intelligent Near-Expiry</span>
+            <el-tag v-if="isLogged" effect="dark" :type="currentRole === 'ADMIN' ? 'danger' : 'success'" round size="small" class="role-badge">
+              {{ roleTitle }}
+            </el-tag>
           </div>
-          <span class="logo-text divider">|</span>
-          <span class="logo-text">Intelligent Near-Expiry</span>
-          <el-tag v-if="isLogged" effect="dark" :type="currentRole === 'ADMIN' ? 'danger' : 'success'" round size="small" class="role-badge">
-            {{ roleTitle }}
-          </el-tag>
-        </div>
 
         <nav class="nav-menu">
-          <div v-if="currentRole !== 'ADMIN'" class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Home Page</div>
+          <div v-if="currentRole !== 'ADMIN'" class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">{{ $t('nav.homePage') }}</div>
 
           <template v-if="currentRole === 'ADMIN'">
-            <div class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">Home Page</div>
-            <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">Accounts</div>
-            <div class="menu-item" :class="{ active: route.path.includes('stores') }" @click="go('/admin/stores')">Stores</div>
-            <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">Inventory</div>
-            <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">Analytics</div>
+            <div class="menu-item" :class="{ active: route.path === '/' }" @click="go('/')">{{ $t('nav.homePage') }}</div>
+            <div class="menu-item" :class="{ active: route.path.includes('accounts') }" @click="go('/admin/accounts')">{{ $t('nav.accounts') }}</div>
+            <div class="menu-item" :class="{ active: route.path.includes('stores') }" @click="go('/admin/stores')">{{ $t('nav.stores') }}</div>
+            <div class="menu-item" :class="{ active: route.path.includes('inventory') }" @click="go('/admin/inventory')">{{ $t('nav.inventory') }}</div>
+            <div class="menu-item" :class="{ active: route.path.includes('dashboard') }" @click="go('/admin/dashboard')">{{ $t('nav.analytics') }}</div>
           </template>
 
           <template v-else-if="currentRole === 'EMPLOYEE'">
-            <div class="menu-item" :class="{ active: route.path.includes('staff/home') }" @click="go('/staff/home')">Workspace</div>
+            <div class="menu-item" :class="{ active: route.path.includes('staff/home') }" @click="go('/staff/home')">{{ $t('nav.workspace') }}</div>
           </template>
 
           <template v-else>
             <template v-if="isLogged">
-              <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">Store Home</div>
-              <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">Cart</div>
-              <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">Orders</div>
+              <div class="menu-item" :class="{ active: route.path === '/home' }" @click="go('/home')">{{ $t('nav.storeHome') }}</div>
+              <div class="menu-item" :class="{ active: route.path === '/cart' }" @click="go('/cart')">{{ $t('nav.cart') }}</div>
+              <div class="menu-item" :class="{ active: route.path === '/order-status' }" @click="go('/order-status')">{{ $t('nav.orders') }}</div>
             </template>
           </template>
         </nav>
 
         <div class="nav-right">
-          <el-button v-if="!isLogged" class="login-nav-btn" type="success" round @click="go('/login')">Log In</el-button>
+          <el-dropdown trigger="click" @command="handleLocaleChange">
+            <span class="locale-switch">
+              <span class="locale-label">{{ currentLocaleLabel }}</span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="en" :class="{ active: locale === 'en' }">English</el-dropdown-item>
+                <el-dropdown-item command="zh" :class="{ active: locale === 'zh' }">中文</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+
+          <el-button v-if="!isLogged" class="login-nav-btn" type="success" round @click="go('/login')">{{ $t('common.login') }}</el-button>
 
           <template v-else>
             <div v-if="currentRole !== 'ADMIN'" class="menu-item profile-icon" :class="{ active: route.path.includes('profile') }" @click="goProfile">
               <el-icon><User /></el-icon>
             </div>
-            <div class="logout-btn" @click="handleLogout" title="Logout">
+            <div class="logout-btn" @click="handleLogout" :title="$t('common.logout')">
               <el-icon><SwitchButton /></el-icon>
             </div>
           </template>
         </div>
       </header>
 
-      <main class="content-area">
-        <div :class="{ 'content-inner': route.path !== '/' }">
-          <router-view />
-        </div>
-      </main>
-    </template>
-  </div>
+        <main class="content-area">
+          <div :class="{ 'content-inner': route.path !== '/' }">
+            <router-view />
+          </div>
+        </main>
+      </template>
+    </div>
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { SwitchButton, User } from '@element-plus/icons-vue'
+import { setLocale, getLocale, type Locale } from './locales'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import enLocale from 'element-plus/es/locale/lang/en'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const isLogged = ref(false)
 const currentRole = ref<string | null>(null)
+const locale = ref<Locale>(getLocale())
+
+const currentLocaleLabel = computed(() => locale.value === 'zh' ? '中文' : 'EN')
+const elementLocale = computed(() => locale.value === 'zh' ? zhCn : enLocale)
 
 const syncStatus = () => {
   const token = localStorage.getItem('token')
@@ -85,9 +108,9 @@ const syncStatus = () => {
 
 const roleClass = computed(() => currentRole.value === 'ADMIN' ? 'bg-admin' : 'bg-consumer')
 const roleTitle = computed(() => {
-  if (currentRole.value === 'ADMIN') return 'Admin Panel'
-  if (currentRole.value === 'EMPLOYEE') return 'Staff Panel'
-  return 'Customer'
+  if (currentRole.value === 'ADMIN') return t('nav.adminPanel')
+  if (currentRole.value === 'EMPLOYEE') return t('nav.staffPanel')
+  return t('nav.customer')
 })
 
 onMounted(() => {
@@ -103,6 +126,13 @@ const handleLogout = () => {
   localStorage.clear()
   window.dispatchEvent(new Event('auth-change'))
   router.push('/login')
+}
+
+const handleLocaleChange = (command: Locale) => {
+  if (command === locale.value) return
+  setLocale(command)
+  locale.value = command
+  window.location.reload()
 }
 </script>
 
@@ -124,9 +154,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f8f
 .bg-admin .logo-text { color: #a0aec0; }
 .role-badge { margin-left: 10px; }
 
-/* ======== 修改这里：向左对齐并加一点左边距 ======== */
 .nav-menu { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-start; margin-left: 40px; }
-/* ================================================ */
 
 .menu-item { padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 600; transition: 0.3s; color: #475569; font-size: 15px; }
 .bg-admin .menu-item { color: #cbd5e1; }
@@ -143,7 +171,12 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #f8f
 .logout-btn { color: var(--711-red); font-size: 22px; cursor: pointer; padding: 8px; transition: 0.2s; display: flex; align-items: center; }
 .logout-btn:hover { transform: scale(1.1); }
 
+.locale-switch { display: flex; align-items: center; gap: 4px; cursor: pointer; font-size: 14px; font-weight: 600; color: #475569; padding: 6px 10px; border-radius: 8px; transition: 0.2s; }
+.locale-switch:hover { background: rgba(0,0,0,0.05); }
+.bg-admin .locale-switch { color: #cbd5e1; }
+.bg-admin .locale-switch:hover { background: rgba(255,255,255,0.1); }
+.locale-label { min-width: 28px; text-align: center; }
+
 .content-area { min-height: calc(100vh - var(--navbar-height) - 6px); }
-/* 有内容内边距的页面 */
 .content-inner { max-width: 1400px; margin: 0 auto; padding: 20px; }
 </style>

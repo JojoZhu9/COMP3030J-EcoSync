@@ -12,14 +12,13 @@
             <div class="hero-bg-grid"></div>
             <div class="hero-content">
               <h1 class="hero-title">
-                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Rescue Near-Expiry Food,</span>
+                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">{{ $t('landing.hero.title1') }}</span>
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.3s">
-                  <span class="c-green">Embrace an Eco-Friendly Life</span>
+                  <span class="c-green">{{ $t('landing.hero.title2') }}</span>
                 </span>
               </h1>
               <p class="hero-subtitle animate-fade-in-up" style="animation-delay: 0.5s">
-                The official 7-ELEVEn near-expiry food platform powered by SMARTCHAIN RETAIL TECH.
-                <br />Grab premium bentos, onigiri, and dairy products at ultra-low discounts.
+                {{ $t('landing.hero.subtitle') }}
               </p>
               <div class="hero-actions animate-fade-in-up" style="animation-delay: 0.7s">
                 <el-button
@@ -29,7 +28,7 @@
                   round
                   @click="goLogin"
                 >
-                  Purchase near-expiry food
+                  {{ $t('landing.hero.ctaPrimary') }}
                   <el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
                 <el-button
@@ -38,7 +37,7 @@
                   round
                   @click="scrollTo('features')"
                 >
-                  Explore More
+                  {{ $t('landing.hero.ctaSecondary') }}
                 </el-button>
               </div>
             </div>
@@ -46,7 +45,7 @@
               <div class="mouse">
                 <div class="wheel"></div>
               </div>
-              <div class="scroll-text">Scroll to explore</div>
+              <div class="scroll-text">{{ $t('landing.hero.scrollText') }}</div>
             </div>
           </div>
         </el-carousel-item>
@@ -56,14 +55,13 @@
             <div class="hero-bg-grid"></div>
             <div class="hero-content">
               <h1 class="hero-title">
-                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">Sustainable Retail,</span>
+                <span class="title-line animate-fade-in-up" style="animation-delay: 0.1s">{{ $t('landing.hero.slide2Title1') }}</span>
                 <span class="title-line animate-fade-in-up" style="animation-delay: 0.3s">
-                  <span class="c-orange">Zero Food Waste</span>
+                  <span class="c-orange">{{ $t('landing.hero.slide2Title2') }}</span>
                 </span>
               </h1>
               <p class="hero-subtitle animate-fade-in-up" style="animation-delay: 0.5s">
-                Empowering 7-ELEVEn with data-driven logistics to solve urban food waste.
-                <br />Join us in building a greener future.
+                {{ $t('landing.hero.slide2Subtitle') }}
               </p>
               <div class="hero-actions animate-fade-in-up" style="animation-delay: 0.7s">
                 <el-button
@@ -73,7 +71,7 @@
                   round
                   @click="goLogin"
                 >
-                  Join Our Community
+                  {{ $t('landing.hero.slide2Cta') }}
                   <el-icon class="el-icon--right"><ArrowRight /></el-icon>
                 </el-button>
               </div>
@@ -82,7 +80,7 @@
               <div class="mouse">
                 <div class="wheel"></div>
               </div>
-              <div class="scroll-text">Scroll to explore</div>
+              <div class="scroll-text">{{ $t('landing.hero.scrollText') }}</div>
             </div>
           </div>
         </el-carousel-item>
@@ -92,10 +90,10 @@
     <!-- Features 区域 -->
     <section id="features" class="features-section">
       <div class="section-header">
-        <span class="section-tag">CORE VALUES</span>
-        <h2 class="section-title">Reshaping the Near-Expiry Ecosystem</h2>
+        <span class="section-tag">{{ $t('landing.features.tag') }}</span>
+        <h2 class="section-title">{{ $t('landing.features.title') }}</h2>
         <div class="title-underline"></div>
-        <p class="section-desc">Three pillars that define our commitment to sustainable retail innovation</p>
+        <p class="section-desc">{{ $t('landing.features.desc') }}</p>
       </div>
 
       <div class="feature-row-flex">
@@ -105,8 +103,8 @@
             <div class="icon-box bg-green">
               <el-icon :size="32"><Monitor /></el-icon>
             </div>
-            <h3>Digitalization & Transparency</h3>
-            <p>Real-time synchronization of inventory and expiration dates, purchased through official channels, completely eliminating information opacity.</p>
+            <h3>{{ $t('landing.features.card1Title') }}</h3>
+            <p>{{ $t('landing.features.card1Desc') }}</p>
           </div>
         </div>
 
@@ -116,8 +114,8 @@
             <div class="icon-box bg-orange">
               <el-icon :size="32"><Discount /></el-icon>
             </div>
-            <h3>Ultimate Cost-Effectiveness</h3>
-            <p>Targeted at consumers with a strong demand for value. As the expiration date approaches, the system applies stepped smart discounts.</p>
+            <h3>{{ $t('landing.features.card2Title') }}</h3>
+            <p>{{ $t('landing.features.card2Desc') }}</p>
           </div>
         </div>
 
@@ -127,8 +125,8 @@
             <div class="icon-box bg-red">
               <el-icon :size="32"><Sunny /></el-icon>
             </div>
-            <h3>Sustainable Consumption</h3>
-            <p>Every order directly reduces urban food waste, helping 7-ELEVEn boost profitability while lightening the burden on our planet.</p>
+            <h3>{{ $t('landing.features.card3Title') }}</h3>
+            <p>{{ $t('landing.features.card3Desc') }}</p>
           </div>
         </div>
       </div>
@@ -137,8 +135,8 @@
     <!-- 流程展示 -->
     <section id="process" class="process-section">
       <div class="section-header">
-        <span class="section-tag">HOW IT WORKS</span>
-        <h2 class="section-title">Simple, Fast, Effective</h2>
+        <span class="section-tag">{{ $t('landing.process.tag') }}</span>
+        <h2 class="section-title">{{ $t('landing.process.title') }}</h2>
         <div class="title-underline"></div>
       </div>
 
@@ -163,28 +161,28 @@
     <section id="about" class="about-section">
       <div class="about-content">
         <div class="about-header">
-          <span class="team-tag">OUR MISSION</span>
-          <h2>About Bibilabo Group 8</h2>
+          <span class="team-tag">{{ $t('landing.about.tag') }}</span>
+          <h2>{{ $t('landing.about.title') }}</h2>
           <div class="accent-line"></div>
         </div>
 
         <div class="about-grid">
           <div class="about-text">
             <p class="about-desc reveal-text">
-              We are an innovative software engineering team dedicated to leveraging smart retail technology to solve modern urban challenges.
+              {{ $t('landing.about.desc1') }}
             </p>
             <p class="about-desc reveal-text">
-              Our platform is deeply committed to <strong>United Nations Sustainable Development Goal 12 (SDG 12): Responsible Consumption and Production</strong>.
+              {{ $t('landing.about.desc2') }}
             </p>
             <p class="about-desc reveal-text">
-              By implementing dynamic near-expiry product tracking and automated algorithmic discounting, we aim to minimize food waste and promote a circular economy within the 7-ELEVEn retail ecosystem.
+              {{ $t('landing.about.desc3') }}
             </p>
           </div>
 
           <div class="about-visual">
             <div class="sdg-badge">
               <div class="sdg-number">12</div>
-              <div class="sdg-label">SDG</div>
+              <div class="sdg-label">{{ $t('landing.about.sdg') }}</div>
             </div>
           </div>
         </div>
@@ -205,22 +203,22 @@
             <div class="footer-logo">
               <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
             </div>
-            <p class="brand-footer">Near-Expiry Product Management System</p>
-            <p class="brand-desc">Transforming retail waste into consumer value through intelligent technology.</p>
+            <p class="brand-footer">{{ $t('landing.footer.systemName') }}</p>
+            <p class="brand-desc">{{ $t('landing.footer.systemDesc') }}</p>
           </div>
           <div class="footer-links">
             <div class="link-group">
-              <h4>Platform</h4>
-              <a href="#features">Features</a>
-              <a href="#process">Process</a>
-              <a href="#about">About Us</a>
+              <h4>{{ $t('landing.footer.platform') }}</h4>
+              <a href="#features">{{ $t('landing.footer.features') }}</a>
+              <a href="#process">{{ $t('landing.footer.process') }}</a>
+              <a href="#about">{{ $t('landing.footer.aboutUs') }}</a>
             </div>
           </div>
         </div>
         <div class="footer-divider"></div>
         <div class="footer-bottom">
-          <p class="copyright">© 2026 Developed by <strong>Group 8: Bibilabo</strong>. All Rights Reserved.</p>
-          <p class="disclaimer">Custom-developed for 7-ELEVEn stores by Team Bibilabo.</p>
+          <p class="copyright">{{ $t('landing.footer.copyright') }}</p>
+          <p class="disclaimer">{{ $t('landing.footer.disclaimer') }}</p>
         </div>
       </div>
     </footer>
@@ -228,15 +226,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   ArrowRight, Discount, Monitor, Sunny,
-  Stamp, TrendCharts, Food, ShoppingCart,
-  Timer, CircleCheck, Wallet
+  Search, Timer, CircleCheck
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // 平滑滚动
 const scrollTo = (id: string) => {
@@ -286,45 +285,37 @@ const resetTilt = (e: MouseEvent) => {
 }
 
 // 流程步骤
-const processSteps = [
+const processSteps = computed(() => [
   {
-    title: 'Scan & Discover',
-    desc: 'Browse real-time near-expiry inventory from your local 7-ELEVEn stores.',
-    icon: 'Search',
+    title: t('landing.process.step1Title'),
+    desc: t('landing.process.step1Desc'),
+    icon: Search,
     color: 'bg-green'
   },
   {
-    title: 'Smart Discount',
-    desc: 'Dynamic pricing ensures you get the best deal based on expiry proximity.',
-    icon: 'Discount',
+    title: t('landing.process.step2Title'),
+    desc: t('landing.process.step2Desc'),
+    icon: Discount,
     color: 'bg-orange'
   },
   {
-    title: 'Quick Pickup',
-    desc: 'Secure your items with one tap and pick them up within 2 hours.',
-    icon: 'Timer',
+    title: t('landing.process.step3Title'),
+    desc: t('landing.process.step3Desc'),
+    icon: Timer,
     color: 'bg-red'
   },
   {
-    title: 'Save & Sustain',
-    desc: 'Enjoy quality food at reduced prices while contributing to zero food waste.',
-    icon: 'CircleCheck',
+    title: t('landing.process.step4Title'),
+    desc: t('landing.process.step4Desc'),
+    icon: CircleCheck,
     color: 'bg-green'
   }
-]
+])
 
 // 技术栈
 const techStack = ['Spring Boot 3', 'Vue 3', 'MyBatis', 'MySQL 8.0', 'Redis', 'Docker']
 
 const goLogin = () => router.push('/login')
-
-onMounted(() => {
-  // 移除滚动监听，不再需要
-})
-
-onUnmounted(() => {
-  // 移除滚动监听
-})
 </script>
 
 <style scoped>
@@ -462,6 +453,7 @@ onUnmounted(() => {
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
+  white-space: pre-line;
 }
 
 .hero-actions {
@@ -1005,13 +997,11 @@ onUnmounted(() => {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  /* 替换为橘色渐变：从深橘色 (#e65c00) 到浅橘色 (#ff9800) */
   background: linear-gradient(135deg, #e65c00, #ff9800);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  /* 阴影颜色同步修改为深橘色的 RGB 值：230, 92, 0 */
   box-shadow: 0 20px 60px rgba(230, 92, 0, 0.3);
   position: relative;
 }
@@ -1021,7 +1011,6 @@ onUnmounted(() => {
   position: absolute;
   inset: -10px;
   border-radius: 50%;
-  /* 边框颜色同步修改为深橘色 */
   border: 2px solid rgba(230, 92, 0, 0.3);
   animation: ripple 2s infinite;
 }

@@ -6,10 +6,10 @@
           <div class="nav-back" @click="$router.back()">
             <el-icon><ArrowLeft /></el-icon>
           </div>
-          <h2 class="page-title">Shopping Cart</h2>
+          <h2 class="page-title">{{ $t('consumer.cart.shoppingCart') }}</h2>
         </div>
         <el-button class="empty-btn" type="danger" link @click="handleClearCart" :disabled="cartItems.length === 0">
-          <el-icon style="margin-right: 4px"><Delete /></el-icon>Empty Cart
+          <el-icon style="margin-right: 4px"><Delete /></el-icon>{{ $t('consumer.cart.emptyCartBtn') }}
         </el-button>
       </div>
 
@@ -17,13 +17,13 @@
         <div class="checkout-body" v-if="cartItems.length > 0">
           <div class="fulfillment-card">
             <div class="fulfillment-header">
-              <span class="label"><el-icon><Shop /></el-icon> PICKUP INFO</span>
+              <span class="label"><el-icon><Shop /></el-icon> {{ $t('consumer.cart.pickupInfo') }}</span>
             </div>
             <div class="address-content">
-              <div class="addr-main">In-Store Pickup</div>
+              <div class="addr-main">{{ $t('consumer.cart.inStorePickup') }}</div>
               <div class="contact-sub">
-                <span class="u-tag">{{ rawUser.username || 'Member' }}</span>
-                <span class="u-phone">{{ userPhone || 'No phone' }}</span>
+                <span class="u-tag">{{ rawUser.username || $t('consumer.cart.member') }}</span>
+                <span class="u-phone">{{ userPhone || $t('consumer.cart.noPhone') }}</span>
               </div>
             </div>
           </div>
@@ -52,8 +52,7 @@
 
               <div class="item-details">
                 <div class="name-row">
-                  <span class="product-name" :title="item.productName">{{ item.productName || 'Syncing...' }}</span>
-                  <!-- 删除按钮：改为更醒目的圆形按钮 -->
+                  <span class="product-name" :title="item.productName">{{ item.productName || $t('consumer.cart.syncing') }}</span>
                   <div class="delete-btn-wrap" @click="deleteSingleItem(item.cartItemId)">
                     <el-icon :size="18"><Close /></el-icon>
                   </div>
@@ -71,7 +70,6 @@
                   </div>
 
                   <div class="qty-control">
-                    <!-- 数量输入器：改为 default 尺寸，更大更醒目 -->
                     <el-input-number
                       v-model="item.quantity"
                       :min="0"
@@ -85,7 +83,7 @@
                   </div>
                 </div>
                 <div v-if="item.maxStock <= 5" class="stock-warning">
-                  Only {{ item.maxStock }} units left!
+                  {{ $t('consumer.cart.unitsLeft', { count: item.maxStock }) }}
                 </div>
               </div>
             </div>
@@ -94,12 +92,12 @@
         </div>
 
         <div v-else class="empty-cart-view">
-          <el-empty description="Your cart is empty right now." :image-size="160">
+          <el-empty :description="$t('consumer.cart.emptyCartDesc')" :image-size="160">
             <template #image>
               <el-icon :size="80" color="#cbd5e1"><Shop /></el-icon>
             </template>
             <el-button type="primary" round class="go-shop-btn" @click="$router.push('/home')">
-              Go Shopping
+              {{ $t('consumer.cart.goShopping') }}
             </el-button>
           </el-empty>
         </div>
@@ -107,7 +105,7 @@
 
       <div class="sticky-footer" v-if="cartItems.length > 0">
         <div class="total-section">
-          <span class="total-label">Subtotal</span>
+          <span class="total-label">{{ $t('consumer.cart.subtotal') }}</span>
           <div class="total-amount-box">
             <span class="currency">¥</span>
             <span class="value">{{ totalPrice }}</span>
@@ -119,7 +117,7 @@
           @click="openConfirmDialog"
           :disabled="selectedItems.length === 0"
         >
-          Pay Now ({{ selectedItems.length }})
+          {{ $t('consumer.cart.payNow', { count: selectedItems.length }) }}
         </el-button>
       </div>
     </div>
@@ -129,12 +127,12 @@
         <div class="receipt-zigzag-top"></div>
         <div class="receipt-header">
           <div class="brand-logo">7-ELEVEN</div>
-          <p class="receipt-title">ORDER PREVIEW</p>
+          <p class="receipt-title">{{ $t('consumer.cart.orderPreview') }}</p>
         </div>
 
         <div class="receipt-info">
-          <div class="r-row"><span>Customer:</span><span class="r-val">{{ rawUser.username || 'Member' }}</span></div>
-          <div class="r-row"><span>Phone:</span><span class="r-val">{{ userPhone }}</span></div>
+          <div class="r-row"><span>{{ $t('consumer.cart.customerLabel') }}</span><span class="r-val">{{ rawUser.username || $t('consumer.cart.member') }}</span></div>
+          <div class="r-row"><span>{{ $t('consumer.cart.phoneLabel') }}</span><span class="r-val">{{ userPhone }}</span></div>
         </div>
 
         <div class="r-divider"></div>
@@ -164,21 +162,21 @@
         <div class="r-divider"></div>
 
         <div class="r-total">
-          <span class="r-total-label">GRAND TOTAL</span>
+          <span class="r-total-label">{{ $t('consumer.cart.grandTotal') }}</span>
           <span class="r-amt">¥{{ totalPrice }}</span>
         </div>
 
         <div class="barcode-area">
-          <div class="barcode-placeholder">Order ID will be generated after payment</div>
+          <div class="barcode-placeholder">{{ $t('consumer.cart.orderIdGenHint') }}</div>
         </div>
         <div class="receipt-zigzag-bottom"></div>
       </div>
 
       <template #footer>
         <div class="dialog-actions">
-          <el-button plain round @click="confirmVisible = false" class="cancel-btn">Cancel</el-button>
+          <el-button plain round @click="confirmVisible = false" class="cancel-btn">{{ $t('consumer.cart.cancel') }}</el-button>
           <el-button type="success" round @click="executePayment" :loading="checkingOut" class="confirm-btn">
-            Confirm & Pay
+            {{ $t('consumer.cart.confirmPay') }}
           </el-button>
         </div>
       </template>
@@ -188,12 +186,14 @@
 
 <script setup lang="ts">
 import {ref, computed, onMounted} from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowLeft, Delete, Shop, Close, Goods } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
+const { t } = useI18n()
 const router = useRouter()
 const cartItems = ref<any[]>([])
 const userPhone = ref('')
@@ -283,13 +283,13 @@ const initData = async () => {
         return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false, storeId: null, storeName: 'Unknown', storeAddress: '' }
       }
     }))
-  } catch (e) { ElMessage.error('Data Sync Failed') }
+  } catch (e) { ElMessage.error(t('consumer.cart.dataSyncFailed')) }
 }
 
 onMounted(initData)
 
 const openConfirmDialog = () => {
-  if (selectedItems.value.length === 0) return ElMessage.warning('Please select items to checkout')
+  if (selectedItems.value.length === 0) return ElMessage.warning(t('consumer.cart.selectItemsWarning'))
   confirmVisible.value = true
 }
 
@@ -313,11 +313,11 @@ const updateCartQuantity = async (item: any, rawVal: number) => {
     if (qty > item.maxStock) {
       item.quantity = item.maxStock
       await request.put(`/cart/${item.cartItemId}?quantity=${item.maxStock}`)
-      ElMessage.warning('Quantity adjusted due to stock changes')
+      ElMessage.warning(t('consumer.cart.qtyAdjusted'))
     }
   } catch (e) {
     item.quantity = previousQty
-    ElMessage.error('Update Failed')
+    ElMessage.error(t('consumer.cart.updateFailed'))
   }
 }
 
@@ -326,12 +326,16 @@ const deleteSingleItem = async (id: number) => {
     await request.delete(`/cart/${id}`)
     cartItems.value = cartItems.value.filter(i => i.cartItemId !== id)
     updateLocalStorageCart()
-  } catch (e) { ElMessage.error('Delete Failed') }
+  } catch (e) { ElMessage.error(t('consumer.cart.deleteFailed')) }
 }
 
 const handleClearCart = async () => {
   try {
-    await ElMessageBox.confirm('Clear all items from your cart?', 'Warning', { confirmButtonText: 'Clear', cancelButtonText: 'Cancel', type: 'warning' })
+    await ElMessageBox.confirm(
+      t('consumer.cart.clearCartConfirm'),
+      t('consumer.cart.clearCartWarning'),
+      { confirmButtonText: t('consumer.cart.clear'), cancelButtonText: t('common.cancel'), type: 'warning' }
+    )
     await request.delete(`/cart/user/${getUserId()}`)
     cartItems.value = []
     updateLocalStorageCart()
@@ -364,11 +368,11 @@ const executePayment = async () => {
     localStorage.setItem('cart', '[]')
     const orderCount = res?.orders?.length || 1
     const codes = res?.orders?.map((o: any) => o.pickupCode).join(', ')
-    ElMessage.success(`Order Successful! ${orderCount} order(s) created. Pickup codes: ${codes}`)
+    ElMessage.success(t('consumer.cart.orderSuccess', { count: orderCount, codes }))
     confirmVisible.value = false
     router.push('/order-status')
   } catch (e: any) {
-    ElMessage.error(e.message || 'Payment logic error')
+    ElMessage.error(e.message || t('consumer.cart.paymentError'))
   } finally {
     checkingOut.value = false
   }
@@ -415,7 +419,6 @@ const executePayment = async () => {
 .item-tile.is-selected { border-color: #008163; background: #f8fafc; box-shadow: 0 8px 16px rgba(0, 129, 99, 0.08); }
 
 .item-check { display: flex; align-items: center; justify-content: center; }
-/* 复选框：删除内部对勾，选中时纯色填充 */
 .custom-checkbox :deep(.el-checkbox__inner) {
   border-radius: 6px;
   width: 20px;
@@ -423,13 +426,11 @@ const executePayment = async () => {
   border: 2px solid #cbd5e1;
   background: #fff;
 }
-/* 彻底删除对勾 */
 .custom-checkbox :deep(.el-checkbox__inner::after) {
   display: none !important;
   border: none !important;
   content: none !important;
 }
-/* 选中状态：品牌绿纯色填充 */
 .custom-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
   background-color: #008163;
   border-color: #008163;
@@ -450,7 +451,6 @@ const executePayment = async () => {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-/* ===== 删除按钮：改为醒目的圆形按钮 ===== */
 .delete-btn-wrap {
   width: 36px; height: 36px;
   background: #f1f5f9;
@@ -473,11 +473,9 @@ const executePayment = async () => {
 .points-price .unit { font-size: 14px; margin-right: 2px; }
 .cart-original-price { text-decoration: line-through; color: #94a3b8; font-size: 12px; margin-top: 4px; }
 
-/* ===== 步进器：增大尺寸和按钮 ===== */
 .qty-control { display: flex; align-items: center; }
 .modern-input-number { width: 120px; }
 .modern-input-number :deep(.el-input__wrapper) { background: #f1f5f9; box-shadow: none !important; border-radius: 10px; }
-/* 增大加减按钮 */
 .modern-input-number :deep(.el-input-number__decrease),
 .modern-input-number :deep(.el-input-number__increase) {
   width: 32px;
@@ -499,7 +497,6 @@ const executePayment = async () => {
   color: #fff;
   border-color: #008163;
 }
-/* 增大中间数字输入框 */
 .modern-input-number :deep(.el-input__inner) {
   font-size: 16px;
   font-weight: 800;
@@ -631,5 +628,5 @@ const executePayment = async () => {
 
 .dialog-actions { display: flex; gap: 16px; margin-top: 24px; }
 .cancel-btn { flex: 1; border: 2px solid #e2e8f0; font-weight: bold; }
-.confirm-btn { flex: 2; background: #008163 !important; border: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2); }
+.confirm-btn { flex: 2; background: #008163 !important; border: none !important; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2); }
 </style>

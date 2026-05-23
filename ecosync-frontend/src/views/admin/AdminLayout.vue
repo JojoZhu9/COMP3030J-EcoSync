@@ -5,7 +5,7 @@
         <div class="brand-logo">
           <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
         </div>
-        <div class="platform-tag">Admin Console</div>
+        <div class="platform-tag">{{ $t('admin.layout.adminConsole') }}</div>
       </div>
 
       <div class="menu-wrapper">
@@ -17,33 +17,33 @@
           text-color="#94a3b8"
           active-text-color="#ffffff"
         >
-          <div class="menu-section-label">Main Operations</div>
+          <div class="menu-section-label">{{ $t('admin.layout.mainOperations') }}</div>
 
           <el-menu-item index="/admin/dashboard">
             <el-icon><DataLine /></el-icon>
-            <span>Analytics Dashboard</span>
+            <span>{{ $t('admin.layout.analyticsDashboard') }}</span>
           </el-menu-item>
 
           <el-menu-item index="/admin/inventory">
             <el-icon><Box /></el-icon>
-            <span>Product Inventory</span>
+            <span>{{ $t('admin.layout.productInventory') }}</span>
           </el-menu-item>
 
           <el-menu-item index="/admin/accounts">
             <el-icon><UserGroup /></el-icon>
-            <span>Account Control</span>
+            <span>{{ $t('admin.layout.accountControl') }}</span>
           </el-menu-item>
 
           <el-menu-item index="/admin/stores">
             <el-icon><Shop /></el-icon>
-            <span>Store Management</span>
+            <span>{{ $t('admin.layout.storeManagement') }}</span>
           </el-menu-item>
 
-          <div class="menu-section-label">System</div>
+          <div class="menu-section-label">{{ $t('admin.layout.system') }}</div>
 
           <el-menu-item index="/admin/scan">
             <el-icon><Setting /></el-icon>
-            <span>Settings</span>
+            <span>{{ $t('admin.layout.settings') }}</span>
           </el-menu-item>
         </el-menu>
       </div>
@@ -53,11 +53,11 @@
           <el-avatar :size="36" class="admin-avatar">{{ currentAdmin.charAt(0).toUpperCase() }}</el-avatar>
           <div class="admin-info">
             <div class="admin-name">{{ currentAdmin }}</div>
-            <div class="admin-role">Super Administrator</div>
+            <div class="admin-role">{{ $t('admin.layout.superAdministrator') }}</div>
           </div>
         </div>
         <el-button class="logout-btn" type="danger" plain @click="logout">
-          <el-icon><SwitchButton /></el-icon> Sign Out
+          <el-icon><SwitchButton /></el-icon> {{ $t('admin.layout.signOut') }}
         </el-button>
       </div>
     </el-aside>
@@ -65,13 +65,13 @@
     <el-container class="main-container">
       <header class="top-nav">
         <div class="breadcrumb-area">
-          <span class="root-node">EcoSync Platform</span>
+          <span class="root-node">{{ $t('admin.layout.ecoSyncPlatform') }}</span>
           <el-icon class="sep"><ArrowRight /></el-icon>
           <span class="current-node">{{ formatPath($route.path) }}</span>
         </div>
         <div class="system-status">
           <span class="status-dot"></span>
-          Server Online: 2026-04-28
+          {{ $t('admin.layout.serverOnline', { date: '2026-04-28' }) }}
         </div>
       </header>
 
@@ -87,8 +87,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { DataLine, Box, UserFilled as UserGroup, Shop, Setting, SwitchButton, ArrowRight } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const currentAdmin = ref('Admin User')
 

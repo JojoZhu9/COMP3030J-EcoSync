@@ -2,15 +2,15 @@
   <div class="category-page">
     <div class="category-header">
       <div class="title-main">
-        <span class="c-green">7-ELEVEN</span> <span class="c-orange">Fresh</span>
+        <span class="c-green">7-ELEVEN</span> <span class="c-orange">{{ $t('consumer.category.fresh') }}</span>
       </div>
-      <div class="title-sub">SmartChain Retail Tech - Category Selection</div>
+      <div class="title-sub">{{ $t('consumer.category.subtitle') }}</div>
     </div>
 
     <div class="category-grid">
       <el-row :gutter="16">
-        <el-col :span="8" v-for="cat in categories" :key="cat.name">
-          <div class="category-tile" @click="handleCategoryClick(cat.name)">
+        <el-col :span="8" v-for="cat in categories" :key="cat.key">
+          <div class="category-tile" @click="handleCategoryClick(cat.key)">
             <div class="tile-icon-wrapper" :style="{ background: cat.bg }">
               <el-icon :style="{ color: cat.color }">
                 <component :is="cat.icon" />
@@ -26,7 +26,7 @@
     <div class="promo-banner">
       <div class="promo-content">
         <el-icon><Timer /></el-icon>
-        <span class="promo-text">Stocks update every 60 mins</span>
+        <span class="promo-text">{{ $t('consumer.category.stocksUpdate') }}</span>
       </div>
     </div>
 
@@ -35,26 +35,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Menu, Food, Coffee, Bowl,
   IceTea, IceCream, Timer
 } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 
+const { t } = useI18n()
 const router = useRouter()
 
-const categories = ref([
-  { name: 'Bento', icon: Bowl, color: '#ff7900', bg: '#fff7ed' },
-  { name: 'Sandwich', icon: Food, color: '#2196F3', bg: '#eff6ff' },
-  { name: 'Onigiri', icon: Menu, color: '#007934', bg: '#f0fdf4' },
-  { name: 'Dessert', icon: IceCream, color: '#E91E63', bg: '#fdf2f8' },
-  { name: 'Drinks', icon: Coffee, color: '#00BCD4', bg: '#ecfeff' },
-  { name: 'Bakery', icon: IceTea, color: '#9E9E9E', bg: '#f8fafc' }
+const categories = computed(() => [
+  { key: 'Bento', name: t('consumer.category.bento'), icon: Bowl, color: '#ff7900', bg: '#fff7ed' },
+  { key: 'Sandwich', name: t('consumer.category.sandwich'), icon: Food, color: '#2196F3', bg: '#eff6ff' },
+  { key: 'Onigiri', name: t('consumer.category.onigiri'), icon: Menu, color: '#007934', bg: '#f0fdf4' },
+  { key: 'Dessert', name: t('consumer.category.dessert'), icon: IceCream, color: '#E91E63', bg: '#fdf2f8' },
+  { key: 'Drinks', name: t('consumer.category.drinks'), icon: Coffee, color: '#00BCD4', bg: '#ecfeff' },
+  { key: 'Bakery', name: t('consumer.category.bakery'), icon: IceTea, color: '#9E9E9E', bg: '#f8fafc' }
 ])
 
 const handleCategoryClick = (name: string) => {
-  // 跳轉回首頁，並帶上分類參數
   router.push({
     path: '/home',
     query: { category: name }
@@ -66,7 +67,6 @@ const handleCategoryClick = (name: string) => {
 .category-page {
   background: #fff;
   min-height: 100vh;
-  /* 確保內容不被手機狀態欄或導航欄遮蓋 */
   padding-top: env(safe-area-inset-top);
 }
 

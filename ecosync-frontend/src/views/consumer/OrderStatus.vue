@@ -3,18 +3,18 @@
     <div class="brand-top-header">
       <div class="header-main">
         <div class="header-text">
-          <h2 class="title">My Transactions</h2>
-          <div class="header-desc">Data synchronized with central store network</div>
+          <h2 class="title">{{ $t('consumer.orderStatus.myTransactions') }}</h2>
+          <div class="header-desc">{{ $t('consumer.orderStatus.syncDesc') }}</div>
         </div>
       </div>
-      <div class="header-badge">7-ELEVEn Verified</div>
+      <div class="header-badge">{{ $t('consumer.orderStatus.verified') }}</div>
     </div>
 
     <div class="sticky-tabs-container">
       <el-tabs v-model="activeTab" class="brand-tabs" @tab-change="fetchOrders">
-        <el-tab-pane label="All History" name="ALL" />
-        <el-tab-pane label="Awaiting Pickup" name="AWAITING_PICKUP" />
-        <el-tab-pane label="Completed" name="COMPLETED" />
+        <el-tab-pane :label="$t('consumer.orderStatus.allHistory')" name="ALL" />
+        <el-tab-pane :label="$t('consumer.orderStatus.awaitingPickup')" name="AWAITING_PICKUP" />
+        <el-tab-pane :label="$t('consumer.orderStatus.completed')" name="COMPLETED" />
       </el-tabs>
     </div>
 
@@ -28,7 +28,7 @@
                 <el-icon><Shop /></el-icon>
               </div>
               <div class="store-text">
-                <span class="store-name">{{ storeMap[order.storeId] || `Store #${order.storeId}` }}</span>
+                <span class="store-name">{{ storeMap[order.storeId] || `${t('common.unknown')} #${order.storeId}` }}</span>
                 <span class="store-sub">{{ formatDate(order.createdAt) }}</span>
               </div>
             </div>
@@ -45,7 +45,7 @@
           <div class="details-box">
             <div class="order-meta">
               <span class="order-id">ORD-{{ order.orderId }}</span>
-              <span class="order-items-count">{{ order.details?.length || 0 }} items</span>
+              <span class="order-items-count">{{ $t('consumer.orderStatus.itemsCount', { count: order.details?.length || 0 }) }}</span>
             </div>
 
             <div class="item-list" v-if="order.details && order.details.length > 0">
@@ -56,7 +56,7 @@
                   </div>
                   <div class="item-name-group">
                     <span class="item-name">{{ item.productName }}</span>
-                    <span class="item-sku">SKU: {{ item.productId }}</span>
+                    <span class="item-sku">{{ $t('consumer.orderStatus.sku', { id: item.productId }) }}</span>
                   </div>
                 </div>
                 <div class="item-qty-price">
@@ -75,7 +75,7 @@
                   <el-icon :size="20"><Ticket /></el-icon>
                 </div>
                 <div class="pickup-info">
-                  <span class="p-label">PICKUP IDENTIFIER</span>
+                  <span class="p-label">{{ $t('consumer.orderStatus.pickupIdentifier') }}</span>
                   <div class="p-code">{{ order.pickupCode }}</div>
                 </div>
               </div>
@@ -89,7 +89,7 @@
 
           <div class="card-bottom">
             <div class="total-section">
-              <span class="total-label">Final Payment</span>
+              <span class="total-label">{{ $t('consumer.orderStatus.finalPayment') }}</span>
               <div class="total-val">
                 <span class="currency">¥</span>
                 <span class="num">{{ order.totalAmount.toFixed(2) }}</span>
@@ -105,7 +105,7 @@
                 class="cancel-order-btn"
                 @click="cancelOrder(order.orderId)"
               >
-                <el-icon><CircleClose /></el-icon> Cancel
+                <el-icon><CircleClose /></el-icon> {{ $t('consumer.orderStatus.cancel') }}
               </el-button>
 
               <el-button
@@ -115,7 +115,7 @@
                 class="action-btn"
                 @click="router.push('/home')"
               >
-                <el-icon><ShoppingCart /></el-icon> Shop More
+                <el-icon><ShoppingCart /></el-icon> {{ $t('consumer.orderStatus.shopMore') }}
               </el-button>
             </div>
           </div>
@@ -126,10 +126,10 @@
         <div class="empty-icon">
           <el-icon :size="64" color="#cbd5e1"><Document /></el-icon>
         </div>
-        <div class="empty-title">No transactions found</div>
-        <div class="empty-desc">Start shopping to see your orders here</div>
+        <div class="empty-title">{{ $t('consumer.orderStatus.noTransactions') }}</div>
+        <div class="empty-desc">{{ $t('consumer.orderStatus.emptyDesc') }}</div>
         <el-button type="success" round class="empty-action" @click="router.push('/home')">
-          <el-icon><ShoppingCart /></el-icon> Go Shopping
+          <el-icon><ShoppingCart /></el-icon> {{ $t('consumer.orderStatus.goShopping') }}
         </el-button>
       </div>
 
@@ -140,12 +140,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid, CircleClose } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 
+const { t } = useI18n()
 const router = useRouter()
 const activeTab = ref('ALL')
 const orders = ref<any[]>([])
@@ -159,7 +161,7 @@ const fetchStores = async () => {
     const stores = res.data || res || []
     const map: Record<number, string> = {}
     stores.forEach((s: any) => {
-      map[s.storeId] = s.storeName || `Store #${s.storeId}`
+      map[s.storeId] = s.storeName || `${t('common.unknown')} #${s.storeId}`
     })
     storeMap.value = map
   } catch (e) {}
@@ -210,70 +212,66 @@ const fetchOrders = async () => {
   }
 }
 
-// 记录当前正在"再来一单/继续加购"的订单ID，用于按钮Loading动画
 const shopMoreLoading = ref<number | null>(null)
 
-// 处理商品重新加入购物车的逻辑
 const handleShopMore = async (order: any) => {
-  // 1. 防御性检查：如果没有详情数据则直接返回
   if (!order.details || order.details.length === 0) {
-    ElMessage.warning('No items found in this order.')
+    ElMessage.warning(t('consumer.orderStatus.noItemsFound'))
     return
   }
 
-  // 开启对应按钮的 loading 动画
   shopMoreLoading.value = order.orderId
 
   try {
-    // 2. 遍历该订单中的所有商品，生成加入购物车的 Promise 数组
     const addCartPromises = order.details.map((item: any) => {
       return request.post('/cart', {
         userId: Number(userId),
         productId: Number(item.productId),
-        quantity: Number(item.quantity) // 保持当时购买的数量
+        quantity: Number(item.quantity)
       })
     })
 
-    // 3. 并发执行所有加购请求
     await Promise.all(addCartPromises)
-
-    ElMessage.success('Items returned to cart successfully!')
-
-    // 4. 全部加购成功后，跳转至首页 /home
+    ElMessage.success(t('consumer.orderStatus.returnedToCart'))
     router.push('/home')
-
   } catch (e: any) {
-    // 如果某个商品库存不足或失效，捕获异常提示用户
-    ElMessage.error(e.response?.data?.message || e.message || 'Failed to add some items back to cart')
+    ElMessage.error(e.response?.data?.message || e.message || t('consumer.orderStatus.addBackFailed'))
   } finally {
-    // 无论成功失败，关闭 loading
     shopMoreLoading.value = null
   }
 }
 
-// 取消订单方法 - POST 请求
 const cancelOrder = async (orderId: number) => {
   try {
     await ElMessageBox.confirm(
-      'Are you sure you want to cancel this order?',
-      'Cancel Order',
+      t('consumer.orderStatus.cancelOrderConfirm'),
+      t('consumer.orderStatus.cancelOrderTitle'),
       {
-        confirmButtonText: 'Yes, Cancel',
-        cancelButtonText: 'No, Keep It',
+        confirmButtonText: t('consumer.orderStatus.yesCancel'),
+        cancelButtonText: t('consumer.orderStatus.noKeep'),
         type: 'warning'
       }
     )
     await request.post(`/orders/${orderId}/cancel`)
-    ElMessage.success('Order cancelled successfully')
+    ElMessage.success(t('consumer.orderStatus.orderCancelled'))
     fetchOrders()
   } catch (e: any) {
     if (e !== 'cancel') {
-      ElMessage.error(e.response?.data?.message || e.message || 'Failed to cancel order')
+      ElMessage.error(e.response?.data?.message || e.message || t('consumer.orderStatus.cancelFailed'))
     }
   }
 }
 
-const formatStatus = (s: string) => s.replace('_', ' ')
+const formatStatus = (s: string) => {
+  const map: Record<string, string> = {
+    PENDING: t('staff.pending'),
+    PAID: t('staff.paid'),
+    AWAITING_PICKUP: t('staff.awaitingPickup'),
+    COMPLETED: t('staff.completed'),
+    CANCELLED: t('staff.cancelled')
+  }
+  return map[s] || s
+}
 const formatDate = (val: string) => val ? val.replace('T', ' ').substring(0, 16) : '-'
 
 onMounted(async () => {

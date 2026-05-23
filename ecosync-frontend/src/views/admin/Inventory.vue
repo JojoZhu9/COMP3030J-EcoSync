@@ -6,12 +6,12 @@
           <div class="header-left">
             <div class="title-icon"><el-icon><Box /></el-icon></div>
             <div class="title-text-box">
-              <span class="main-title">Standard Product Library</span>
-              <span class="sub-title">Maintain master product data and default discount curves</span>
+              <span class="main-title">{{ $t('admin.inventory.standardProductLibrary') }}</span>
+              <span class="sub-title">{{ $t('admin.inventory.maintainMasterData') }}</span>
             </div>
           </div>
           <el-button type="success" class="brand-btn" @click="openAddDialog">
-            <el-icon class="mr-5"><Plus /></el-icon> Register Product
+            <el-icon class="mr-5"><Plus /></el-icon> {{ $t('admin.inventory.registerProduct') }}
           </el-button>
         </div>
       </template>
@@ -19,7 +19,7 @@
       <div class="table-toolbar">
         <el-input
           v-model="searchQuery"
-          placeholder="Search product name or barcode..."
+          :placeholder="$t('admin.inventory.searchPlaceholder')"
           :prefix-icon="Search"
           clearable
           class="search-input"
@@ -27,12 +27,12 @@
         <div class="toolbar-right">
           <el-button v-if="selectedProducts.length" type="danger" plain round size="small" @click="handleBatchDelete"
           >
-            Delete Selected ({{ selectedProducts.length }})
+            {{ $t('admin.inventory.deleteSelected', { count: selectedProducts.length }) }}
           </el-button>
           <el-radio-group v-model="priceFilter" class="custom-radio">
-            <el-radio-button label="ALL">All Items</el-radio-button>
-            <el-radio-button label="UNDER_20">Under ¥20</el-radio-button>
-            <el-radio-button label="OVER_20">Above ¥20</el-radio-button>
+            <el-radio-button label="ALL">{{ $t('admin.inventory.allItems') }}</el-radio-button>
+            <el-radio-button label="UNDER_20">{{ $t('admin.inventory.under20') }}</el-radio-button>
+            <el-radio-button label="OVER_20">{{ $t('admin.inventory.above20') }}</el-radio-button>
           </el-radio-group>
         </div>
       </div>
@@ -40,13 +40,13 @@
       <el-table :data="filteredProducts" v-loading="loading" class="custom-table" stripe border height="600" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
 
-        <el-table-column label="Barcode" width="160" align="center">
+        <el-table-column :label="$t('admin.inventory.barcode')" width="160" align="center">
           <template #default="{ row }">
             <span class="barcode-text">{{ row.barcode }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Product Preview" width="140" align="center">
+        <el-table-column :label="$t('admin.inventory.productPreview')" width="140" align="center">
           <template #default="{ row }">
             <el-image
               class="product-avatar cursor-pointer"
@@ -61,37 +61,37 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Product Name" min-width="200">
+        <el-table-column :label="$t('admin.inventory.productName')" min-width="200">
           <template #default="{ row }">
-            <span class="product-name-txt">{{ row.product_name || row.productName || 'Unnamed Product' }}</span>
+            <span class="product-name-txt">{{ row.product_name || row.productName || $t('admin.inventory.unnamedProduct') }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Base Price" width="150" align="right">
+        <el-table-column :label="$t('admin.inventory.basePrice')" width="150" align="right">
           <template #default="{ row }">
             <span class="price-tag">¥{{ parseFloat(row.normal_price || row.normalPrice || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column label="Management" width="240" align="center">
+        <el-table-column :label="$t('admin.inventory.management')" width="240" align="center">
           <template #default="{ row }">
             <el-button class="action-btn-primary" size="small" round @click="goDetail(row)">
-              <el-icon class="mr-5"><TrendCharts /></el-icon> Strategy
+              <el-icon class="mr-5"><TrendCharts /></el-icon> {{ $t('admin.inventory.strategy') }}
             </el-button>
-            <el-button type="danger" plain size="small" round @click="handleDelete(row)">Delete</el-button>
+            <el-button type="danger" plain size="small" round @click="handleDelete(row)">{{ $t('admin.inventory.delete') }}</el-button>
           </template>
         </el-table-column>
 
         <template #empty>
-          <el-empty description="No products found matching criteria" />
+          <el-empty :description="$t('admin.inventory.noProductsFound')" />
         </template>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showAdd" title="Register New Master Product" width="850px" class="modern-dialog" destroy-on-close @closed="stopScanner">
+    <el-dialog v-model="showAdd" :title="$t('admin.inventory.registerNewMasterProduct')" width="850px" class="modern-dialog" destroy-on-close @closed="stopScanner">
       <div class="dialog-flex-layout">
         <div class="preview-panel">
-          <div class="panel-title">DISCOUNT CURVE PREVIEW</div>
+          <div class="panel-title">{{ $t('admin.inventory.discountCurvePreview') }}</div>
           <div class="chart-container">
             <div class="y-axis"><span>100%</span><span>50%</span><span>0%</span></div>
             <div class="visual-graph">
@@ -103,14 +103,14 @@
             <div class="x-axis"><span>12h</span><span>6h</span><span>Exp</span></div>
           </div>
           <div class="price-stats">
-            <div class="stat-item"><span class="label">Base:</span><span class="value">¥{{ newP.normal_price }}</span></div>
-            <div class="stat-item highlight"><span class="label">Final:</span><span class="value">¥{{ (newP.normal_price * (newP.discount_rates[0] || 1)).toFixed(2) }}</span></div>
+            <div class="stat-item"><span class="label">{{ $t('admin.inventory.base') }}</span><span class="value">¥{{ newP.normal_price }}</span></div>
+            <div class="stat-item highlight"><span class="label">{{ $t('admin.inventory.final') }}</span><span class="value">¥{{ (newP.normal_price * (newP.discount_rates[0] || 1)).toFixed(2) }}</span></div>
           </div>
         </div>
 
         <div class="form-panel">
           <el-form ref="formRef" :model="newP" :rules="rules" label-position="top">
-            <el-form-item label="Product Image">
+            <el-form-item :label="$t('admin.inventory.productImage')">
               <div class="image-preview-wrap">
                 <el-upload v-if="!imgPreview" class="product-uploader" action="#" :auto-upload="false" :show-file-list="false" :on-change="handleFileChange"
                 >
@@ -128,22 +128,22 @@
             </el-form-item>
             <el-row :gutter="20">
               <el-col :span="14">
-                <el-form-item label="Barcode (SKU)" prop="barcode">
-                  <el-input v-model="newP.barcode" placeholder="Scan or enter barcode" class="modern-input">
+                <el-form-item :label="$t('admin.inventory.barcodeSku')" prop="barcode">
+                  <el-input v-model="newP.barcode" :placeholder="$t('admin.inventory.scanOrEnter')" class="modern-input">
                     <template #append><el-button @click="startScanner"><el-icon><Camera /></el-icon></el-button></template>
                   </el-input>
                 </el-form-item>
               </el-col>
               <el-col :span="10">
-                <el-form-item label="Standard Price" prop="normal_price">
+                <el-form-item :label="$t('admin.inventory.standardPrice')" prop="normal_price">
                   <el-input-number v-model="newP.normal_price" :precision="2" :min="0.01" class="modern-input-num" style="width:100%" />
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-form-item label="Product Title" prop="product_name">
+            <el-form-item :label="$t('admin.inventory.productTitle')" prop="product_name">
               <el-input v-model="newP.product_name" class="modern-input" />
             </el-form-item>
-            <el-divider content-position="left"><span style="color:#64748b; font-weight:700">Decay Strategy (12h)</span></el-divider>
+            <el-divider content-position="left"><span style="color:#64748b; font-weight:700">{{ $t('admin.inventory.decayStrategy') }}</span></el-divider>
             <div class="matrix-grid">
               <div v-for="h in 12" :key="h" class="discount-input-group">
                 <span class="hour-label">{{ h }}h</span>
@@ -156,13 +156,13 @@
 
       <div v-if="scanning" class="scanner-overlay">
         <div id="scanner-reader"></div>
-        <el-button type="danger" round @click="stopScanner" class="close-scanner">Cancel Scan</el-button>
+        <el-button type="danger" round @click="stopScanner" class="close-scanner">{{ $t('admin.inventory.cancelScan') }}</el-button>
       </div>
 
       <template #footer>
         <div class="dialog-footer">
-          <el-button round @click="showAdd = false">Cancel</el-button>
-          <el-button round type="success" class="brand-btn" @click="submitAdd" :loading="submitLoading">Confirm & Save</el-button>
+          <el-button round @click="showAdd = false">{{ $t('admin.inventory.cancel') }}</el-button>
+          <el-button round type="success" class="brand-btn" @click="submitAdd" :loading="submitLoading">{{ $t('admin.inventory.confirmSave') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -172,12 +172,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import request from '@/utils/request'
 import { ElMessageBox, type FormInstance } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { Plus, Camera, TrendCharts, Search, Box, Delete } from '@element-plus/icons-vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
+const { t } = useI18n()
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const products = ref<any[]>([])
@@ -199,21 +201,21 @@ const newP = ref({
 })
 
 const validateBarcode = (_rule: any, value: string, callback: any) => {
-  if (!value) return callback(new Error('Barcode required'))
-  if (!/^\d{13}$/.test(value)) return callback(new Error('Barcode must be exactly 13 digits'))
+  if (!value) return callback(new Error(t('admin.inventory.barcodeRequired')))
+  if (!/^\d{13}$/.test(value)) return callback(new Error(t('admin.inventory.barcode13Digits')))
   callback()
 }
 
 const validatePrice = (_rule: any, value: number, callback: any) => {
-  if (value == null || value === undefined) return callback(new Error('Price required'))
-  if (value <= 0) return callback(new Error('Price must be greater than 0'))
+  if (value == null || value === undefined) return callback(new Error(t('admin.inventory.priceRequired')))
+  if (value <= 0) return callback(new Error(t('admin.inventory.priceGreaterThan0')))
   callback()
 }
 
 const validateDecay = (_rule: any, _value: any, callback: any) => {
   for (const rate of newP.value.discount_rates) {
     if (rate < 0.1 || rate > 1.0) {
-      return callback(new Error('Each decay rate must be between 0.1 and 1.0'))
+      return callback(new Error(t('admin.inventory.decayRateRange')))
     }
   }
   callback()
@@ -221,7 +223,7 @@ const validateDecay = (_rule: any, _value: any, callback: any) => {
 
 const rules = reactive({
   barcode: [{ required: true, validator: validateBarcode, trigger: 'blur' }],
-  product_name: [{ required: true, message: 'Name required', trigger: 'blur' }],
+  product_name: [{ required: true, message: t('admin.inventory.nameRequired'), trigger: 'blur' }],
   normal_price: [{ required: true, validator: validatePrice, trigger: 'change' }],
   discount_rates: [{ validator: validateDecay, trigger: 'change' }]
 })
@@ -246,7 +248,6 @@ const filteredProducts = computed(() => {
   return result
 })
 
-// 【核心修复】：恢复使用 name 匹配路由，解决空白页问题
 const goDetail = (row: any) => {
   router.push({ name: 'AdminHome', query: { id: row.barcode } })
 }
@@ -256,7 +257,7 @@ const fetchData = async () => {
   try {
     const res: any = await request.get('/products')
     products.value = Array.isArray(res) ? res : (res.data || [])
-  } catch (e) { ElMessage.error('Server connection failed') }
+  } catch (e) { ElMessage.error(t('admin.inventory.serverConnectionFailed')) }
   finally { loading.value = false }
 }
 
@@ -345,28 +346,27 @@ const submitAdd = async () => {
       fd.append('normal_price', newP.value.normal_price.toString())
       fd.append('discount_rates', JSON.stringify(newP.value.discount_rates))
       await request.post('/products', fd)
-      ElMessage.success('Product registered!')
+      ElMessage.success(t('admin.inventory.productRegistered'))
       showAdd.value = false
       fetchData()
-    } catch (e) { ElMessage.error('Registration failed') }
+    } catch (e) { ElMessage.error(t('admin.inventory.registrationFailed')) }
     finally { submitLoading.value = false }
   })
 }
 
 const handleDelete = (row: any) => {
-  ElMessageBox.confirm(`Delete [${row.product_name || row.productName || row.barcode}]?`, 'Warning', { type: 'error' }).then(async () => {
+  ElMessageBox.confirm(t('admin.inventory.deleteConfirm', { name: row.product_name || row.productName || row.barcode }), t('admin.inventory.warning'), { type: 'error' }).then(async () => {
     try {
       await request.delete(`/products/${row.barcode}`)
-      ElMessage.success('Deleted')
+      ElMessage.success(t('admin.inventory.deleted'))
       fetchData()
     } catch (e: any) {
-      const msg = e?.response?.data?.message || 'Delete failed'
+      const msg = e?.response?.data?.message || t('admin.inventory.deleteFailed')
       ElMessage.error(msg)
     }
   }).catch(() => {})
 }
 
-// 扫描器逻辑
 const scanning = ref(false)
 let html5QrCode: Html5Qrcode | null = null
 const startScanner = async () => {
@@ -375,7 +375,7 @@ const startScanner = async () => {
     try {
       html5QrCode = new Html5Qrcode("scanner-reader")
       await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (text) => {
-        newP.value.barcode = text; stopScanner(); ElMessage.success('Scanned!')
+        newP.value.barcode = text; stopScanner(); ElMessage.success(t('admin.inventory.scanned'))
       }, () => {})
     } catch (e) { scanning.value = false }
   }, 100)
@@ -396,8 +396,8 @@ const handleBatchDelete = async () => {
   const count = selectedProducts.value.length
   try {
     await ElMessageBox.confirm(
-      `Delete ${count} selected product${count > 1 ? 's' : ''}?`,
-      'Batch Delete',
+      t('admin.inventory.batchDeleteConfirm', { count, plural: count > 1 ? 's' : '' }),
+      t('admin.inventory.batchDelete'),
       { type: 'error' }
     )
     let success = 0
@@ -410,11 +410,11 @@ const handleBatchDelete = async () => {
         failed++
       }
     }
-    if (success) ElMessage.success(`${success} product${success > 1 ? 's' : ''} deleted`)
-    if (failed) ElMessage.warning(`${failed} could not be deleted (linked to inventory/orders)`)
+    if (success) ElMessage.success(t('admin.inventory.batchDeleteSuccess', { count: success, plural: success > 1 ? 's' : '' }))
+    if (failed) ElMessage.warning(t('admin.inventory.batchDeleteFailed', { count: failed }))
     fetchData()
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('Batch delete failed')
+    if (e !== 'cancel') ElMessage.error(t('admin.inventory.batchDeleteError'))
   }
 }
 

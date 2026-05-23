@@ -6,13 +6,13 @@
           <div class="header-left">
             <div class="title-icon"><el-icon><Shop /></el-icon></div>
             <div class="title-text-box">
-              <span class="main-title">Store Management</span>
-              <span class="sub-title">Manage 7-ELEVEn store locations and assignments</span>
+              <span class="main-title">{{ $t('admin.storeManage.storeManagement') }}</span>
+              <span class="sub-title">{{ $t('admin.storeManage.manageLocations') }}</span>
             </div>
-            <el-tag effect="light" type="success" round class="count-badge">Total: {{ stores.length }}</el-tag>
+            <el-tag effect="light" type="success" round class="count-badge">{{ $t('admin.storeManage.total', { count: stores.length }) }}</el-tag>
           </div>
           <el-button type="success" class="brand-btn" @click="openAddDialog">
-            <el-icon style="margin-right: 6px;"><Plus /></el-icon> Add Store
+            <el-icon style="margin-right: 6px;"><Plus /></el-icon> {{ $t('admin.storeManage.addStore') }}
           </el-button>
         </div>
       </template>
@@ -20,7 +20,7 @@
       <div class="table-toolbar">
         <el-input
           v-model="searchQuery"
-          placeholder="Search store name or city..."
+          :placeholder="$t('admin.storeManage.searchPlaceholder')"
           :prefix-icon="Search"
           clearable
           class="search-input"
@@ -28,23 +28,23 @@
       </div>
 
       <el-table :data="filteredStores" v-loading="loading" class="custom-table" stripe border height="600">
-        <el-table-column label="ID" width="80" align="center">
+        <el-table-column :label="$t('admin.storeManage.id')" width="80" align="center">
           <template #default="{ row }">
             <span class="uid-text">#{{ row.storeId || row.store_id }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="storeName" label="Store Name" min-width="180">
+        <el-table-column prop="storeName" :label="$t('admin.storeManage.storeName')" min-width="180">
           <template #default="{ row }">
             <span class="store-name">{{ row.storeName || row.store_name }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="city" label="City" width="120" align="center" />
+        <el-table-column prop="city" :label="$t('admin.storeManage.city')" width="120" align="center" />
 
-        <el-table-column prop="address" label="Address" min-width="200" />
+        <el-table-column prop="address" :label="$t('admin.storeManage.address')" min-width="200" />
 
-        <el-table-column label="Coordinates" width="200" align="center">
+        <el-table-column :label="$t('admin.storeManage.coordinates')" width="200" align="center">
           <template #default="{ row }">
             <span v-if="row.latitude && row.longitude" class="coord-text">
               {{ row.latitude.toFixed(4) }}, {{ row.longitude.toFixed(4) }}
@@ -53,41 +53,41 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="Actions" width="200" align="center">
+        <el-table-column :label="$t('admin.storeManage.actions')" width="200" align="center">
           <template #default="{ row }">
-            <el-button plain size="small" round type="primary" @click="openEditDialog(row)">Edit</el-button>
-            <el-button plain size="small" round type="danger" @click="handleDelete(row)">Delete</el-button>
+            <el-button plain size="small" round type="primary" @click="openEditDialog(row)">{{ $t('admin.storeManage.edit') }}</el-button>
+            <el-button plain size="small" round type="danger" @click="handleDelete(row)">{{ $t('admin.storeManage.delete') }}</el-button>
           </template>
         </el-table-column>
 
         <template #empty>
-          <el-empty description="No stores found" />
+          <el-empty :description="$t('admin.storeManage.noStoresFound')" />
         </template>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showDialog" :title="isEdit ? 'Edit Store' : 'Add New Store'" width="500px" class="modern-dialog" destroy-on-close>
+    <el-dialog v-model="showDialog" :title="isEdit ? $t('admin.storeManage.editStore') : $t('admin.storeManage.addNewStore')" width="500px" class="modern-dialog" destroy-on-close>
       <el-form :model="form" label-position="top">
-        <el-form-item label="Store Name">
-          <el-input v-model="form.storeName" placeholder="Enter store name" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.storeNameLabel')">
+          <el-input v-model="form.storeName" :placeholder="$t('admin.storeManage.enterStoreName')" class="dialog-input" />
         </el-form-item>
 
-        <el-form-item label="City">
-          <el-input v-model="form.city" placeholder="Enter city" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.cityLabel')">
+          <el-input v-model="form.city" :placeholder="$t('admin.storeManage.enterCity')" class="dialog-input" />
         </el-form-item>
 
-        <el-form-item label="Address">
-          <el-input v-model="form.address" type="textarea" :rows="2" placeholder="Enter full address" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.addressLabel')">
+          <el-input v-model="form.address" type="textarea" :rows="2" :placeholder="$t('admin.storeManage.enterFullAddress')" class="dialog-input" />
         </el-form-item>
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="Latitude">
+            <el-form-item :label="$t('admin.storeManage.latitude')">
               <el-input-number v-model="form.latitude" :precision="6" style="width: 100%" class="dialog-input-num" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="Longitude">
+            <el-form-item :label="$t('admin.storeManage.longitude')">
               <el-input-number v-model="form.longitude" :precision="6" style="width: 100%" class="dialog-input-num" />
             </el-form-item>
           </el-col>
@@ -95,8 +95,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button round @click="showDialog = false">Cancel</el-button>
-          <el-button round type="success" class="brand-btn" :loading="submitting" @click="submit">{{ isEdit ? 'Update' : 'Add' }}</el-button>
+          <el-button round @click="showDialog = false">{{ $t('admin.storeManage.cancel') }}</el-button>
+          <el-button round type="success" class="brand-btn" :loading="submitting" @click="submit">{{ isEdit ? $t('admin.storeManage.update') : $t('admin.storeManage.add') }}</el-button>
         </div>
       </template>
     </el-dialog>
@@ -105,11 +105,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { storeApi } from '@/api/store'
 import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { Plus, Search, Shop } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const stores = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -164,7 +166,7 @@ const fetchStores = async () => {
     const res: any = await storeApi.getAll()
     stores.value = res.data || res
   } catch (e) {
-    ElMessage.error('Failed to load stores')
+    ElMessage.error(t('admin.storeManage.failedToLoadStores'))
   } finally {
     loading.value = false
   }
@@ -172,21 +174,21 @@ const fetchStores = async () => {
 
 const submit = async () => {
   if (!form.value.storeName || !form.value.city || !form.value.address) {
-    return ElMessage.warning('Please fill in all required fields')
+    return ElMessage.warning(t('admin.storeManage.fillRequiredFields'))
   }
   submitting.value = true
   try {
     if (isEdit.value) {
       await storeApi.update(form.value.storeId, form.value)
-      ElMessage.success('Store updated successfully')
+      ElMessage.success(t('admin.storeManage.storeUpdated'))
     } else {
       await storeApi.create(form.value)
-      ElMessage.success('Store added successfully')
+      ElMessage.success(t('admin.storeManage.storeAdded'))
     }
     showDialog.value = false
     fetchStores()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || 'Operation failed')
+    ElMessage.error(e.response?.data?.message || t('admin.storeManage.operationFailed'))
   } finally {
     submitting.value = false
   }
@@ -195,13 +197,13 @@ const submit = async () => {
 const handleDelete = (row: any) => {
   const id = row.storeId || row.store_id
   const name = row.storeName || row.store_name
-  ElMessageBox.confirm(`Delete store "${name}"?`, 'Warning', { type: 'error' }).then(async () => {
+  ElMessageBox.confirm(t('admin.storeManage.deleteStoreConfirm', { name }), t('common.warning'), { type: 'error' }).then(async () => {
     try {
       await storeApi.delete(id)
-      ElMessage.success('Deleted successfully')
+      ElMessage.success(t('common.deleted'))
       fetchStores()
     } catch (e) {
-      ElMessage.error('Deletion failed. Store may have employees or inventory linked.')
+      ElMessage.error(t('admin.storeManage.deletionFailed'))
     }
   }).catch(() => {})
 }

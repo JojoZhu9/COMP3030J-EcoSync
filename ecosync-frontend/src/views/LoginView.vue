@@ -4,7 +4,7 @@
 
     <div class="back-home-nav">
       <el-button link @click="router.push('/')">
-        <el-icon><ArrowLeft /></el-icon> Back to Home page
+        <el-icon><ArrowLeft /></el-icon> {{ $t('nav.backToHome') }}
       </el-button>
     </div>
 
@@ -16,44 +16,44 @@
               <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
             </div>
             <h3 class="platform-name">SMARTCHAIN RETAIL TECH</h3>
-            <div class="slogan">Intelligent Near-Expiry Sales Platform</div>
+            <div class="slogan">{{ $t('login.slogan') }}</div>
           </div>
 
           <div class="form-side">
             <div class="form-header">
-              <h2 class="title">{{ isRegister ? 'Join Us' : 'Welcome Back' }}</h2>
-              <p class="subtitle">{{ isRegister ? 'Register to start your eco-saving journey' : 'Please login to manage your account' }}</p>
+              <h2 class="title">{{ isRegister ? $t('login.joinUs') : $t('login.welcomeBack') }}</h2>
+              <p class="subtitle">{{ isRegister ? $t('login.registerSubtitle') : $t('login.loginSubtitle') }}</p>
               <div class="title-underline"></div>
             </div>
 
             <el-form :model="form" @keyup.enter="handleSubmit" label-position="top">
-              <el-form-item label="Username">
-                <el-input v-model="form.username" placeholder="Enter username" :prefix-icon="User" />
+              <el-form-item :label="$t('login.username')">
+                <el-input v-model="form.username" :placeholder="$t('login.usernamePlaceholder')" :prefix-icon="User" />
               </el-form-item>
-              <el-form-item label="Password">
-                <el-input v-model="form.password" type="password" placeholder="Enter password" show-password :prefix-icon="Lock" />
+              <el-form-item :label="$t('login.password')">
+                <el-input v-model="form.password" type="password" :placeholder="$t('login.passwordPlaceholder')" show-password :prefix-icon="Lock" />
               </el-form-item>
 
               <div v-if="isRegister">
-                <el-form-item label="Confirm Password">
-                  <el-input v-model="form.rePassword" type="password" placeholder="Repeat password" show-password :prefix-icon="CircleCheck" />
+                <el-form-item :label="$t('login.confirmPassword')">
+                  <el-input v-model="form.rePassword" type="password" :placeholder="$t('login.confirmPasswordPlaceholder')" show-password :prefix-icon="CircleCheck" />
                 </el-form-item>
-                <el-form-item label="Phone Number">
-                  <el-input v-model="form.phone" placeholder="11-digit phone number" maxlength="11" :prefix-icon="Phone" />
+                <el-form-item :label="$t('login.phoneNumber')">
+                  <el-input v-model="form.phone" :placeholder="$t('login.phonePlaceholder')" maxlength="11" :prefix-icon="Phone" />
                 </el-form-item>
-                <el-form-item label="Address">
-                  <el-input v-model="form.address" placeholder="Enter your address" :prefix-icon="MapLocation" />
+                <el-form-item :label="$t('login.address')">
+                  <el-input v-model="form.address" :placeholder="$t('login.addressPlaceholder')" :prefix-icon="MapLocation" />
                 </el-form-item>
               </div>
 
               <el-button type="success" @click="handleSubmit" :loading="loading" class="submit-btn">
-                {{ isRegister ? 'REGISTER NOW' : 'LOGIN' }}
+                {{ isRegister ? $t('login.registerBtn') : $t('login.loginBtn') }}
               </el-button>
 
               <div class="switch-mode">
-                <span>{{ isRegister ? 'Already have an account?' : 'Need an account?' }}</span>
+                <span>{{ isRegister ? $t('login.hasAccount') : $t('login.noAccount') }}</span>
                 <el-link type="primary" underline="never" @click="toggleMode" style="margin-left:5px">
-                  {{ isRegister ? 'Log in' : 'Register now' }}
+                  {{ isRegister ? $t('login.logInLink') : $t('login.registerLink') }}
                 </el-link>
               </div>
             </el-form>
@@ -66,12 +66,14 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { loginApi, registerApi } from '../api/user'
 import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
 import { User, Lock, CircleCheck, ArrowLeft, Phone, MapLocation } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const loading = ref(false)
 const isRegister = ref(false)
 const form = reactive({ username: '', password: '', rePassword: '', phone: '', address: '' })
@@ -80,7 +82,9 @@ const toggleMode = () => { isRegister.value = !isRegister.value }
 
 const parseJwt = (token: string) => {
   try {
-    const base64Url = token.split('.')[1]
+    const parts = token.split('.')
+    if (parts.length < 2) return null
+    const base64Url = parts[1]!
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
     const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))
     return JSON.parse(jsonPayload)
@@ -88,28 +92,28 @@ const parseJwt = (token: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!form.username || !form.password) return ElMessage.warning({ message: 'Please fill in all fields', duration: 1500 })
+  if (!form.username || !form.password) return ElMessage.warning({ message: t('login.validation.fillAll'), duration: 1500 })
   loading.value = true
   try {
     if (isRegister.value) {
       if (form.password !== form.rePassword) {
         loading.value = false
-        return ElMessage.error({ message: 'Passwords do not match', duration: 1500 })
+        return ElMessage.error({ message: t('login.validation.passwordMismatch'), duration: 1500 })
       }
       if (form.password.length < 6) {
         loading.value = false
-        return ElMessage.error({ message: 'Password must be at least 6 characters', duration: 1500 })
+        return ElMessage.error({ message: t('login.validation.passwordLength'), duration: 1500 })
       }
       if (!/^\d{11}$/.test(form.phone)) {
         loading.value = false
-        return ElMessage.error({ message: 'Phone number must be exactly 11 digits', duration: 1500 })
+        return ElMessage.error({ message: t('login.validation.phoneInvalid'), duration: 1500 })
       }
       if (!form.address.trim()) {
         loading.value = false
-        return ElMessage.error({ message: 'Please enter your address', duration: 1500 })
+        return ElMessage.error({ message: t('login.validation.addressRequired'), duration: 1500 })
       }
       await registerApi({ username: form.username, password: form.password, role: 'CONSUMER', phone: form.phone, address: form.address })
-      ElMessage.success({ message: 'Registration Successful!', duration: 1500 })
+      ElMessage.success({ message: t('login.success.register'), duration: 1500 })
       form.password = ''; form.rePassword = ''
       isRegister.value = false
     } else {
@@ -121,14 +125,14 @@ const handleSubmit = async () => {
         localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
         localStorage.setItem('userId', String(payload.userId || payload.id))
         window.dispatchEvent(new Event('auth-change'))
-        ElMessage.success({ message: 'Login Successful', duration: 1500 })
+        ElMessage.success({ message: t('login.success.login'), duration: 1500 })
         router.push('/')
       } else {
-        ElMessage.error({ message: 'Login Failed', duration: 1500 })
+        ElMessage.error({ message: t('login.error.loginFailed'), duration: 1500 })
       }
     }
   } catch (error: any) {
-    const msg = error.response?.data?.message || error.message || 'Service Error'
+    const msg = error.response?.data?.message || error.message || t('message.error')
     ElMessage.error({ message: msg, duration: 2000 })
   } finally {
     loading.value = false

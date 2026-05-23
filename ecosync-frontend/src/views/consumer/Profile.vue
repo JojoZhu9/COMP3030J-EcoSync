@@ -13,7 +13,7 @@
             <span class="member-id">UID: {{ userId }}</span>
             <el-tag size="small" class="active-tag">{{ rawUserData.role || 'MEMBER' }}</el-tag>
           </div>
-          <h2 class="welcome-text">Welcome back, {{ rawUserData.username || 'Guest' }}!</h2>
+          <h2 class="welcome-text">{{ $t('consumer.profile.welcome', { name: rawUserData.username || $t('common.unknown') }) }}</h2>
         </div>
       </div>
       <div class="hero-decoration">
@@ -26,7 +26,7 @@
         <div class="wallet-left">
           <div class="wallet-header">
             <el-icon :size="16" color="#ff7900"><Wallet /></el-icon>
-            <span class="wallet-label">Available Balance</span>
+            <span class="wallet-label">{{ $t('consumer.profile.availableBalance') }}</span>
           </div>
           <div class="points-display">
             <span class="points-unit">¥</span>
@@ -35,14 +35,14 @@
         </div>
         <div class="wallet-right">
           <el-button type="warning" round size="default" class="recharge-btn" @click="handleRecharge">
-            Top Up
+            {{ $t('consumer.profile.topUp') }}
           </el-button>
         </div>
       </div>
       <div class="wallet-progress">
         <div class="progress-bar" :style="{ width: progressWidth + '%' }"></div>
       </div>
-      <div class="wallet-hint">Next tier at ¥{{ nextTierTarget.toFixed(2) }}</div>
+      <div class="wallet-hint">{{ $t('consumer.profile.nextTier', { amount: nextTierTarget.toFixed(2) }) }}</div>
     </div>
 
     <div class="settings-body">
@@ -53,8 +53,8 @@
               <el-icon><User /></el-icon>
             </div>
             <div class="title-text">
-              <span class="title-main">Profile & Contact</span>
-              <span class="title-sub">Manage your personal information</span>
+              <span class="title-main">{{ $t('consumer.profile.profileContact') }}</span>
+              <span class="title-sub">{{ $t('consumer.profile.manageInfo') }}</span>
             </div>
           </div>
         </div>
@@ -62,11 +62,11 @@
           <div class="form-group">
             <label class="form-label">
               <el-icon :size="14"><User /></el-icon>
-              USERNAME / NICKNAME
+              {{ $t('consumer.profile.usernameLabel') }}
             </label>
             <el-input
               v-model="rawUserData.username"
-              placeholder="Enter your username"
+              :placeholder="$t('consumer.profile.usernamePlaceholder')"
               :prefix-icon="User"
               clearable
               class="custom-input"
@@ -76,11 +76,11 @@
           <div class="form-group">
             <label class="form-label">
               <el-icon :size="14"><Location /></el-icon>
-              DEFAULT DELIVERY ADDRESS
+              {{ $t('consumer.profile.addressLabel') }}
             </label>
             <el-input
               v-model="rawUserData.userAddress"
-              placeholder="e.g. 123 Fresh St, Tokyo"
+              :placeholder="$t('consumer.profile.addressPlaceholder')"
               :prefix-icon="Location"
               clearable
               class="custom-input"
@@ -89,11 +89,11 @@
           <div class="form-group">
             <label class="form-label">
               <el-icon :size="14"><Phone /></el-icon>
-              CONTACT TELEPHONE
+              {{ $t('consumer.profile.phoneLabel') }}
             </label>
             <el-input
               v-model="rawUserData.phoneNumber"
-              placeholder="Primary phone number"
+              :placeholder="$t('consumer.profile.phonePlaceholder')"
               :prefix-icon="Phone"
               clearable
               class="custom-input"
@@ -105,7 +105,7 @@
             @click="updateUserInfo"
             :loading="saving"
           >
-            Update Profile Data
+            {{ $t('consumer.profile.updateProfile') }}
           </el-button>
         </div>
       </div>
@@ -117,8 +117,8 @@
               <el-icon><Lock /></el-icon>
             </div>
             <div class="title-text">
-              <span class="title-main">Security Settings</span>
-              <span class="title-sub">Protect your account</span>
+              <span class="title-main">{{ $t('consumer.profile.securitySettings') }}</span>
+              <span class="title-sub">{{ $t('consumer.profile.protectAccount') }}</span>
             </div>
           </div>
         </div>
@@ -129,12 +129,12 @@
                 <el-icon :size="18"><Key /></el-icon>
               </div>
               <div class="sec-info">
-                <div class="sec-label">Account Password</div>
-                <div class="sec-desc">Update your password (MD5 encrypted)</div>
+                <div class="sec-label">{{ $t('consumer.profile.accountPassword') }}</div>
+                <div class="sec-desc">{{ $t('consumer.profile.passwordDesc') }}</div>
               </div>
             </div>
             <el-button type="info" plain round size="small" class="sec-btn" @click="pwdDialogVisible = true">
-              Change
+              {{ $t('consumer.profile.change') }}
             </el-button>
           </div>
           <div class="divider"></div>
@@ -144,12 +144,12 @@
                 <el-icon :size="18"><SwitchButton /></el-icon>
               </div>
               <div class="sec-info">
-                <div class="sec-label">Session</div>
-                <div class="sec-desc">Sign out from all devices</div>
+                <div class="sec-label">{{ $t('consumer.profile.session') }}</div>
+                <div class="sec-desc">{{ $t('consumer.profile.signOutDesc') }}</div>
               </div>
             </div>
             <el-button type="danger" plain round size="small" class="sec-btn" @click="handleLogout">
-              Log Out
+              {{ $t('consumer.profile.logOut') }}
             </el-button>
           </div>
         </div>
@@ -167,7 +167,7 @@
 
     <el-dialog
       v-model="pwdDialogVisible"
-      title="Change Account Password"
+      :title="$t('consumer.profile.changePassword')"
       width="400px"
       align-center
       class="modern-dialog"
@@ -177,18 +177,18 @@
         <el-icon :size="48" color="#008163"><Lock /></el-icon>
       </div>
       <el-form ref="pwdFormRef" :model="pwdForm" :rules="pwdRules" label-position="top">
-        <el-form-item label="NEW PASSWORD" prop="newPassword">
-          <el-input v-model="pwdForm.newPassword" type="password" show-password placeholder="Enter new password" />
+        <el-form-item :label="$t('consumer.profile.newPasswordLabel')" prop="newPassword">
+          <el-input v-model="pwdForm.newPassword" type="password" show-password :placeholder="$t('consumer.profile.newPasswordPlaceholder')" />
         </el-form-item>
-        <el-form-item label="CONFIRM NEW PASSWORD" prop="confirmPassword">
-          <el-input v-model="pwdForm.confirmPassword" type="password" show-password placeholder="Repeat new password" />
+        <el-form-item :label="$t('consumer.profile.confirmPasswordLabel')" prop="confirmPassword">
+          <el-input v-model="pwdForm.confirmPassword" type="password" show-password :placeholder="$t('consumer.profile.confirmPasswordPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="pwdDialogVisible = false" round>Cancel</el-button>
+          <el-button @click="pwdDialogVisible = false" round>{{ $t('common.cancel') }}</el-button>
           <el-button type="success" :loading="pwdSaving" @click="handleUpdatePassword" round>
-            Confirm Update
+            {{ $t('consumer.profile.confirmUpdate') }}
           </el-button>
         </div>
       </template>
@@ -203,7 +203,9 @@ import request from '@/utils/request'
 import { ElMessageBox, type FormInstance } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const userId = localStorage.getItem('userId') || '12'
 const saving = ref(false)
@@ -227,11 +229,11 @@ const rawUserData = ref<any>({
 const pwdForm = reactive({ newPassword: '', confirmPassword: '' })
 
 const pwdRules = reactive({
-  newPassword: [{ required: true, min: 6, message: 'Minimum 6 characters', trigger: 'blur' }],
+  newPassword: [{ required: true, min: 6, message: () => t('consumer.profile.pwdMinLength'), trigger: 'blur' }],
   confirmPassword: [
-    { required: true, message: 'Confirm your password', trigger: 'blur' },
+    { required: true, message: () => t('consumer.profile.pwdConfirm'), trigger: 'blur' },
     { validator: (rule: any, value: any, callback: any) => {
-        if (value !== pwdForm.newPassword) callback(new Error('Mismatch!'))
+        if (value !== pwdForm.newPassword) callback(new Error(t('consumer.profile.pwdMismatch')))
         else callback()
       }, trigger: 'blur'
     }
@@ -259,7 +261,7 @@ const fetchUser = async () => {
     const data = res.data?.data || res.data || res
     if (data && typeof data === 'object') rawUserData.value = data
   } catch (e) {
-    ElMessage.error('Profile sync failed')
+    ElMessage.error(t('consumer.profile.profileSyncFailed'))
   }
 }
 
@@ -271,11 +273,11 @@ const handleUpdatePassword = async () => {
     try {
       const payload = { ...rawUserData.value, passwordHash: pwdForm.newPassword }
       await request.put(`/users/${userId}`, payload)
-      ElMessage.success('Password updated')
+      ElMessage.success(t('consumer.profile.passwordUpdated'))
       pwdDialogVisible.value = false
       await fetchUser()
     } catch (e: any) {
-      ElMessage.error('Password update failed')
+      ElMessage.error(t('consumer.profile.passwordUpdateFailed'))
     } finally {
       pwdSaving.value = false
     }
@@ -285,46 +287,46 @@ const handleUpdatePassword = async () => {
 // 更新用户信息（包括用户名、地址、电话）
 const updateUserInfo = async () => {
   if (!rawUserData.value.username || !rawUserData.value.userAddress || !rawUserData.value.phoneNumber) {
-    return ElMessage.warning('Fields cannot be empty')
+    return ElMessage.warning(t('consumer.profile.fieldsEmpty'))
   }
   if (!/^\d{11}$/.test(rawUserData.value.phoneNumber)) {
-    return ElMessage.warning('Phone number must be exactly 11 digits')
+    return ElMessage.warning(t('consumer.profile.phoneInvalid'))
   }
   saving.value = true
   try {
     await request.put(`/users/${userId}`, rawUserData.value)
-    ElMessage.success('Profile saved')
+    ElMessage.success(t('consumer.profile.profileSaved'))
     await fetchUser() // 刷新本地数据以更新 UI 上的欢迎词
   } catch (e) {
-    ElMessage.error('Update failed')
+    ElMessage.error(t('consumer.profile.updateFailed'))
   } finally {
     saving.value = false
   }
 }
 
 const handleRecharge = () => {
-  ElMessageBox.prompt('Amount (¥)', 'Top-up', {
-    confirmButtonText: 'Confirm',
+  ElMessageBox.prompt(t('consumer.profile.amountLabel'), t('consumer.profile.topUpTitle'), {
+    confirmButtonText: t('common.confirm'),
     inputPattern: /^\d+(\.\d{1,2})?$/,
-    inputErrorMessage: 'Invalid amount',
+    inputErrorMessage: t('consumer.profile.invalidAmount'),
   }).then(async ({ value }) => {
     try {
       const currentBalance = Number(rawUserData.value.balance) || 0
       const newBalance = (currentBalance + parseFloat(value)).toFixed(2)
       const payload = { ...rawUserData.value, balance: newBalance }
       await request.put(`/users/${userId}`, payload)
-      ElMessage.success('Balance updated')
+      ElMessage.success(t('consumer.profile.balanceUpdated'))
       await fetchUser()
     } catch (e) {
-      ElMessage.error('Transaction failed')
+      ElMessage.error(t('consumer.profile.transactionFailed'))
     }
   })
 }
 
 const handleLogout = () => {
-  ElMessageBox.confirm('Are you sure you want to sign out?', 'Log Out', {
-    confirmButtonText: 'Yes, Sign Out',
-    cancelButtonText: 'Cancel',
+  ElMessageBox.confirm(t('consumer.profile.signOutConfirm'), t('consumer.profile.logOutTitle'), {
+    confirmButtonText: t('consumer.profile.yesSignOut'),
+    cancelButtonText: t('common.cancel'),
     type: 'warning'
   }).then(() => {
     localStorage.removeItem('token')
@@ -332,7 +334,7 @@ const handleLogout = () => {
     localStorage.removeItem('userId')
     localStorage.removeItem('cart')
     window.dispatchEvent(new Event('auth-change'))
-    ElMessage.success('Signed out successfully')
+    ElMessage.success(t('consumer.profile.signedOut'))
     router.push('/login')
   })
 }

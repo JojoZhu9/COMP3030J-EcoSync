@@ -1,15 +1,15 @@
 <template>
   <el-card shadow="never">
     <template #header>
-      <div style="font-weight: bold; color: #007934;">List New Item</div>
+      <div style="font-weight: bold; color: #007934;">{{ $t('staff.productEntry.listNewItem') }}</div>
     </template>
     <el-form :model="form" label-position="top">
-      <el-form-item label="Product Library" required>
-        <el-select v-model="form.barcode" filterable style="width: 100%" placeholder="Select SPU">
+      <el-form-item :label="$t('staff.productEntry.productLibrary')" required>
+        <el-select v-model="form.barcode" filterable style="width: 100%" :placeholder="$t('staff.productEntry.selectSpu')">
           <el-option v-for="p in library" :key="p.barcode" :label="p.productName" :value="p.barcode" />
         </el-select>
       </el-form-item>
-      <el-form-item label="Expiration Date" required>
+      <el-form-item :label="$t('staff.productEntry.expirationDate')" required>
         <el-date-picker
           v-model="form.expirationTime"
           type="datetime"
@@ -18,11 +18,11 @@
           :disabled-date="disabledDate"
         />
       </el-form-item>
-      <el-form-item label="Stock Quantity">
+      <el-form-item :label="$t('staff.productEntry.stockQuantity')">
         <el-input-number v-model="form.remainingStock" :min="1" :step="1" step-strictly style="width: 100%" />
       </el-form-item>
       <el-button type="success" style="width: 100%; background: #007934; border: none; font-weight: bold;" @click="submit" :loading="busy">
-        Confirm Listing
+        {{ $t('staff.productEntry.confirmListing') }}
       </el-button>
     </el-form>
   </el-card>
@@ -30,11 +30,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 
+const { t } = useI18n()
 const emit = defineEmits(['refresh'])
-const library = ref([])
+const library = ref<any[]>([])
 const busy = ref(false)
 
 const form = reactive({
@@ -58,23 +60,23 @@ const fetchLibrary = async () => {
 }
 
 const submit = async () => {
-  if (!form.barcode || !form.expirationTime) return ElMessage.warning('Incomplete data')
+  if (!form.barcode || !form.expirationTime) return ElMessage.warning(t('staff.productEntry.incompleteData'))
 
   const selected = new Date(form.expirationTime)
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   if (selected.getTime() < now.getTime()) {
-    return ElMessage.warning('Expiration date cannot be in the past')
+    return ElMessage.warning(t('staff.productEntry.expirationPast'))
   }
 
   if (!Number.isInteger(form.remainingStock) || form.remainingStock < 1) {
-    return ElMessage.warning('Stock quantity must be a positive integer')
+    return ElMessage.warning(t('staff.productEntry.stockPositiveInteger'))
   }
 
   busy.value = true
   try {
     await request.post('/expiring-products', form)
-    ElMessage.success('Listed Successfully')
+    ElMessage.success(t('staff.productEntry.listedSuccessfully'))
     form.barcode = ''; form.expirationTime = ''; form.remainingStock = 1
     emit('refresh')
   } finally {

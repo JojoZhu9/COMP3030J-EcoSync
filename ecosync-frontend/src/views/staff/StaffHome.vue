@@ -3,10 +3,10 @@
     <div class="top-brand-bar">
       <div class="brand-content">
         <span class="brand-logo">7-ELEVEn</span>
-        <span class="brand-title">Smart Store Management</span>
+        <span class="brand-title">{{ $t('staff.brandTitle') }}</span>
       </div>
       <div class="brand-right">
-        <el-tag effect="dark" type="warning" round class="role-tag">STAFF CONSOLE</el-tag>
+        <el-tag effect="dark" type="warning" round class="role-tag">{{ $t('staff.staffConsole') }}</el-tag>
       </div>
     </div>
 
@@ -14,7 +14,7 @@
       <el-tabs v-model="activeTab" class="brand-tabs">
         <el-tab-pane name="inventory">
           <template #label>
-            <div class="tab-label"><el-icon><Box /></el-icon><span>Inventory Console</span></div>
+            <div class="tab-label"><el-icon><Box /></el-icon><span>{{ $t('staff.inventoryConsole') }}</span></div>
           </template>
 
           <el-row :gutter="24">
@@ -31,12 +31,12 @@
                     <div class="title-group">
                       <div class="title-icon"><el-icon><Box /></el-icon></div>
                       <div class="title-text-box">
-                        <div class="title-text">Live Shelf Stock</div>
-                        <div class="title-sub">Manage and monitor expiring products</div>
+                        <div class="title-text">{{ $t('staff.liveShelfStock') }}</div>
+                        <div class="title-sub">{{ $t('staff.liveShelfStockSub') }}</div>
                       </div>
                     </div>
                     <el-button type="primary" class="brand-btn" @click="fetchData" :loading="loading">
-                      <el-icon><Refresh /></el-icon> Sync
+                      <el-icon><Refresh /></el-icon> {{ $t('common.sync') }}
                     </el-button>
                   </div>
                 </template>
@@ -44,29 +44,29 @@
                 <div class="table-toolbar">
                   <el-input
                     v-model="searchQuery"
-                    placeholder="Search by product name or barcode..."
+                    :placeholder="$t('staff.searchProductPlaceholder')"
                     :prefix-icon="Search"
                     clearable
                     class="search-input"
                   />
                   <el-radio-group v-model="statusFilter" class="custom-radio">
-                    <el-radio-button label="ALL">All Items</el-radio-button>
-                    <el-radio-button label="AVAILABLE">In Stock</el-radio-button>
-                    <el-radio-button label="SOLD_OUT">Sold Out</el-radio-button>
+                    <el-radio-button label="ALL">{{ $t('staff.allItems') }}</el-radio-button>
+                    <el-radio-button label="AVAILABLE">{{ $t('staff.inStock') }}</el-radio-button>
+                    <el-radio-button label="SOLD_OUT">{{ $t('staff.soldOut') }}</el-radio-button>
                   </el-radio-group>
                 </div>
 
                 <el-table :data="filteredStockList" class="custom-table" border stripe height="540">
-                  <el-table-column label="Product Information" min-width="200">
+                  <el-table-column :label="$t('staff.productInfo')" min-width="200">
                     <template #default="{row}">
                       <div class="product-info-cell">
                         <div class="p-name" :title="row.productName">{{ row.productName }}</div>
-                        <div class="p-bc">BC: {{ row.barcode }}</div>
+                        <div class="p-bc">{{ $t('staff.barcodeShort') }}: {{ row.barcode }}</div>
                       </div>
                     </template>
                   </el-table-column>
 
-                  <el-table-column label="Expiration Date" width="180" align="center">
+                  <el-table-column :label="$t('staff.expirationDate')" width="180" align="center">
                     <template #default="{row}">
                       <div class="expiry-time-cell">
                         <el-icon><Timer /></el-icon>
@@ -75,7 +75,7 @@
                     </template>
                   </el-table-column>
 
-                  <el-table-column label="Stock" width="100" align="center">
+                  <el-table-column :label="$t('staff.stock')" width="100" align="center">
                     <template #default="{row}">
                       <span :class="['stock-num', row.remainingStock < 5 ? 'critical' : '']">
                         {{ row.remainingStock }}
@@ -83,19 +83,19 @@
                     </template>
                   </el-table-column>
 
-                  <el-table-column label="Status" width="140" align="center">
+                  <el-table-column :label="$t('staff.status')" width="140" align="center">
                     <template #default="{row}">
                       <el-tag
                         :type="isExpired(row) ? 'danger' : (row.remainingStock <= 0 ? 'info' : 'success')"
                         round effect="light" class="status-tag"
                       >
-                        {{ isExpired(row) ? 'Expired' : (row.remainingStock <= 0 ? 'Sold Out' : 'In Stock') }}
+                        {{ isExpired(row) ? $t('staff.expired') : (row.remainingStock <= 0 ? $t('staff.soldOut') : $t('staff.inStock')) }}
                       </el-tag>
                     </template>
                   </el-table-column>
 
                   <template #empty>
-                    <el-empty description="No products found matching your criteria" :image-size="100" />
+                    <el-empty :description="$t('staff.noProducts')" :image-size="100" />
                   </template>
                 </el-table>
               </el-card>
@@ -105,7 +105,7 @@
 
         <el-tab-pane name="orders">
           <template #label>
-            <div class="tab-label"><el-icon><List /></el-icon><span>Order Monitor</span></div>
+            <div class="tab-label"><el-icon><List /></el-icon><span>{{ $t('staff.orderMonitor') }}</span></div>
           </template>
 
           <el-card class="modern-card order-card" shadow="never">
@@ -114,12 +114,12 @@
                 <div class="title-group">
                   <div class="title-icon orange"><el-icon><ShoppingBag /></el-icon></div>
                   <div class="title-text-box">
-                    <div class="title-text">Recent Pickup Orders</div>
-                    <div class="title-sub">Process and manage customer transactions</div>
+                    <div class="title-text">{{ $t('staff.recentPickupOrders') }}</div>
+                    <div class="title-sub">{{ $t('staff.recentPickupOrdersSub') }}</div>
                   </div>
                 </div>
                 <el-button type="warning" class="warning-btn" @click="syncAllOrders" :loading="loadingOrders">
-                  <el-icon><Refresh /></el-icon> Sync Orders
+                  <el-icon><Refresh /></el-icon> {{ $t('staff.syncOrders') }}
                 </el-button>
               </div>
             </template>
@@ -128,7 +128,7 @@
             <div class="verify-bar">
               <el-input
                 v-model="pickupCodeInput"
-                placeholder="Enter Pickup Identifier to verify..."
+                :placeholder="$t('staff.verifyPlaceholder')"
                 clearable
                 class="verify-input"
                 @keyup.enter="verifyByPickupCode"
@@ -136,7 +136,7 @@
                 <template #prefix><el-icon><Ticket /></el-icon></template>
               </el-input>
               <el-button type="success" class="verify-btn" :loading="verifying" @click="verifyByPickupCode">
-                <el-icon><Check /></el-icon> Verify
+                <el-icon><Check /></el-icon> {{ $t('staff.verify') }}
               </el-button>
             </div>
 
@@ -144,18 +144,18 @@
             <div class="table-toolbar">
               <el-input
                 v-model="orderSearchQuery"
-                placeholder="Search by order ID, customer or pickup code..."
+                :placeholder="$t('staff.searchOrderPlaceholder')"
                 :prefix-icon="Search"
                 clearable
                 class="search-input"
               />
               <el-radio-group v-model="orderStatusFilter" class="custom-radio">
-                <el-radio-button label="ALL">All</el-radio-button>
-                <el-radio-button label="PENDING">Pending</el-radio-button>
-                <el-radio-button label="PAID">Paid</el-radio-button>
-                <el-radio-button label="AWAITING_PICKUP">Awaiting Pickup</el-radio-button>
-                <el-radio-button label="COMPLETED">Completed</el-radio-button>
-                <el-radio-button label="CANCELLED">Cancelled</el-radio-button>
+                <el-radio-button label="ALL">{{ $t('common.all') }}</el-radio-button>
+                <el-radio-button label="PENDING">{{ $t('staff.pending') }}</el-radio-button>
+                <el-radio-button label="PAID">{{ $t('staff.paid') }}</el-radio-button>
+                <el-radio-button label="AWAITING_PICKUP">{{ $t('staff.awaitingPickup') }}</el-radio-button>
+                <el-radio-button label="COMPLETED">{{ $t('staff.completed') }}</el-radio-button>
+                <el-radio-button label="CANCELLED">{{ $t('staff.cancelled') }}</el-radio-button>
               </el-radio-group>
             </div>
 
@@ -163,13 +163,13 @@
               <el-table-column type="expand">
                 <template #default="{ row }">
                   <div class="order-detail-wrapper">
-                    <div class="detail-header"><el-icon><ShoppingBag /></el-icon> Order Items ({{row.items?.length || 0}})</div>
+                    <div class="detail-header"><el-icon><ShoppingBag /></el-icon> {{ $t('staff.orderItems') }} ({{row.items?.length || 0}})</div>
                     <el-table :data="row.items" size="small" border class="inner-table">
-                      <el-table-column label="Item Name" prop="productName" />
-                      <el-table-column label="Price" width="120" align="right">
+                      <el-table-column :label="$t('staff.itemName')" prop="productName" />
+                      <el-table-column :label="$t('staff.price')" width="120" align="right">
                         <template #default="s"><span class="inner-price">¥{{ s.row.actualPrice?.toFixed(2) }}</span></template>
                       </el-table-column>
-                      <el-table-column label="Qty" prop="quantity" width="80" align="center">
+                      <el-table-column :label="$t('staff.qty')" prop="quantity" width="80" align="center">
                         <template #default="s"><b>x{{ s.row.quantity }}</b></template>
                       </el-table-column>
                     </el-table>
@@ -177,23 +177,23 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="Order ID" width="120" align="center">
+              <el-table-column :label="$t('staff.orderId')" width="120" align="center">
                 <template #default="{row}"><span class="order-id-col">ORD-{{ row.orderId }}</span></template>
               </el-table-column>
 
-              <el-table-column label="Customer" width="140" align="center">
-                <template #default="{row}"><span class="customer-col">{{ row.customerName || 'Unknown' }}</span></template>
+              <el-table-column :label="$t('staff.customer')" width="140" align="center">
+                <template #default="{row}"><span class="customer-col">{{ row.customerName || $t('common.unknown') }}</span></template>
               </el-table-column>
 
-              <el-table-column label="Pickup Identifier" width="200" align="center">
+              <el-table-column :label="$t('staff.pickupIdentifier')" width="200" align="center">
                 <template #default="{row}"><code class="code-badge">{{ row.pickupCode }}</code></template>
               </el-table-column>
 
-              <el-table-column label="Final Payment" width="140" align="right">
+              <el-table-column :label="$t('staff.finalPayment')" width="140" align="right">
                 <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template>
               </el-table-column>
 
-              <el-table-column label="Order Status" width="180" align="center">
+              <el-table-column :label="$t('staff.orderStatus')" width="180" align="center">
                 <template #default="{row}">
                   <el-select
                     v-model="row.status"
@@ -202,23 +202,23 @@
                     :disabled="row.status === 'CANCELLED' || row.status === 'COMPLETED'"
                     class="status-select"
                   >
-                    <el-option label="Pending" value="PENDING" />
-                    <el-option label="Paid" value="PAID" />
-                    <el-option label="Awaiting Pickup" value="AWAITING_PICKUP" />
-                    <el-option label="Completed" value="COMPLETED" />
-                    <el-option label="Cancelled" value="CANCELLED" />
+                    <el-option :label="$t('staff.pending')" value="PENDING" />
+                    <el-option :label="$t('staff.paid')" value="PAID" />
+                    <el-option :label="$t('staff.awaitingPickup')" value="AWAITING_PICKUP" />
+                    <el-option :label="$t('staff.completed')" value="COMPLETED" />
+                    <el-option :label="$t('staff.cancelled')" value="CANCELLED" />
                   </el-select>
                 </template>
               </el-table-column>
 
-              <el-table-column label="Created Timestamp" min-width="160" align="center">
+              <el-table-column :label="$t('staff.createdTimestamp')" min-width="160" align="center">
                 <template #default="{row}">
                   <span class="timestamp-col">{{ formatDateTime(row.createdAt) }}</span>
                 </template>
               </el-table-column>
 
               <template #empty>
-                <el-empty description="No orders found" :image-size="100" />
+                <el-empty :description="$t('staff.noOrders')" :image-size="100" />
               </template>
             </el-table>
           </el-card>
@@ -230,10 +230,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Box, List, Refresh, ShoppingBag, Timer, Search, Ticket, Check } from '@element-plus/icons-vue'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 import ProductEntry from './ProductEntry.vue'
+
+const { t } = useI18n()
 
 const activeTab = ref('inventory')
 const loading = ref(false)
@@ -264,7 +267,7 @@ const fetchData = async () => {
     allExpiringProducts.value = stockRes.data || stockRes
     library.value = libRes.data || libRes
   } catch (err) {
-    ElMessage.error('Failed to sync data')
+    ElMessage.error(t('staff.dataSyncFailed'))
   } finally { loading.value = false }
 }
 
@@ -272,16 +275,16 @@ const fetchData = async () => {
 const handleOrderUpdate = async (row: any) => {
   // 防御性检查：如果订单已经是 CANCELLED 或 COMPLETED，则不允许修改
   if (row.status === 'CANCELLED' || row.status === 'COMPLETED') {
-    ElMessage.warning('This order cannot be modified')
+    ElMessage.warning(t('staff.orderCannotModify'))
     return
   }
   try {
     await request.put(`/orders/${row.orderId}`, {
       status: row.status
     })
-    ElMessage.success('Order status updated successfully')
+    ElMessage.success(t('staff.orderStatusUpdated'))
   } catch (e) {
-    ElMessage.error('Order status update failed')
+    ElMessage.error(t('staff.orderStatusUpdateFailed'))
     syncAllOrders()
   }
 }
@@ -292,7 +295,7 @@ const fetchUsers = async () => {
     const users = res.data || res || []
     const map: Record<number, string> = {}
     users.forEach((u: any) => {
-      map[u.userId] = u.username || `User #${u.userId}`
+      map[u.userId] = u.username || `${t('common.unknown')} #${u.userId}`
     })
     userMap.value = map
   } catch (e) {}
@@ -318,21 +321,21 @@ const syncAllOrders = async () => {
         const enrichedItems = (vo.items || []).map((item: any) => {
           const stock = allExpiringProducts.value.find(s => Number(s.productId) === Number(item.productId))
           const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
-          return { ...item, productName: prod?.productName || 'Unknown Product' }
+          return { ...item, productName: prod?.productName || `${t('common.unknown')} SKU` }
         })
-        return { ...order, items: enrichedItems, customerName: userMap.value[order.userId] || `User #${order.userId}` }
-      } catch (e) { return { ...order, items: [], customerName: userMap.value[order.userId] || `User #${order.userId}` } }
+        return { ...order, items: enrichedItems, customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` }
+      } catch (e) { return { ...order, items: [], customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` } }
     }))
 
     orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
       .sort((a, b) => b.orderId - a.orderId)
   } catch (e) {
-    ElMessage.error('Order sync failed')
+    ElMessage.error(t('staff.syncFailed'))
   } finally { loadingOrders.value = false }
 }
 
 const formatDateTime = (val: string) => {
-  if (!val) return 'N/A'
+  if (!val) return t('common.na')
   return val.replace('T', ' ').substring(0, 16)
 }
 
@@ -365,21 +368,21 @@ const filteredOrderList = computed(() => {
 
 const verifyByPickupCode = async () => {
   const code = pickupCodeInput.value.trim()
-  if (!code) return ElMessage.warning('Please enter a Pickup Identifier')
+  if (!code) return ElMessage.warning(t('staff.enterPickupCode'))
 
   const target = orderList.value.find(o => o.pickupCode === code)
-  if (!target) return ElMessage.error('No order found with this identifier')
-  if (target.status === 'COMPLETED') return ElMessage.info('This order is already completed')
-  if (target.status === 'CANCELLED') return ElMessage.warning('This order has been cancelled')
+  if (!target) return ElMessage.error(t('staff.orderNotFound'))
+  if (target.status === 'COMPLETED') return ElMessage.info(t('staff.orderAlreadyCompleted'))
+  if (target.status === 'CANCELLED') return ElMessage.warning(t('staff.orderCancelled'))
 
   verifying.value = true
   try {
     await request.put(`/orders/${target.orderId}`, { status: 'COMPLETED' })
     target.status = 'COMPLETED'
-    ElMessage.success('Order verified and marked as Completed')
+    ElMessage.success(t('staff.orderVerified'))
     pickupCodeInput.value = ''
   } catch (e) {
-    ElMessage.error('Verification failed')
+    ElMessage.error(t('staff.verificationFailed'))
   } finally {
     verifying.value = false
   }
@@ -389,7 +392,7 @@ const verifyByPickupCode = async () => {
 const enrichedStockList = computed(() => {
   return allExpiringProducts.value.map(stock => {
     const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
-    return { ...stock, productName: std?.productName || 'Unknown SKU' }
+    return { ...stock, productName: std?.productName || `${t('common.unknown')} SKU` }
   })
 })
 

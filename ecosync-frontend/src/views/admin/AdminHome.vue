@@ -10,7 +10,7 @@
               <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
             </div>
             <span class="divider">|</span>
-            <span class="header-title">Product Strategy: <span class="highlight-name">{{ prod.productName }}</span></span>
+            <span class="header-title">{{ $t('admin.adminHome.productStrategy', { name: prod.productName }) }}</span>
           </div>
         </template>
       </el-page-header>
@@ -20,8 +20,8 @@
           <el-card class="modern-card info-card" shadow="never">
             <div class="digital-label">
               <div class="label-header">
-                <span class="sku-tag">SKU: {{ prod.barcode }}</span>
-                <el-tag size="small" type="success" effect="dark" round class="pulse-tag">LIVE</el-tag>
+                <span class="sku-tag">{{ $t('admin.adminHome.sku') }}: {{ prod.barcode }}</span>
+                <el-tag size="small" type="success" effect="dark" round class="pulse-tag">{{ $t('admin.adminHome.live') }}</el-tag>
               </div>
               <h2 class="label-name">{{ prod.productName }}</h2>
               <div class="barcode-box">
@@ -29,7 +29,7 @@
                 <div class="barcode-num">{{ prod.barcode }}</div>
               </div>
               <div class="label-price-row">
-                <div class="price-label">STANDARD RETAIL PRICE</div>
+                <div class="price-label">{{ $t('admin.adminHome.standardRetailPrice') }}</div>
                 <div class="price-value">
                   <span class="currency">¥</span>
                   <span class="amount">{{ parseFloat(prod.normalPrice || 0).toFixed(2) }}</span>
@@ -45,7 +45,7 @@
               <div class="card-header">
                 <div class="header-title-box">
                   <el-icon class="c-orange title-icon"><TrendCharts /></el-icon>
-                  <span class="main-title">Dynamic Price Curve (12h Decay)</span>
+                  <span class="main-title">{{ $t('admin.adminHome.dynamicPriceCurve') }}</span>
                 </div>
               </div>
             </template>
@@ -54,11 +54,11 @@
               <div ref="discountChartRef" style="width: 100%; height: 100%"></div>
             </div>
 
-            <el-divider border-style="dashed"><span class="divider-text">ADJUST COEFFICIENTS</span></el-divider>
+            <el-divider border-style="dashed"><span class="divider-text">{{ $t('admin.adminHome.adjustCoefficients') }}</span></el-divider>
 
             <div class="discount-grid">
               <div v-for="h in 12" :key="h" class="discount-item" :class="getRiskClass(h)">
-                <div class="hour-badge">{{ h }}h</div>
+                <div class="hour-badge">{{ $t('admin.adminHome.hourSuffix', { h }) }}</div>
                 <el-input-number
                   v-model="editForm.rates[h-1]"
                   :min="0.1" :max="1" :step="0.05" :precision="2"
@@ -70,30 +70,30 @@
             </div>
 
             <div class="promo-preview-box">
-              <div class="promo-header"><el-icon><View /></el-icon> E-Label Preview Simulation</div>
+              <div class="promo-header"><el-icon><View /></el-icon> {{ $t('admin.adminHome.elabelPreview') }}</div>
               <div class="promo-body">
                 <div class="promo-tag">
-                  <div class="tag-top">LIMITED TIME OFFER</div>
+                  <div class="tag-top">{{ $t('admin.adminHome.limitedTimeOffer') }}</div>
                   <div class="tag-middle">
-                    <div class="old-price">Orig: ¥{{ parseFloat(prod.normalPrice).toFixed(2) }}</div>
+                    <div class="old-price">{{ $t('admin.adminHome.origPrice', { price: parseFloat(prod.normalPrice).toFixed(2) }) }}</div>
                     <div class="new-price">
                       <span class="yen">¥</span>
                       <span class="val">{{ (parseFloat(prod.normalPrice) * editForm.rates[previewHour-1]).toFixed(2) }}</span>
                     </div>
                   </div>
-                  <div class="tag-bottom">ONLY {{ previewHour }}H LEFT BEFORE EXPIRY</div>
+                  <div class="tag-bottom">{{ $t('admin.adminHome.onlyXhLeft', { hours: previewHour }) }}</div>
                 </div>
 
                 <div class="promo-controls">
-                  <p class="control-hint">Simulate time remaining:</p>
+                  <p class="control-hint">{{ $t('admin.adminHome.simulateTimeRemaining') }}</p>
                   <el-slider v-model="previewHour" :min="1" :max="12" show-stops class="custom-slider" />
-                  <div class="rate-indicator">Multiplier Applied: <span class="c-red">{{ editForm.rates[previewHour-1].toFixed(2) }}x</span></div>
+                  <div class="rate-indicator">{{ $t('admin.adminHome.multiplierApplied', { rate: editForm.rates[previewHour-1].toFixed(2) }) }}</div>
                 </div>
               </div>
             </div>
 
             <el-button type="success" @click="saveRule" class="save-strategy-btn" :loading="saving">
-              DEPLOY STRATEGY TO STORE NETWORK
+              {{ $t('admin.adminHome.deployStrategy') }}
             </el-button>
           </el-card>
         </el-col>
@@ -105,12 +105,14 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/message'
 import { TrendCharts, View } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import JsBarcode from 'jsbarcode'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const prod = ref<any>(null)
@@ -119,7 +121,7 @@ const saving = ref(false)
 const previewHour = ref(1)
 
 const discountChartRef = ref<HTMLElement | null>(null)
-const barcodeSvgRef = ref<HTMLElement | null>(null) // 条码渲染的引用节点
+const barcodeSvgRef = ref<HTMLElement | null>(null)
 
 let chartInstance: echarts.ECharts | null = null
 const editForm = reactive({ rates: Array(12).fill(1.0) })
@@ -153,7 +155,6 @@ const fetchDetail = async () => {
     const res: any = await request.get(`/products/${barcode}`)
     const data = res.data?.data || res.data || res
 
-    // 携带所有数据，防止保存时覆盖
     prod.value = {
       barcode: data.barcode,
       productName: data.product_name || data.productName,
@@ -169,17 +170,15 @@ const fetchDetail = async () => {
     }
 
     nextTick(() => {
-      // 1. 渲染图表
       if (discountChartRef.value) {
         chartInstance = echarts.init(discountChartRef.value)
         updateChartData()
       }
 
-      // 2. 渲染动态条形码
       if (barcodeSvgRef.value && prod.value.barcode) {
         JsBarcode(barcodeSvgRef.value, prod.value.barcode, {
           format: "CODE128",
-          displayValue: false, // 隐藏默认文字，使用我们自己设计的更美观的文字
+          displayValue: false,
           height: 44,
           width: 2,
           background: "transparent",
@@ -188,7 +187,7 @@ const fetchDetail = async () => {
         })
       }
     })
-  } catch (e) { ElMessage.error('Load failed') }
+  } catch (e) { ElMessage.error(t('admin.adminHome.loadFailed')) }
   finally { loading.value = false }
 }
 
@@ -197,10 +196,10 @@ const saveRule = async () => {
   try {
     await request.put(`/products/${prod.value.barcode}`, {
       ...prod.value,
-      discountRates: JSON.stringify(editForm.rates) // 使用驼峰匹配后端
+      discountRates: JSON.stringify(editForm.rates)
     })
-    ElMessage.success('Strategy Deployed Successfully!')
-  } catch (e) { ElMessage.error('Save failed') }
+    ElMessage.success(t('admin.adminHome.strategyDeployed'))
+  } catch (e) { ElMessage.error(t('admin.adminHome.saveFailed')) }
   finally { saving.value = false }
 }
 

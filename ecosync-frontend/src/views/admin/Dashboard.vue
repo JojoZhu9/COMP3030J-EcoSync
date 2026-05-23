@@ -9,9 +9,9 @@
               <el-icon :size="22"><component :is="item.icon" /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-label">{{ item.label }}</div>
+              <div class="kpi-label">{{ $t(item.labelKey) }}</div>
               <div class="kpi-value">{{ item.value }}</div>
-              <div class="kpi-sub">{{ item.sub || ' ' }}</div>
+              <div class="kpi-sub">{{ item.sub || ' ' }}</div>
             </div>
           </div>
           <div class="kpi-footer-line"></div>
@@ -25,26 +25,26 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">Sales Trend</span>
+              <span class="header-title">{{ $t('admin.dashboard.salesTrend') }}</span>
               <el-radio-group v-model="salesPeriod" size="small" @change="fetchSalesTrend">
-                <el-radio-button label="day">Daily</el-radio-button>
-                <el-radio-button label="month">Monthly</el-radio-button>
+                <el-radio-button label="day">{{ $t('admin.dashboard.daily') }}</el-radio-button>
+                <el-radio-button label="month">{{ $t('admin.dashboard.monthly') }}</el-radio-button>
               </el-radio-group>
             </div>
           </template>
           <div ref="salesChartRef" class="chart-box" v-show="hasSalesData"></div>
-          <div class="chart-empty" v-show="!hasSalesData"><el-empty description="No sales data yet" /></div>
+          <div class="chart-empty" v-show="!hasSalesData"><el-empty :description="$t('admin.dashboard.noSalesData')" /></div>
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="8" style="display: flex; margin-bottom: 12px;">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">Order Status Distribution</span>
+              <span class="header-title">{{ $t('admin.dashboard.orderStatusDistribution') }}</span>
             </div>
           </template>
           <div ref="statusChartRef" class="chart-box" v-show="hasStatusData"></div>
-          <div class="chart-empty" v-show="!hasStatusData"><el-empty description="No order data yet" /></div>
+          <div class="chart-empty" v-show="!hasStatusData"><el-empty :description="$t('admin.dashboard.noOrderData')" /></div>
         </el-card>
       </el-col>
     </el-row>
@@ -55,22 +55,22 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">Top 10 Best-Selling Products</span>
+              <span class="header-title">{{ $t('admin.dashboard.top10BestSelling') }}</span>
             </div>
           </template>
           <div ref="topProductChartRef" class="chart-box" v-show="hasTopProductData"></div>
-          <div class="chart-empty" v-show="!hasTopProductData"><el-empty description="No product sales data yet" /></div>
+          <div class="chart-empty" v-show="!hasTopProductData"><el-empty :description="$t('admin.dashboard.noProductSalesData')" /></div>
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="12" style="display: flex; margin-bottom: 12px;">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">Store Sales Comparison</span>
+              <span class="header-title">{{ $t('admin.dashboard.storeSalesComparison') }}</span>
             </div>
           </template>
           <div ref="storeChartRef" class="chart-box" v-show="hasStoreData"></div>
-          <div class="chart-empty" v-show="!hasStoreData"><el-empty description="No store sales data yet" /></div>
+          <div class="chart-empty" v-show="!hasStoreData"><el-empty :description="$t('admin.dashboard.noStoreSalesData')" /></div>
         </el-card>
       </el-col>
     </el-row>
@@ -81,26 +81,26 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">User Growth Trend</span>
+              <span class="header-title">{{ $t('admin.dashboard.userGrowthTrend') }}</span>
               <el-radio-group v-model="userPeriod" size="small" @change="fetchUserGrowth">
-                <el-radio-button label="day">Daily</el-radio-button>
-                <el-radio-button label="month">Monthly</el-radio-button>
+                <el-radio-button label="day">{{ $t('admin.dashboard.daily') }}</el-radio-button>
+                <el-radio-button label="month">{{ $t('admin.dashboard.monthly') }}</el-radio-button>
               </el-radio-group>
             </div>
           </template>
           <div ref="userChartRef" class="chart-box" v-show="hasUserData"></div>
-          <div class="chart-empty" v-show="!hasUserData"><el-empty description="No user growth data yet" /></div>
+          <div class="chart-empty" v-show="!hasUserData"><el-empty :description="$t('admin.dashboard.noUserGrowthData')" /></div>
         </el-card>
       </el-col>
       <el-col :xs="24" :lg="12" style="display: flex; margin-bottom: 12px;">
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="card-header">
-              <span class="header-title">Discount Rate Distribution</span>
+              <span class="header-title">{{ $t('admin.dashboard.discountRateDistribution') }}</span>
             </div>
           </template>
           <div ref="discountChartRef" class="chart-box" v-show="hasDiscountData"></div>
-          <div class="chart-empty" v-show="!hasDiscountData"><el-empty description="No discount data yet" /></div>
+          <div class="chart-empty" v-show="!hasDiscountData"><el-empty :description="$t('admin.dashboard.noDiscountData')" /></div>
         </el-card>
       </el-col>
     </el-row>
@@ -109,21 +109,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import request from '@/utils/request'
 import * as echarts from 'echarts'
 import {
   Money, Present, Food, ShoppingBag, User, Box, OfficeBuilding, Timer
 } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
+
 const kpiList = ref([
-  { label: 'Total Sales', value: '¥0', sub: '', icon: Money },
-  { label: 'Discount Savings', value: '¥0', sub: '', icon: Present },
-  { label: 'Waste Saved', value: '0 kg', sub: '¥0', icon: Food },
-  { label: 'Total Orders', value: '0', sub: '', icon: ShoppingBag },
-  { label: 'Total Users', value: '0', sub: '', icon: User },
-  { label: 'Products', value: '0', sub: '', icon: Box },
-  { label: 'Stores', value: '0', sub: '', icon: OfficeBuilding },
-  { label: 'Active Items', value: '0', sub: '', icon: Timer }
+  { labelKey: 'admin.dashboard.totalSales', value: '¥0', sub: '', icon: Money },
+  { labelKey: 'admin.dashboard.discountSavings', value: '¥0', sub: '', icon: Present },
+  { labelKey: 'admin.dashboard.wasteSaved', value: '0 kg', sub: '¥0', icon: Food },
+  { labelKey: 'admin.dashboard.totalOrders', value: '0', sub: '', icon: ShoppingBag },
+  { labelKey: 'admin.dashboard.totalUsers', value: '0', sub: '', icon: User },
+  { labelKey: 'admin.dashboard.products', value: '0', sub: '', icon: Box },
+  { labelKey: 'admin.dashboard.stores', value: '0', sub: '', icon: OfficeBuilding },
+  { labelKey: 'admin.dashboard.activeItems', value: '0', sub: '', icon: Timer }
 ])
 
 const salesPeriod = ref('day')
@@ -197,7 +200,7 @@ const fetchSalesTrend = async () => {
         textStyle: { color: '#fff' },
         axisPointer: { type: 'cross', crossStyle: { color: '#999' } }
       },
-      legend: { data: ['Sales Amount', 'Order Count'], bottom: 0, textStyle: { color: '#64748b' } },
+      legend: { data: [t('admin.dashboard.salesAmount'), t('admin.dashboard.orderCount')], bottom: 0, textStyle: { color: '#64748b' } },
       grid: { top: '10%', left: '3%', right: '4%', bottom: '15%', containLabel: true },
       xAxis: {
         type: 'category',
@@ -206,12 +209,12 @@ const fetchSalesTrend = async () => {
         axisLabel: { color: '#64748b', rotate: salesPeriod.value === 'day' ? 0 : 0 }
       },
       yAxis: [
-        { type: 'value', name: 'Amount (¥)', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
-        { type: 'value', name: 'Orders', axisLabel: { color: '#64748b' }, splitLine: { show: false } }
+        { type: 'value', name: t('admin.dashboard.amountYuan'), axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } } },
+        { type: 'value', name: t('admin.dashboard.orderCount'), axisLabel: { color: '#64748b' }, splitLine: { show: false } }
       ],
       series: [
         {
-          name: 'Sales Amount',
+          name: t('admin.dashboard.salesAmount'),
           type: 'line',
           smooth: true,
           data: yData,
@@ -225,7 +228,7 @@ const fetchSalesTrend = async () => {
           lineStyle: { width: 3, shadowColor: 'rgba(0,129,99,0.3)', shadowBlur: 10 }
         },
         {
-          name: 'Order Count',
+          name: t('admin.dashboard.orderCount'),
           type: 'bar',
           yAxisIndex: 1,
           data: countData,
