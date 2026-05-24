@@ -173,6 +173,7 @@
     "orderStatus": "订单状态",
     "createdTimestamp": "创建时间",
     "noOrders": "未找到订单",
+    "status": "状态",
     "orderCannotModify": "该订单不可修改",
     "orderStatusUpdated": "订单状态更新成功",
     "orderStatusUpdateFailed": "订单状态更新失败",

@@ -173,6 +173,7 @@
     "orderStatus": "Order Status",
     "createdTimestamp": "Created Timestamp",
     "noOrders": "No orders found",
+    "status": "Status",
     "orderCannotModify": "This order cannot be modified",
     "orderStatusUpdated": "Order status updated successfully",
     "orderStatusUpdateFailed": "Order status update failed",
