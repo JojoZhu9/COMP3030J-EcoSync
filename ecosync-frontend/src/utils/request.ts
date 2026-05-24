@@ -14,6 +14,13 @@ request.interceptors.request.use(config => {
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`
   }
+
+  // 自动附加当前语言参数到 GET 请求
+  const locale = localStorage.getItem('locale') || 'en'
+  if (config.method?.toLowerCase() === 'get') {
+    config.params = { ...config.params, lang: locale }
+  }
+
   return config
 }, error => Promise.reject(error))
 

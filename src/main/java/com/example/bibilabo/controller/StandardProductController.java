@@ -3,6 +3,7 @@ package com.example.bibilabo.controller;
 import com.example.bibilabo.entity.StandardProduct;
 import com.example.bibilabo.service.MinioService;
 import com.example.bibilabo.service.StandardProductService;
+import com.example.bibilabo.util.I18nUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,14 +29,19 @@ public class StandardProductController {
 
     @GetMapping
     @Operation(summary = "获取所有标准商品", description = "查询基础商品库中的所有商品列表")
-    public List<StandardProduct> getAll() {
-        return productService.getAllProducts();
+    public List<StandardProduct> getAll(@RequestParam(required = false, defaultValue = "zh") String lang) {
+        List<StandardProduct> products = productService.getAllProducts();
+        I18nUtil.applyProductLocale(products, lang);
+        return products;
     }
 
     @GetMapping("/{barcode}")
     @Operation(summary = "查询单个标准商品", description = "根据商品条码 (Barcode) 获取商品信息及原价")
-    public StandardProduct getByBarcode(@Parameter(description = "商品条码") @PathVariable String barcode) {
-        return productService.getProductByBarcode(barcode);
+    public StandardProduct getByBarcode(@Parameter(description = "商品条码") @PathVariable String barcode,
+                                         @RequestParam(required = false, defaultValue = "zh") String lang) {
+        StandardProduct product = productService.getProductByBarcode(barcode);
+        I18nUtil.applyProductLocale(product, lang);
+        return product;
     }
 
     @PostMapping(consumes = "multipart/form-data")
@@ -43,6 +49,7 @@ public class StandardProductController {
     public String add(
             @RequestParam("barcode") String barcode,
             @RequestParam("product_name") String productName,
+            @RequestParam(value = "product_name_en", required = false) String productNameEn,
             @RequestParam("normal_price") BigDecimal normalPrice,
             @RequestParam("discount_rates") String discountRates,
             @RequestPart(value = "image", required = false) MultipartFile image) throws Exception {
@@ -50,6 +57,7 @@ public class StandardProductController {
         StandardProduct product = new StandardProduct();
         product.setBarcode(barcode);
         product.setProductName(productName);
+        product.setProductNameEn(productNameEn);
         product.setNormalPrice(normalPrice);
         product.setDiscountRates(discountRates);
 

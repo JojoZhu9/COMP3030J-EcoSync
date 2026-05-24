@@ -16,9 +16,12 @@ DROP TABLE IF EXISTS stores;
 -- 1.1 门店表 (Stores)
 CREATE TABLE stores (
                         store_id INT AUTO_INCREMENT PRIMARY KEY,
-                        store_name VARCHAR(100) NOT NULL COMMENT '门店名称',
-                        city VARCHAR(50) NOT NULL COMMENT '所在城市',
-                        address VARCHAR(255) NOT NULL COMMENT '详细地址',
+                        store_name VARCHAR(100) NOT NULL COMMENT '门店名称（中文）',
+                        store_name_en VARCHAR(100) DEFAULT NULL COMMENT '门店名称（英文）',
+                        city VARCHAR(50) NOT NULL COMMENT '所在城市（中文）',
+                        city_en VARCHAR(50) DEFAULT NULL COMMENT '所在城市（英文）',
+                        address VARCHAR(255) NOT NULL COMMENT '详细地址（中文）',
+                        address_en VARCHAR(255) DEFAULT NULL COMMENT '详细地址（英文）',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='7-11门店表';
 
@@ -43,7 +46,8 @@ CREATE TABLE users (
 -- 2.1 系统标准商品表 (Standard Products)
 CREATE TABLE standard_products (
                                    barcode VARCHAR(50) PRIMARY KEY COMMENT '商品条码',
-                                   product_name VARCHAR(100) NOT NULL COMMENT '商品名称',
+                                   product_name VARCHAR(100) NOT NULL COMMENT '商品名称（中文）',
+                                   product_name_en VARCHAR(100) DEFAULT NULL COMMENT '商品名称（英文）',
                                    normal_price DECIMAL(10, 2) NOT NULL COMMENT '正常售价',
                                    discount_rates JSON NOT NULL DEFAULT (JSON_ARRAY(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
                                        COMMENT '临期前12小时逐小时折扣率数组，默认不打折'
@@ -112,17 +116,17 @@ CREATE TABLE order_items (
 
 
 -- 1. Insert Stores (10 stores total, 5 in Beijing)
-INSERT INTO stores (store_id, store_name, city, address, created_at) VALUES
-                                                                         (1, '7-ELEVEn Chaoyang Park', 'Beijing', '1 Chaoyang Park Road, Chaoyang District', '2026-04-01 08:00:00'),
-                                                                         (2, '7-ELEVEn Guomao CBD', 'Beijing', '1 Jianguomenwai Avenue, Chaoyang District', '2026-04-01 08:00:00'),
-                                                                         (3, '7-ELEVEn Zhongguancun', 'Beijing', '15 Zhongguancun Street, Haidian District', '2026-04-01 08:00:00'),
-                                                                         (4, '7-ELEVEn Wangfujing', 'Beijing', '88 Wangfujing Street, Dongcheng District', '2026-04-01 08:00:00'),
-                                                                         (5, '7-ELEVEn Sanlitun', 'Beijing', '19 Sanlitun Road, Chaoyang District', '2026-04-01 08:00:00'),
-                                                                         (6, '7-ELEVEn Lujiazui', 'Shanghai', 'Century Avenue, Pudong New Area', '2026-04-01 08:00:00'),
-                                                                         (7, '7-ELEVEn Xintiandi', 'Shanghai', 'Madang Road, Huangpu District', '2026-04-01 08:00:00'),
-                                                                         (8, '7-ELEVEn Tianhe Sports Center', 'Guangzhou', 'Tianhe Road, Tianhe District', '2026-04-01 08:00:00'),
-                                                                         (9, '7-ELEVEn Zhujiang New Town', 'Guangzhou', 'Huaxia Road, Tianhe District', '2026-04-01 08:00:00'),
-                                                                         (10, '7-ELEVEn Futian CBD', 'Shenzhen', 'Fuhua Road, Futian District', '2026-04-01 08:00:00');
+INSERT INTO stores (store_id, store_name, store_name_en, city, city_en, address, address_en, created_at) VALUES
+                                                                         (1, '7-ELEVEn 朝阳公园店', '7-ELEVEn Chaoyang Park', '北京', 'Beijing', '朝阳区朝阳公园路1号', '1 Chaoyang Park Road, Chaoyang District', '2026-04-01 08:00:00'),
+                                                                         (2, '7-ELEVEn 国贸CBD店', '7-ELEVEn Guomao CBD', '北京', 'Beijing', '朝阳区建国门外大街1号', '1 Jianguomenwai Avenue, Chaoyang District', '2026-04-01 08:00:00'),
+                                                                         (3, '7-ELEVEn 中关村店', '7-ELEVEn Zhongguancun', '北京', 'Beijing', '海淀区中关村大街15号', '15 Zhongguancun Street, Haidian District', '2026-04-01 08:00:00'),
+                                                                         (4, '7-ELEVEn 王府井店', '7-ELEVEn Wangfujing', '北京', 'Beijing', '东城区王府井大街88号', '88 Wangfujing Street, Dongcheng District', '2026-04-01 08:00:00'),
+                                                                         (5, '7-ELEVEn 三里屯店', '7-ELEVEn Sanlitun', '北京', 'Beijing', '朝阳区三里屯路19号', '19 Sanlitun Road, Chaoyang District', '2026-04-01 08:00:00'),
+                                                                         (6, '7-ELEVEn 陆家嘴店', '7-ELEVEn Lujiazui', '上海', 'Shanghai', '浦东新区世纪大道', 'Century Avenue, Pudong New Area', '2026-04-01 08:00:00'),
+                                                                         (7, '7-ELEVEn 新天地店', '7-ELEVEn Xintiandi', '上海', 'Shanghai', '黄浦区马当路', 'Madang Road, Huangpu District', '2026-04-01 08:00:00'),
+                                                                         (8, '7-ELEVEn 天河体育中心店', '7-ELEVEn Tianhe Sports Center', '广州', 'Guangzhou', '天河区天河路', 'Tianhe Road, Tianhe District', '2026-04-01 08:00:00'),
+                                                                         (9, '7-ELEVEn 珠江新城店', '7-ELEVEn Zhujiang New Town', '广州', 'Guangzhou', '天河区华夏路', 'Huaxia Road, Tianhe District', '2026-04-01 08:00:00'),
+                                                                         (10, '7-ELEVEn 福田CBD店', '7-ELEVEn Futian CBD', '深圳', 'Shenzhen', '福田区福华路', 'Fuhua Road, Futian District', '2026-04-01 08:00:00');
 
 -- 2. Insert Users (1 Admin, 10 Employees mapped to stores, 5 Consumers)
 INSERT INTO users (user_id, username, password_hash, role, status, store_id, balance, phone_number, created_at) VALUES
@@ -144,27 +148,27 @@ INSERT INTO users (user_id, username, password_hash, role, status, store_id, bal
                                                                                                                     (16, 'user_eve', 'hash_emp_123', 'CONSUMER', 'BANNED', NULL, 0.00, '13900000005', '2026-04-13 09:00:00');
 
 -- 3. Insert Standard Products (20 English products with varied discount arrays)
-INSERT INTO standard_products (barcode, product_name, normal_price, discount_rates) VALUES
-                                                                                        ('6901234560001', 'Teriyaki Chicken Bento', 15.80, '[1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
-                                                                                        ('6901234560002', 'Tuna Mayonnaise Onigiri', 4.50, '[1.0, 1.0, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5, 0.5, 0.4, 0.3, 0.1]'),
-                                                                                        ('6901234560003', 'Meiji Fresh Milk 200ml', 6.00, '[1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]'),
-                                                                                        ('6901234560004', 'Ham & Egg Sandwich', 8.50, '[1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1]'),
-                                                                                        ('6901234560005', 'Original Hot Dog', 5.00, '[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.6, 0.6, 0.4, 0.2]'),
-                                                                                        ('6901234560006', 'Spicy Chicken Wrap', 12.00, '[1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
-                                                                                        ('6901234560007', 'Beef & Potato Stew Bento', 18.50, '[1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]'),
-                                                                                        ('6901234560008', 'Salmon Sushi Roll', 14.00, '[0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
-                                                                                        ('6901234560009', 'Matcha Swiss Roll', 9.90, '[1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
-                                                                                        ('6901234560010', 'Chocolate Chip Cookie', 6.50, '[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.5, 0.3]'),
-                                                                                        ('6901234560011', 'Suntory Oolong Tea 500ml', 5.50, '[1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5]'),
-                                                                                        ('6901234560012', 'Iced Americano', 10.00, '[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
-                                                                                        ('6901234560013', 'Hot Latte', 12.00, '[0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1]'),
-                                                                                        ('6901234560014', 'Pork Katsu Sandwich', 11.50, '[1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1]'),
-                                                                                        ('6901234560015', 'Strawberry Yogurt', 7.80, '[1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
-                                                                                        ('6901234560016', 'Mixed Fruit Salad', 13.50, '[0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1]'),
-                                                                                        ('6901234560017', 'Classic Cheesecake', 16.00, '[1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1]'),
-                                                                                        ('6901234560018', 'Grilled Eel Rice Bowl', 25.00, '[1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]'),
-                                                                                        ('6901234560019', 'Crab Stick Salad', 10.50, '[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
-                                                                                        ('6901234560020', 'Roasted Sweet Potato', 6.00, '[1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.6, 0.6, 0.4, 0.4, 0.2, 0.1]');
+INSERT INTO standard_products (barcode, product_name, product_name_en, normal_price, discount_rates) VALUES
+                                                                                        ('6901234560001', '照烧鸡肉便当', 'Teriyaki Chicken Bento', 15.80, '[1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
+                                                                                        ('6901234560002', '金枪鱼蛋黄酱饭团', 'Tuna Mayonnaise Onigiri', 4.50, '[1.0, 1.0, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5, 0.5, 0.4, 0.3, 0.1]'),
+                                                                                        ('6901234560003', '明治鲜牛奶 200ml', 'Meiji Fresh Milk 200ml', 6.00, '[1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]'),
+                                                                                        ('6901234560004', '火腿鸡蛋三明治', 'Ham & Egg Sandwich', 8.50, '[1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1]'),
+                                                                                        ('6901234560005', '原味热狗', 'Original Hot Dog', 5.00, '[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.6, 0.6, 0.4, 0.2]'),
+                                                                                        ('6901234560006', '香辣鸡肉卷', 'Spicy Chicken Wrap', 12.00, '[1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
+                                                                                        ('6901234560007', '土豆炖牛肉便当', 'Beef & Potato Stew Bento', 18.50, '[1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]'),
+                                                                                        ('6901234560008', '三文鱼寿司卷', 'Salmon Sushi Roll', 14.00, '[0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
+                                                                                        ('6901234560009', '抹茶瑞士卷', 'Matcha Swiss Roll', 9.90, '[1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
+                                                                                        ('6901234560010', '巧克力曲奇', 'Chocolate Chip Cookie', 6.50, '[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.5, 0.3]'),
+                                                                                        ('6901234560011', '三得利乌龙茶 500ml', 'Suntory Oolong Tea 500ml', 5.50, '[1.0, 1.0, 1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.8, 0.7, 0.6, 0.5]'),
+                                                                                        ('6901234560012', '冰美式咖啡', 'Iced Americano', 10.00, '[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
+                                                                                        ('6901234560013', '热拿铁', 'Hot Latte', 12.00, '[0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1]'),
+                                                                                        ('6901234560014', '炸猪排三明治', 'Pork Katsu Sandwich', 11.50, '[1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1]'),
+                                                                                        ('6901234560015', '草莓酸奶', 'Strawberry Yogurt', 7.80, '[1.0, 1.0, 1.0, 0.9, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2]'),
+                                                                                        ('6901234560016', '混合水果沙拉', 'Mixed Fruit Salad', 13.50, '[0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1, 0.1]'),
+                                                                                        ('6901234560017', '经典芝士蛋糕', 'Classic Cheesecake', 16.00, '[1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.2, 0.1]'),
+                                                                                        ('6901234560018', '蒲烧鳗鱼饭', 'Grilled Eel Rice Bowl', 25.00, '[1.0, 1.0, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]'),
+                                                                                        ('6901234560019', '蟹棒沙拉', 'Crab Stick Salad', 10.50, '[1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.1, 0.1]'),
+                                                                                        ('6901234560020', '烤红薯', 'Roasted Sweet Potato', 6.00, '[1.0, 1.0, 1.0, 1.0, 0.8, 0.8, 0.6, 0.6, 0.4, 0.4, 0.2, 0.1]');
 
 -- 4. Insert Expiring Products (Distributed across different stores)
 INSERT INTO expiring_products (product_id, barcode, store_id, expiration_time, remaining_stock, status, created_by, created_at) VALUES

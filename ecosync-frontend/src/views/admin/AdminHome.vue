@@ -195,7 +195,8 @@ const saveRule = async () => {
   saving.value = true
   try {
     await request.put(`/products/${prod.value.barcode}`, {
-      ...prod.value,
+      barcode: prod.value.barcode,
+      normalPrice: prod.value.normalPrice,
       discountRates: JSON.stringify(editForm.rates)
     })
     ElMessage.success(t('admin.adminHome.strategyDeployed'))

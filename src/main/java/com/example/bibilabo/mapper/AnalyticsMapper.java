@@ -84,23 +84,23 @@ public interface AnalyticsMapper {
     List<SalesTrend> getMonthlySalesTrend();
 
     // Top 10 selling products
-    @Select("SELECT sp.product_name, SUM(oi.quantity) as totalSold, SUM(oi.quantity * oi.actual_price) as revenue " +
+    @Select("SELECT sp.product_name as productName, sp.product_name_en as productNameEn, SUM(oi.quantity) as totalSold, SUM(oi.quantity * oi.actual_price) as revenue " +
             "FROM order_items oi " +
             "JOIN orders o ON oi.order_id = o.order_id " +
             "JOIN expiring_products ep ON oi.product_id = ep.product_id " +
             "JOIN standard_products sp ON ep.barcode = sp.barcode " +
             "WHERE o.status IN ('PAID', 'AWAITING_PICKUP', 'COMPLETED') " +
-            "GROUP BY sp.barcode, sp.product_name " +
+            "GROUP BY sp.barcode, sp.product_name, sp.product_name_en " +
             "ORDER BY totalSold DESC " +
             "LIMIT 10")
     List<TopProduct> getTopProducts();
 
     // Store sales comparison
-    @Select("SELECT s.store_name as storeName, COALESCE(SUM(o.total_amount), 0) as amount, COUNT(*) as orderCount " +
+    @Select("SELECT s.store_name as storeName, s.store_name_en as storeNameEn, COALESCE(SUM(o.total_amount), 0) as amount, COUNT(*) as orderCount " +
             "FROM orders o " +
             "JOIN stores s ON o.store_id = s.store_id " +
             "WHERE o.status IN ('PAID', 'AWAITING_PICKUP', 'COMPLETED') " +
-            "GROUP BY s.store_id, s.store_name " +
+            "GROUP BY s.store_id, s.store_name, s.store_name_en " +
             "ORDER BY amount DESC")
     List<StoreSales> getStoreSalesComparison();
 

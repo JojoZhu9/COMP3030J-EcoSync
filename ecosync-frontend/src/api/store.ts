@@ -5,8 +5,8 @@ export const storeApi = {
     return request({ url: '/stores', method: 'get' })
   },
 
-  getById: (id: number) => {
-    return request({ url: `/stores/${id}`, method: 'get' })
+  getById: (id: number, params?: any) => {
+    return request({ url: `/stores/${id}`, method: 'get', params })
   },
 
   create: (data: any) => {

@@ -5,8 +5,11 @@ import java.util.Date;
 public class Store {
     private Integer storeId;
     private String storeName;
+    private String storeNameEn;
     private String city;
+    private String cityEn;
     private String address;
+    private String addressEn;
     private Double latitude;
     private Double longitude;
     private Date createdAt;
@@ -27,6 +30,14 @@ public class Store {
         this.storeName = storeName;
     }
 
+    public String getStoreNameEn() {
+        return storeNameEn;
+    }
+
+    public void setStoreNameEn(String storeNameEn) {
+        this.storeNameEn = storeNameEn;
+    }
+
     public String getCity() {
         return city;
     }
@@ -35,12 +46,28 @@ public class Store {
         this.city = city;
     }
 
+    public String getCityEn() {
+        return cityEn;
+    }
+
+    public void setCityEn(String cityEn) {
+        this.cityEn = cityEn;
+    }
+
     public String getAddress() {
         return address;
     }
 
     public void setAddress(String address) {
         this.address = address;
+    }
+
+    public String getAddressEn() {
+        return addressEn;
+    }
+
+    public void setAddressEn(String addressEn) {
+        this.addressEn = addressEn;
     }
 
     public Double getLatitude() {

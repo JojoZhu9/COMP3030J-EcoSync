@@ -32,6 +32,18 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public String updateStore(Store store) {
+        // 先查询原始数据，避免 null 字段覆盖已有值
+        Store existing = storeMapper.findById(store.getStoreId());
+        if (existing != null) {
+            if (store.getStoreName() == null) store.setStoreName(existing.getStoreName());
+            if (store.getStoreNameEn() == null) store.setStoreNameEn(existing.getStoreNameEn());
+            if (store.getCity() == null) store.setCity(existing.getCity());
+            if (store.getCityEn() == null) store.setCityEn(existing.getCityEn());
+            if (store.getAddress() == null) store.setAddress(existing.getAddress());
+            if (store.getAddressEn() == null) store.setAddressEn(existing.getAddressEn());
+            if (store.getLatitude() == null) store.setLatitude(existing.getLatitude());
+            if (store.getLongitude() == null) store.setLongitude(existing.getLongitude());
+        }
         storeMapper.update(store);
         return "Store updated successfully";
     }

@@ -140,8 +140,11 @@
                 </el-form-item>
               </el-col>
             </el-row>
-            <el-form-item :label="$t('admin.inventory.productTitle')" prop="product_name">
-              <el-input v-model="newP.product_name" class="modern-input" />
+            <el-form-item :label="$t('admin.inventory.productTitle') + ' (中文)'" prop="product_name">
+              <el-input v-model="newP.product_name" placeholder="输入中文商品名称" class="modern-input" />
+            </el-form-item>
+            <el-form-item label="Product Title (English)">
+              <el-input v-model="newP.product_name_en" placeholder="Enter English product name" class="modern-input" />
             </el-form-item>
             <el-divider content-position="left"><span style="color:#64748b; font-weight:700">{{ $t('admin.inventory.decayStrategy') }}</span></el-divider>
             <div class="matrix-grid">
@@ -196,6 +199,7 @@ const priceFilter = ref('ALL')
 const newP = ref({
   barcode: '',
   product_name: '',
+  product_name_en: '',
   normal_price: 0.00,
   discount_rates: Array(12).fill(1.0)
 })
@@ -262,7 +266,7 @@ const fetchData = async () => {
 }
 
 const openAddDialog = () => {
-  newP.value = { barcode: '', product_name: '', normal_price: 0.00, discount_rates: Array(12).fill(1.0) }
+  newP.value = { barcode: '', product_name: '', product_name_en: '', normal_price: 0.00, discount_rates: Array(12).fill(1.0) }
   imgPreview.value = ''; imgFile.value = null; showAdd.value = true
 }
 
@@ -343,6 +347,9 @@ const submitAdd = async () => {
       }
       fd.append('barcode', newP.value.barcode)
       fd.append('product_name', newP.value.product_name)
+      if (newP.value.product_name_en) {
+        fd.append('product_name_en', newP.value.product_name_en)
+      }
       fd.append('normal_price', newP.value.normal_price.toString())
       fd.append('discount_rates', JSON.stringify(newP.value.discount_rates))
       await request.post('/products', fd)

@@ -2,6 +2,7 @@ package com.example.bibilabo.controller;
 
 import com.example.bibilabo.entity.Store;
 import com.example.bibilabo.service.StoreService;
+import com.example.bibilabo.util.I18nUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,14 +21,19 @@ public class StoreController {
 
     @GetMapping
     @Operation(summary = "获取所有门店", description = "前端地图展示或下拉框选择：列出所有支持临期售卖的门店")
-    public List<Store> getAll() {
-        return storeService.getAllStores();
+    public List<Store> getAll(@RequestParam(required = false, defaultValue = "zh") String lang) {
+        List<Store> stores = storeService.getAllStores();
+        I18nUtil.applyStoreLocale(stores, lang);
+        return stores;
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "查询单家门店详情", description = "根据门店ID获取地址及所在城市")
-    public Store getById(@Parameter(description = "门店ID") @PathVariable("id") Integer id) {
-        return storeService.getStoreById(id);
+    public Store getById(@Parameter(description = "门店ID") @PathVariable("id") Integer id,
+                         @RequestParam(required = false, defaultValue = "zh") String lang) {
+        Store store = storeService.getStoreById(id);
+        I18nUtil.applyStoreLocale(store, lang);
+        return store;
     }
 
     @PostMapping
