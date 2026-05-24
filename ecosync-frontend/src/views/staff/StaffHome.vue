@@ -231,6 +231,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import { Box, List, Refresh, ShoppingBag, Timer, Search, Ticket, Check } from '@element-plus/icons-vue'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
@@ -321,7 +322,10 @@ const syncAllOrders = async () => {
         const enrichedItems = (vo.items || []).map((item: any) => {
           const stock = allExpiringProducts.value.find(s => Number(s.productId) === Number(item.productId))
           const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
-          return { ...item, productName: prod?.productName || `${t('common.unknown')} SKU` }
+          const name = getLocale() === 'en' && prod?.productNameEn
+            ? prod.productNameEn
+            : (prod?.productName || `${t('common.unknown')} SKU`)
+          return { ...item, productName: name }
         })
         return { ...order, items: enrichedItems, customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` }
       } catch (e) { return { ...order, items: [], customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` } }
@@ -392,7 +396,10 @@ const verifyByPickupCode = async () => {
 const enrichedStockList = computed(() => {
   return allExpiringProducts.value.map(stock => {
     const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
-    return { ...stock, productName: std?.productName || `${t('common.unknown')} SKU` }
+    const name = getLocale() === 'en' && std?.productNameEn
+      ? std.productNameEn
+      : (std?.productName || `${t('common.unknown')} SKU`)
+    return { ...stock, productName: name }
   })
 })
 

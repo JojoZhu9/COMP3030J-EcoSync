@@ -21,3 +21,9 @@ export function setLocale(locale: Locale) {
 export function getLocale(): Locale {
   return (localStorage.getItem('locale') as Locale) || 'en'
 }
+
+export function localizeName(item: any, zhField = 'productName', enField = 'productNameEn'): string {
+  const locale = getLocale()
+  if (locale === 'en' && item?.[enField]) return item[enField]
+  return item?.[zhField] || ''
+}

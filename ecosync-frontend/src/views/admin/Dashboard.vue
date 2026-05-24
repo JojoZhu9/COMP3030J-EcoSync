@@ -110,6 +110,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import request from '@/utils/request'
 import * as echarts from 'echarts'
 import {
@@ -279,7 +280,7 @@ const fetchTopProducts = async () => {
   try {
     const res: any = await request.get('/analytics/top-products')
     const list: any[] = res.data || res || []
-    const yData = list.map(i => i.productName).reverse()
+    const yData = list.map(i => getLocale() === 'en' && i.productNameEn ? i.productNameEn : i.productName).reverse()
     const xData = list.map(i => Number(i.totalSold || 0)).reverse()
     hasTopProductData.value = list.length > 0
 
@@ -307,7 +308,7 @@ const fetchStoreSales = async () => {
   try {
     const res: any = await request.get('/analytics/store-sales')
     const list: any[] = res.data || res || []
-    const xData = list.map(i => i.storeName)
+    const xData = list.map(i => getLocale() === 'en' && i.storeNameEn ? i.storeNameEn : i.storeName)
     const yData = list.map(i => Number(i.amount || 0))
     hasStoreData.value = list.length > 0
 

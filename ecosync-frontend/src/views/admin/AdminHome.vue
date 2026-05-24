@@ -106,6 +106,7 @@
 import { ref, onMounted, reactive, nextTick, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/message'
 import { TrendCharts, View } from '@element-plus/icons-vue'
@@ -157,7 +158,9 @@ const fetchDetail = async () => {
 
     prod.value = {
       barcode: data.barcode,
-      productName: data.product_name || data.productName,
+      productName: getLocale() === 'en' && (data.productNameEn || data.product_name_en)
+        ? (data.productNameEn || data.product_name_en)
+        : (data.product_name || data.productName),
       normalPrice: data.normal_price || data.normalPrice,
       imageUrl: data.image_url || data.imageUrl,
       status: data.status || 'ACTIVE'

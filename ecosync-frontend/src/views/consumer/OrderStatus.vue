@@ -141,6 +141,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import { Shop, Ticket, Goods, Check, Clock, Close, Document, ShoppingCart, Grid, CircleClose } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessageBox } from 'element-plus'
@@ -161,7 +162,7 @@ const fetchStores = async () => {
     const stores = res.data || res || []
     const map: Record<number, string> = {}
     stores.forEach((s: any) => {
-      map[s.storeId] = s.storeName || `${t('common.unknown')} #${s.storeId}`
+      map[s.storeId] = (getLocale() === 'en' && s.storeNameEn ? s.storeNameEn : s.storeName) || `${t('common.unknown')} #${s.storeId}`
     })
     storeMap.value = map
   } catch (e) {}
@@ -194,7 +195,9 @@ const fetchOrders = async () => {
           const product = library.find((p: any) => String(p.barcode) === String(stock?.barcode))
           return {
             ...item,
-            productName: product ? (product.productName || product.product_name) : `ID: ${item.productId}`
+            productName: getLocale() === 'en' && product?.productNameEn
+              ? product.productNameEn
+              : (product ? (product.productName || product.product_name) : `ID: ${item.productId}`)
           }
         })
         return { ...order, details: enrichedItems }

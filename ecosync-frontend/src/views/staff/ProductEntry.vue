@@ -6,7 +6,7 @@
     <el-form :model="form" label-position="top">
       <el-form-item :label="$t('staff.productEntry.productLibrary')" required>
         <el-select v-model="form.barcode" filterable style="width: 100%" :placeholder="$t('staff.productEntry.selectSpu')">
-          <el-option v-for="p in library" :key="p.barcode" :label="p.productName" :value="p.barcode" />
+          <el-option v-for="p in library" :key="p.barcode" :label="getLocale() === 'en' && p.productNameEn ? p.productNameEn : p.productName" :value="p.barcode" />
         </el-select>
       </el-form-item>
       <el-form-item :label="$t('staff.productEntry.expirationDate')" required>
@@ -31,6 +31,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 

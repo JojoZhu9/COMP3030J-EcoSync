@@ -187,6 +187,7 @@
 <script setup lang="ts">
 import {ref, computed, onMounted} from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import { ArrowLeft, Delete, Shop, Close, Goods } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { ElMessageBox } from 'element-plus'
@@ -269,15 +270,15 @@ const initData = async () => {
           ...item,
           productId: pId,
           barcode: exp.barcode,
-          productName: std.productName,
+          productName: getLocale() === 'en' && std.productNameEn ? std.productNameEn : std.productName,
           originalPrice: normalPrice,
           pointsPrice: +(normalPrice * rate).toFixed(2),
           maxStock: Number(exp.remainingStock),
           selected: true,
           imageUrl: std.imageUrl || std.image_url || null,
           storeId: exp.storeId,
-          storeName: store?.storeName || `Store #${exp.storeId}`,
-          storeAddress: store?.address || ''
+          storeName: getLocale() === 'en' && store?.storeNameEn ? store.storeNameEn : (store?.storeName || `Store #${exp.storeId}`),
+          storeAddress: getLocale() === 'en' && store?.addressEn ? store.addressEn : (store?.address || '')
         }
       } catch {
         return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false, storeId: null, storeName: 'Unknown', storeAddress: '' }

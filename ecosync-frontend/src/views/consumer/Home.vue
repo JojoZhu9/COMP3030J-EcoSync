@@ -18,7 +18,7 @@
               <el-option
                 v-for="item in storeList"
                 :key="item.storeId"
-                :label="item.storeName"
+                :label="storeDisplayName(item)"
                 :value="item.storeId"
               />
             </el-select>
@@ -32,7 +32,7 @@
           <div v-if="nearestStore" class="nearest-store-bar">
             <el-tag effect="dark" type="success" round class="nearest-tag">
               <el-icon><MapLocation /></el-icon>
-              {{ $t('consumer.home.nearest') }} <strong>{{ nearestStore.storeName }}</strong>
+              {{ $t('consumer.home.nearest') }} <strong>{{ storeDisplayName(nearestStore) }}</strong>
               <span class="dist">{{ nearestStore.distance.toFixed(1) }} {{ $t('consumer.home.km') }}</span>
             </el-tag>
             <el-button link type="primary" size="small" @click="openMapDialog">{{ $t('consumer.home.viewMap') }}</el-button>
@@ -176,10 +176,10 @@
       <div v-if="mapStore" class="map-body"
       >
         <p class="map-store-name"
-        >{{ mapStore.storeName }}
+        >{{ storeDisplayName(mapStore) }}
         </p>
         <p class="map-store-addr"
-        >{{ mapStore.address }}, {{ mapStore.city }}
+        >{{ getLocale() === 'en' && mapStore.addressEn ? mapStore.addressEn : mapStore.address }}, {{ getLocale() === 'en' && mapStore.cityEn ? mapStore.cityEn : mapStore.city }}
         </p>
         <iframe
           v-if="mapStore.latitude && mapStore.longitude"
@@ -255,6 +255,7 @@ import { cartApi } from '@/api/cart'
 import request from '@/utils/request'
 import { ElMessage } from '@/utils/message'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import JsBarcode from 'jsbarcode'
 
 const { t } = useI18n()
@@ -283,9 +284,12 @@ const timeFilters = computed(() => [
   { value: '1d', label: t('consumer.home.timeFilter1d'), icon: Calendar }
 ])
 
+const storeDisplayName = (store: any) =>
+  getLocale() === 'en' && store?.storeNameEn ? store.storeNameEn : (store?.storeName || '')
+
 const currentStoreName = computed(() => {
   const store = storeList.value.find(s => s.storeId === selectedStoreId.value)
-  return store?.storeName || ''
+  return storeDisplayName(store)
 })
 
 const getExpiryHours = (expiryDate: string): number => {
@@ -381,7 +385,9 @@ const fetchProducts = async () => {
         const rates = stdData.discountRates || stdData.discount_rates || '[]'
         return {
           ...item,
-          productName: stdData.productName || stdData.product_name || `SKU:${item.barcode}`,
+          productName: getLocale() === 'en' && stdData.productNameEn
+            ? stdData.productNameEn
+            : (stdData.productName || stdData.product_name || `SKU:${item.barcode}`),
           normalPrice: basePrice,
           displayPrice: calculateDisplayPrice(basePrice, item.expirationTime, rates),
           imageUrl: stdData.imageUrl || stdData.image_url || null
@@ -503,7 +509,7 @@ const findNearestStore = () => {
     }
     if (best) {
       nearestStore.value = best
-      ElMessage.success(t('consumer.home.nearestStoreFound', { name: best.storeName, dist: bestDist.toFixed(1) }))
+      ElMessage.success(t('consumer.home.nearestStoreFound', { name: storeDisplayName(best), dist: bestDist.toFixed(1) }))
     } else {
       ElMessage.warning(t('consumer.home.noStoreWithCoords'))
     }

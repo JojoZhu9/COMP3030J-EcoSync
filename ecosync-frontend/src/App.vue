@@ -72,7 +72,7 @@
 
         <main class="content-area">
           <div :class="{ 'content-inner': route.path !== '/' }">
-            <router-view />
+            <router-view :key="localeKey" />
           </div>
         </main>
       </template>
@@ -95,6 +95,7 @@ const { t } = useI18n()
 const isLogged = ref(false)
 const currentRole = ref<string | null>(null)
 const locale = ref<Locale>(getLocale())
+const localeKey = ref(0)
 
 const currentLocaleLabel = computed(() => locale.value === 'zh' ? '中文' : 'EN')
 const elementLocale = computed(() => locale.value === 'zh' ? zhCn : enLocale)
@@ -123,7 +124,9 @@ const go = (p: string) => router.push(p)
 const goProfile = () => go(currentRole.value === 'EMPLOYEE' ? '/staff/profile' : '/profile')
 
 const handleLogout = () => {
+  const savedLocale = localStorage.getItem('locale')
   localStorage.clear()
+  if (savedLocale) localStorage.setItem('locale', savedLocale)
   window.dispatchEvent(new Event('auth-change'))
   router.push('/login')
 }
@@ -132,7 +135,7 @@ const handleLocaleChange = (command: Locale) => {
   if (command === locale.value) return
   setLocale(command)
   locale.value = command
-  window.location.reload()
+  localeKey.value++
 }
 </script>
 

@@ -27,14 +27,14 @@
               <span class="info-label">{{ $t('staff.profile.assignedStore') }}</span>
               <span class="info-val store-highlight">
                 <el-icon><Shop /></el-icon>
-                {{ store.storeName || store.store_name || $t('staff.profile.loading') }}
+                {{ getLocale() === 'en' && store.storeNameEn ? store.storeNameEn : (store.storeName || store.store_name || $t('staff.profile.loading')) }}
               </span>
             </div>
 
             <div class="info-row">
               <div class="info-group half">
                 <span class="info-label">{{ $t('staff.profile.city') }}</span>
-                <span class="info-val">{{ store.city || '---' }}</span>
+                <span class="info-val">{{ getLocale() === 'en' && store.cityEn ? store.cityEn : (store.city || '---') }}</span>
               </div>
               <div class="info-group half">
                 <span class="info-label">{{ $t('staff.profile.status') }}</span>
@@ -45,7 +45,7 @@
             <div class="info-group">
               <span class="info-label">{{ $t('staff.profile.fullAddress') }}</span>
               <span class="info-val address-text">
-                <el-icon><Location /></el-icon> {{ store.address || '---' }}
+                <el-icon><Location /></el-icon> {{ getLocale() === 'en' && store.addressEn ? store.addressEn : (store.address || '---') }}
               </span>
             </div>
           </div>
@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import { UserFilled, Location, Shop } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 
