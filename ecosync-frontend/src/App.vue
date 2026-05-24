@@ -14,7 +14,7 @@
               <span class="c-orange">7</span><span class="c-red">-</span><span class="c-green">ELEVEn</span>
             </div>
             <span class="logo-text divider">|</span>
-            <span class="logo-text">Intelligent Near-Expiry</span>
+            <span class="logo-text">{{ $t('nav.tagline') }}</span>
             <el-tag v-if="isLogged" effect="dark" :type="currentRole === 'ADMIN' ? 'danger' : 'success'" round size="small" class="role-badge">
               {{ roleTitle }}
             </el-tag>

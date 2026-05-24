@@ -119,6 +119,27 @@ import {
 
 const { t } = useI18n()
 
+const statusLabelKeys: Record<string, string> = {
+  PENDING: 'staff.pending',
+  PAID: 'staff.paid',
+  AWAITING_PICKUP: 'staff.awaitingPickup',
+  COMPLETED: 'staff.completed',
+  CANCELLED: 'staff.cancelled'
+}
+
+const discountRangeKeys: Record<string, string> = {
+  '0-10% Off': 'admin.dashboard.discountRange0to10',
+  '10-20% Off': 'admin.dashboard.discountRange10to20',
+  '20-30% Off': 'admin.dashboard.discountRange20to30',
+  '30-40% Off': 'admin.dashboard.discountRange30to40',
+  '40-50% Off': 'admin.dashboard.discountRange40to50',
+  '50-60% Off': 'admin.dashboard.discountRange50to60',
+  '60-70% Off': 'admin.dashboard.discountRange60to70',
+  '70-80% Off': 'admin.dashboard.discountRange70to80',
+  '80-90% Off': 'admin.dashboard.discountRange80to90',
+  '90%+ Off': 'admin.dashboard.discountRange90plus'
+}
+
 const kpiList = ref([
   { labelKey: 'admin.dashboard.totalSales', value: '¥0', sub: '', icon: Money },
   { labelKey: 'admin.dashboard.discountSavings', value: '¥0', sub: '', icon: Present },
@@ -246,7 +267,7 @@ const fetchOrderStatus = async () => {
   try {
     const res: any = await request.get('/analytics/order-status')
     const list: any[] = res.data || res || []
-    const data = list.map(i => ({ value: i.count, name: i.status }))
+    const data = list.map(i => ({ value: i.count, name: t(statusLabelKeys[i.status] || i.status), rawStatus: i.status }))
     hasStatusData.value = data.length > 0
 
     const statusColors: Record<string, string> = {
@@ -269,7 +290,7 @@ const fetchOrderStatus = async () => {
         center: ['50%', '58%'],
         itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
         label: { show: true, formatter: '{b}\n{d}%', color: '#334155', fontWeight: 'bold' },
-        data: data.map(d => ({ ...d, itemStyle: { color: statusColors[d.name] || '#94a3b8' } }))
+        data: data.map(d => ({ ...d, itemStyle: { color: statusColors[d.rawStatus] || '#94a3b8' } }))
       }]
     }, true)
     statusChart.resize()
@@ -371,7 +392,7 @@ const fetchDiscountDistribution = async () => {
   try {
     const res: any = await request.get('/analytics/discount-distribution')
     const list: any[] = res.data || res || []
-    const xData = list.map(i => i.range)
+    const xData = list.map(i => t(discountRangeKeys[i.range] || i.range))
     const yData = list.map(i => Number(i.count || 0))
     hasDiscountData.value = list.length > 0
 

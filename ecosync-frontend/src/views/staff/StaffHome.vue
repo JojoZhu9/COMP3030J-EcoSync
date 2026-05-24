@@ -228,6 +228,11 @@
   </div>
 </template>
 
+<script lang="ts">
+import { ref } from 'vue'
+const savedActiveTab = ref('inventory')
+</script>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -239,7 +244,7 @@ import ProductEntry from './ProductEntry.vue'
 
 const { t } = useI18n()
 
-const activeTab = ref('inventory')
+const activeTab = savedActiveTab
 const loading = ref(false)
 const loadingOrders = ref(false)
 const library = ref<any[]>([])

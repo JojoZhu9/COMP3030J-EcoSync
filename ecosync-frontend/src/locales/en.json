@@ -20,6 +20,9 @@
     "login": "Log In",
     "register": "Register",
     "home": "Home Page",
+    "roleAdmin": "Admin",
+    "roleEmployee": "Employee",
+    "roleCustomer": "Customer",
     "language": "Language"
   },
   "nav": {
@@ -33,6 +36,7 @@
     "cart": "Cart",
     "orders": "Orders",
     "profile": "Profile",
+    "tagline": "Intelligent Near-Expiry",
     "adminPanel": "Admin Panel",
     "staffPanel": "Staff Panel",
     "customer": "Customer",
@@ -224,6 +228,7 @@
       "timeFilter5h": "< 5h",
       "timeFilter10h": "< 10h",
       "timeFilter1d": "> 1d",
+      "timeFilterLt1d": "< 1d",
       "ecoFlashTitle": "7-Eleven Eco-Flash",
       "ecoFlashSubtitle": "Real-time dynamic pricing • Only for items within 12h of expiry",
       "showingResults": "Showing {count} of {total} items",
@@ -428,7 +433,17 @@
       "noProductSalesData": "No product sales data yet",
       "noStoreSalesData": "No store sales data yet",
       "noUserGrowthData": "No user growth data yet",
-      "noDiscountData": "No discount data yet"
+      "noDiscountData": "No discount data yet",
+      "discountRange0to10": "0-10% Off",
+      "discountRange10to20": "10-20% Off",
+      "discountRange20to30": "20-30% Off",
+      "discountRange30to40": "30-40% Off",
+      "discountRange40to50": "40-50% Off",
+      "discountRange50to60": "50-60% Off",
+      "discountRange60to70": "60-70% Off",
+      "discountRange70to80": "70-80% Off",
+      "discountRange80to90": "80-90% Off",
+      "discountRange90plus": "90%+ Off"
     },
     "inventory": {
       "standardProductLibrary": "Standard Product Library",

@@ -51,7 +51,7 @@
         <el-table-column :label="$t('admin.accountManage.systemRole')" width="160" align="center">
           <template #default="{ row }">
             <el-tag :class="['role-tag', row.role?.toLowerCase()]" effect="dark" round>
-              {{ row.role }}
+              {{ roleDisplayName(row.role) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -118,7 +118,7 @@
 
         <el-form-item v-if="form.role === 'EMPLOYEE'" :label="$t('admin.accountManage.assignStore')">
           <el-select v-model="form.storeId" style="width: 100%" class="dialog-select" clearable :placeholder="$t('admin.accountManage.selectStore')">
-            <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
+            <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="storeDisplayName(s) + ' — ' + s.city" :value="s.storeId || s.store_id" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -135,7 +135,7 @@
         {{ $t('admin.accountManage.migratingEmployee', { name: migrateTarget?.username }) }}
       </p>
       <el-select v-model="migrateStoreId" style="width: 100%" :placeholder="$t('admin.accountManage.selectTargetStore')">
-        <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="(s.storeName || s.store_name) + ' — ' + s.city" :value="s.storeId || s.store_id" />
+        <el-option v-for="s in stores" :key="s.storeId || s.store_id" :label="storeDisplayName(s) + ' — ' + s.city" :value="s.storeId || s.store_id" />
       </el-select>
       <template #footer>
         <div class="dialog-footer">
@@ -150,6 +150,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getLocale } from '@/locales'
 import request from '@/utils/request'
 import { storeApi } from '@/api/store'
 import { ElMessageBox } from 'element-plus'
@@ -157,6 +158,16 @@ import { ElMessage } from '@/utils/message'
 import { Plus, Search, UserFilled as UserGroup, Lock } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
+
+const storeDisplayName = (s: any) =>
+  getLocale() === 'en' && s?.storeNameEn ? s.storeNameEn : (s?.storeName || s?.store_name || '')
+
+const roleDisplayName = (role: string) => {
+  if (role === 'ADMIN') return t('common.roleAdmin')
+  if (role === 'EMPLOYEE') return t('common.roleEmployee')
+  if (role === 'CONSUMER') return t('common.roleCustomer')
+  return role
+}
 
 const users = ref<any[]>([])
 const stores = ref<any[]>([])
@@ -176,7 +187,7 @@ const migrateStoreId = ref<number | null>(null)
 const storeNameMap = computed(() => {
   const map: Record<number, string> = {}
   for (const s of stores.value) {
-    map[s.storeId || s.store_id] = s.storeName || s.store_name
+    map[s.storeId || s.store_id] = storeDisplayName(s)
   }
   return map
 })

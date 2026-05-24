@@ -281,6 +281,7 @@ const timeFilters = computed(() => [
   { value: '1h', label: t('consumer.home.timeFilter1h'), icon: Timer },
   { value: '5h', label: t('consumer.home.timeFilter5h'), icon: Clock },
   { value: '10h', label: t('consumer.home.timeFilter10h'), icon: Clock },
+  { value: 'lt1d', label: t('consumer.home.timeFilterLt1d'), icon: Calendar },
   { value: '1d', label: t('consumer.home.timeFilter1d'), icon: Calendar }
 ])
 
@@ -309,6 +310,7 @@ const filteredProducts = computed(() => {
         case '1h': return hours > 0 && hours <= 1
         case '5h': return hours > 0 && hours <= 5
         case '10h': return hours > 0 && hours <= 10
+        case 'lt1d': return hours > 0 && hours <= 24
         case '1d': return hours > 24
         default: return true
       }
