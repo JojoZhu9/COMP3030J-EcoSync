@@ -60,4 +60,9 @@ public class ExpiringProductServiceImpl implements ExpiringProductService {
         int affectedRows = expiringProductMapper.decreaseStock(productId, quantity);
         return affectedRows > 0; // 如果返回值大于0，说明库存充足且扣减成功
     }
+
+    @Override
+    public int markExpiredProducts() {
+        return expiringProductMapper.markExpiredAsDiscarded();
+    }
 }

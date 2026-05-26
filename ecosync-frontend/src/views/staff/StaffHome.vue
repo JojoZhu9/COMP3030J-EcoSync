@@ -86,10 +86,10 @@
                   <el-table-column :label="$t('staff.status')" width="140" align="center">
                     <template #default="{row}">
                       <el-tag
-                        :type="isExpired(row) ? 'danger' : (row.remainingStock <= 0 ? 'info' : 'success')"
+                        :type="row.remainingStock <= 0 ? 'info' : (isExpired(row) ? 'danger' : 'success')"
                         round effect="light" class="status-tag"
                       >
-                        {{ isExpired(row) ? $t('staff.expired') : (row.remainingStock <= 0 ? $t('staff.soldOut') : $t('staff.inStock')) }}
+                        {{ row.remainingStock <= 0 ? $t('staff.soldOut') : (isExpired(row) ? $t('staff.expired') : $t('staff.inStock')) }}
                       </el-tag>
                     </template>
                   </el-table-column>
@@ -423,9 +423,9 @@ const filteredStockList = computed(() => {
 
   // 状态过滤
   if (statusFilter.value === 'AVAILABLE') {
-    result = result.filter(item => item.remainingStock > 0)
+    result = result.filter(item => item.status === 'AVAILABLE')
   } else if (statusFilter.value === 'SOLD_OUT') {
-    result = result.filter(item => item.remainingStock <= 0)
+    result = result.filter(item => item.status === 'SOLD_OUT')
   }
 
   return result

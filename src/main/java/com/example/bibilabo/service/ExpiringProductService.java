@@ -14,4 +14,6 @@ public interface ExpiringProductService {
     String deleteProduct(Integer productId);
     // 扣减库存接口
     boolean decreaseStock(Integer productId, Integer quantity);
+    // 批量标记过期商品为 DISCARDED
+    int markExpiredProducts();
 }

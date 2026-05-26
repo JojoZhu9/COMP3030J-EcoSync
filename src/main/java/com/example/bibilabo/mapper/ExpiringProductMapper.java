@@ -7,7 +7,7 @@ import java.util.List;
 @Mapper
 public interface ExpiringProductMapper {
 
-    @Select("SELECT * FROM expiring_products")
+    @Select("SELECT * FROM expiring_products WHERE expiration_time > NOW()")
     List<ExpiringProduct> findAll();
 
     @Select("SELECT * FROM expiring_products WHERE product_id = #{productId}")
@@ -17,7 +17,8 @@ public interface ExpiringProductMapper {
     ExpiringProduct findByIdForUpdate(@Param("productId") Integer productId);
 
     // 常用业务查询：根据门店ID查找所有正在售卖的临期商品
-    @Select("SELECT * FROM expiring_products WHERE store_id = #{storeId} AND status = 'AVAILABLE'")
+    @Select("SELECT * FROM expiring_products WHERE store_id = #{storeId} " +
+            "AND status = 'AVAILABLE' AND expiration_time > NOW()")
     List<ExpiringProduct> findAvailableByStore(Integer storeId);
 
     @Insert("INSERT INTO expiring_products(barcode, store_id, expiration_time, remaining_stock, status, created_by) " +
@@ -30,13 +31,16 @@ public interface ExpiringProductMapper {
             "status = #{status} WHERE product_id = #{productId}")
     int update(ExpiringProduct product);
 
-    // 🔥 核心逻辑：利用乐观锁思想安全扣减库存（防止超卖）
-    @Update("UPDATE expiring_products SET remaining_stock = remaining_stock - #{quantity} " +
+    // 🔥 核心逻辑：利用乐观锁思想安全扣减库存（防止超卖），库存归零自动标记售罄
+    @Update("UPDATE expiring_products SET remaining_stock = remaining_stock - #{quantity}, " +
+            "status = CASE WHEN remaining_stock - #{quantity} <= 0 THEN 'SOLD_OUT' ELSE status END " +
             "WHERE product_id = #{productId} AND remaining_stock >= #{quantity}")
     int decreaseStock(@Param("productId") Integer productId, @Param("quantity") Integer quantity);
 
-    // 增加库存（取消订单时回滚）
-    @Update("UPDATE expiring_products SET remaining_stock = remaining_stock + #{quantity} WHERE product_id = #{productId}")
+    // 增加库存（取消订单时回滚），库存恢复时自动改回 AVAILABLE
+    @Update("UPDATE expiring_products SET remaining_stock = remaining_stock + #{quantity}, " +
+            "status = CASE WHEN remaining_stock + #{quantity} > 0 AND status = 'SOLD_OUT' THEN 'AVAILABLE' ELSE status END " +
+            "WHERE product_id = #{productId}")
     int increaseStock(@Param("productId") Integer productId, @Param("quantity") Integer quantity);
 
     @Delete("DELETE FROM expiring_products WHERE product_id = #{productId}")
@@ -44,4 +48,8 @@ public interface ExpiringProductMapper {
 
     @Delete("DELETE FROM expiring_products WHERE barcode = #{barcode}")
     int deleteByBarcode(String barcode);
+
+    @Update("UPDATE expiring_products SET status = 'DISCARDED' " +
+            "WHERE expiration_time < NOW() AND status = 'AVAILABLE'")
+    int markExpiredAsDiscarded();
 }
