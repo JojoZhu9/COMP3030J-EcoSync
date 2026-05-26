@@ -6,7 +6,9 @@
         <span class="brand-title">{{ $t('staff.brandTitle') }}</span>
       </div>
       <div class="brand-right">
-        <el-tag effect="dark" type="warning" round class="role-tag">{{ $t('staff.staffConsole') }}</el-tag>
+        <el-tag effect="dark" type="warning" round class="role-tag">{{
+          $t('staff.staffConsole')
+        }}</el-tag>
       </div>
     </div>
 
@@ -14,7 +16,9 @@
       <el-tabs v-model="activeTab" class="brand-tabs">
         <el-tab-pane name="inventory">
           <template #label>
-            <div class="tab-label"><el-icon><Box /></el-icon><span>{{ $t('staff.inventoryConsole') }}</span></div>
+            <div class="tab-label">
+              <el-icon><Box /></el-icon><span>{{ $t('staff.inventoryConsole') }}</span>
+            </div>
           </template>
 
           <el-row :gutter="24">
@@ -29,13 +33,20 @@
                 <template #header>
                   <div class="card-header">
                     <div class="title-group">
-                      <div class="title-icon"><el-icon><Box /></el-icon></div>
+                      <div class="title-icon">
+                        <el-icon><Box /></el-icon>
+                      </div>
                       <div class="title-text-box">
                         <div class="title-text">{{ $t('staff.liveShelfStock') }}</div>
                         <div class="title-sub">{{ $t('staff.liveShelfStockSub') }}</div>
                       </div>
                     </div>
-                    <el-button type="primary" class="brand-btn" @click="fetchData" :loading="loading">
+                    <el-button
+                      type="primary"
+                      class="brand-btn"
+                      @click="fetchData"
+                      :loading="loading"
+                    >
                       <el-icon><Refresh /></el-icon> {{ $t('common.sync') }}
                     </el-button>
                   </div>
@@ -58,7 +69,7 @@
 
                 <el-table :data="filteredStockList" class="custom-table" border stripe height="540">
                   <el-table-column :label="$t('staff.productInfo')" min-width="200">
-                    <template #default="{row}">
+                    <template #default="{ row }">
                       <div class="product-info-cell">
                         <div class="p-name" :title="row.productName">{{ row.productName }}</div>
                         <div class="p-bc">{{ $t('staff.barcodeShort') }}: {{ row.barcode }}</div>
@@ -67,7 +78,7 @@
                   </el-table-column>
 
                   <el-table-column :label="$t('staff.expirationDate')" width="180" align="center">
-                    <template #default="{row}">
+                    <template #default="{ row }">
                       <div class="expiry-time-cell">
                         <el-icon><Timer /></el-icon>
                         <span>{{ formatDateTime(row.expirationTime || row.expirationDate) }}</span>
@@ -76,7 +87,7 @@
                   </el-table-column>
 
                   <el-table-column :label="$t('staff.stock')" width="100" align="center">
-                    <template #default="{row}">
+                    <template #default="{ row }">
                       <span :class="['stock-num', row.remainingStock < 5 ? 'critical' : '']">
                         {{ row.remainingStock }}
                       </span>
@@ -84,12 +95,26 @@
                   </el-table-column>
 
                   <el-table-column :label="$t('staff.status')" width="140" align="center">
-                    <template #default="{row}">
+                    <template #default="{ row }">
                       <el-tag
-                        :type="(row.status === 'SOLD_OUT' || row.remainingStock <= 0) ? 'info' : (isExpired(row) ? 'danger' : 'success')"
-                        round effect="light" class="status-tag"
+                        :type="
+                          row.status === 'SOLD_OUT' || row.remainingStock <= 0
+                            ? 'info'
+                            : isExpired(row)
+                              ? 'danger'
+                              : 'success'
+                        "
+                        round
+                        effect="light"
+                        class="status-tag"
                       >
-                        {{ (row.status === 'SOLD_OUT' || row.remainingStock <= 0) ? $t('staff.soldOut') : (isExpired(row) ? $t('staff.expired') : $t('staff.inStock')) }}
+                        {{
+                          row.status === 'SOLD_OUT' || row.remainingStock <= 0
+                            ? $t('staff.soldOut')
+                            : isExpired(row)
+                              ? $t('staff.expired')
+                              : $t('staff.inStock')
+                        }}
                       </el-tag>
                     </template>
                   </el-table-column>
@@ -105,20 +130,29 @@
 
         <el-tab-pane name="orders">
           <template #label>
-            <div class="tab-label"><el-icon><List /></el-icon><span>{{ $t('staff.orderMonitor') }}</span></div>
+            <div class="tab-label">
+              <el-icon><List /></el-icon><span>{{ $t('staff.orderMonitor') }}</span>
+            </div>
           </template>
 
           <el-card class="modern-card order-card" shadow="never">
             <template #header>
               <div class="card-header">
                 <div class="title-group">
-                  <div class="title-icon orange"><el-icon><ShoppingBag /></el-icon></div>
+                  <div class="title-icon orange">
+                    <el-icon><ShoppingBag /></el-icon>
+                  </div>
                   <div class="title-text-box">
                     <div class="title-text">{{ $t('staff.recentPickupOrders') }}</div>
                     <div class="title-sub">{{ $t('staff.recentPickupOrdersSub') }}</div>
                   </div>
                 </div>
-                <el-button type="warning" class="warning-btn" @click="syncAllOrders" :loading="loadingOrders">
+                <el-button
+                  type="warning"
+                  class="warning-btn"
+                  @click="syncAllOrders"
+                  :loading="loadingOrders"
+                >
                   <el-icon><Refresh /></el-icon> {{ $t('staff.syncOrders') }}
                 </el-button>
               </div>
@@ -133,9 +167,16 @@
                 class="verify-input"
                 @keyup.enter="verifyByPickupCode"
               >
-                <template #prefix><el-icon><Ticket /></el-icon></template>
+                <template #prefix
+                  ><el-icon><Ticket /></el-icon
+                ></template>
               </el-input>
-              <el-button type="success" class="verify-btn" :loading="verifying" @click="verifyByPickupCode">
+              <el-button
+                type="success"
+                class="verify-btn"
+                :loading="verifying"
+                @click="verifyByPickupCode"
+              >
                 <el-icon><Check /></el-icon> {{ $t('staff.verify') }}
               </el-button>
             </div>
@@ -152,24 +193,47 @@
               <el-radio-group v-model="orderStatusFilter" class="custom-radio">
                 <el-radio-button label="ALL">{{ $t('common.all') }}</el-radio-button>
                 <el-radio-button label="PAID">{{ $t('staff.paid') }}</el-radio-button>
-                <el-radio-button label="AWAITING_PICKUP">{{ $t('staff.awaitingPickup') }}</el-radio-button>
+                <el-radio-button label="AWAITING_PICKUP">{{
+                  $t('staff.awaitingPickup')
+                }}</el-radio-button>
                 <el-radio-button label="COMPLETED">{{ $t('staff.completed') }}</el-radio-button>
                 <el-radio-button label="CANCELLED">{{ $t('staff.cancelled') }}</el-radio-button>
               </el-radio-group>
             </div>
 
-            <el-table :data="filteredOrderList" class="custom-table" border highlight-current-row height="540">
+            <el-table
+              :data="filteredOrderList"
+              class="custom-table"
+              border
+              highlight-current-row
+              height="540"
+            >
               <el-table-column type="expand">
                 <template #default="{ row }">
                   <div class="order-detail-wrapper">
-                    <div class="detail-header"><el-icon><ShoppingBag /></el-icon> {{ $t('staff.orderItems') }} ({{row.items?.length || 0}})</div>
+                    <div class="detail-header">
+                      <el-icon><ShoppingBag /></el-icon> {{ $t('staff.orderItems') }} ({{
+                        row.items?.length || 0
+                      }})
+                    </div>
                     <el-table :data="row.items" size="small" border class="inner-table">
                       <el-table-column :label="$t('staff.itemName')" prop="productName" />
                       <el-table-column :label="$t('staff.price')" width="120" align="right">
-                        <template #default="s"><span class="inner-price">¥{{ s.row.actualPrice?.toFixed(2) }}</span></template>
+                        <template #default="s"
+                          ><span class="inner-price"
+                            >¥{{ s.row.actualPrice?.toFixed(2) }}</span
+                          ></template
+                        >
                       </el-table-column>
-                      <el-table-column :label="$t('staff.qty')" prop="quantity" width="80" align="center">
-                        <template #default="s"><b>x{{ s.row.quantity }}</b></template>
+                      <el-table-column
+                        :label="$t('staff.qty')"
+                        prop="quantity"
+                        width="80"
+                        align="center"
+                      >
+                        <template #default="s"
+                          ><b>x{{ s.row.quantity }}</b></template
+                        >
                       </el-table-column>
                     </el-table>
                   </div>
@@ -177,23 +241,33 @@
               </el-table-column>
 
               <el-table-column :label="$t('staff.orderId')" width="120" align="center">
-                <template #default="{row}"><span class="order-id-col">ORD-{{ row.orderId }}</span></template>
+                <template #default="{ row }"
+                  ><span class="order-id-col">ORD-{{ row.orderId }}</span></template
+                >
               </el-table-column>
 
               <el-table-column :label="$t('staff.customer')" width="140" align="center">
-                <template #default="{row}"><span class="customer-col">{{ row.customerName || $t('common.unknown') }}</span></template>
+                <template #default="{ row }"
+                  ><span class="customer-col">{{
+                    row.customerName || $t('common.unknown')
+                  }}</span></template
+                >
               </el-table-column>
 
               <el-table-column :label="$t('staff.pickupIdentifier')" width="200" align="center">
-                <template #default="{row}"><code class="code-badge">{{ row.pickupCode }}</code></template>
+                <template #default="{ row }"
+                  ><code class="code-badge">{{ row.pickupCode }}</code></template
+                >
               </el-table-column>
 
               <el-table-column :label="$t('staff.finalPayment')" width="140" align="right">
-                <template #default="{row}"><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template>
+                <template #default="{ row }"
+                  ><span class="amount-text">¥{{ row.totalAmount?.toFixed(2) }}</span></template
+                >
               </el-table-column>
 
               <el-table-column :label="$t('staff.orderStatus')" width="180" align="center">
-                <template #default="{row}">
+                <template #default="{ row }">
                   <el-select
                     v-model="row.status"
                     size="default"
@@ -210,7 +284,7 @@
               </el-table-column>
 
               <el-table-column :label="$t('staff.createdTimestamp')" min-width="160" align="center">
-                <template #default="{row}">
+                <template #default="{ row }">
                   <span class="timestamp-col">{{ formatDateTime(row.createdAt) }}</span>
                 </template>
               </el-table-column>
@@ -235,7 +309,16 @@ const savedActiveTab = ref('inventory')
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getLocale } from '@/locales'
-import { Box, List, Refresh, ShoppingBag, Timer, Search, Ticket, Check } from '@element-plus/icons-vue'
+import {
+  Box,
+  List,
+  Refresh,
+  ShoppingBag,
+  Timer,
+  Search,
+  Ticket,
+  Check,
+} from '@element-plus/icons-vue'
 import { ElMessage } from '@/utils/message'
 import request from '@/utils/request'
 import ProductEntry from './ProductEntry.vue'
@@ -266,13 +349,15 @@ const fetchData = async () => {
   try {
     const [stockRes, libRes]: any = await Promise.all([
       request.get('/expiring-products'),
-      request.get('/products')
+      request.get('/products'),
     ])
     allExpiringProducts.value = stockRes.data || stockRes
     library.value = libRes.data || libRes
   } catch (err) {
     ElMessage.error(t('staff.dataSyncFailed'))
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 // 2. 订单状态更新写入数据库
@@ -284,7 +369,7 @@ const handleOrderUpdate = async (row: any) => {
   }
   try {
     await request.put(`/orders/${row.orderId}`, {
-      status: row.status
+      status: row.status,
     })
     ElMessage.success(t('staff.orderStatusUpdated'))
   } catch (e) {
@@ -309,8 +394,14 @@ const fetchUsers = async () => {
 const syncAllOrders = async () => {
   loadingOrders.value = true
   try {
-    const scanRange = Array.from({ length: 30 }, (_, i) => i + 1)
-    const results = await Promise.all(scanRange.map(id => request.get(`/orders/user/${id}`).catch(() => null)))
+    const userIds = Object.keys(userMap.value).map(Number)
+    if (userIds.length === 0) {
+      await fetchUsers()
+      userIds.push(...Object.keys(userMap.value).map(Number))
+    }
+    const results = await Promise.all(
+      userIds.map((id) => request.get(`/orders/user/${id}`).catch(() => null)),
+    )
 
     let rawOrders: any[] = []
     results.forEach((res: any) => {
@@ -318,27 +409,45 @@ const syncAllOrders = async () => {
       if (Array.isArray(data)) rawOrders = [...rawOrders, ...data]
     })
 
-    const ordersWithDetails = await Promise.all(rawOrders.map(async (order) => {
-      try {
-        const detailRes: any = await request.get(`/orders/${order.orderId}/details`)
-        const vo = detailRes.data || detailRes
-        const enrichedItems = (vo.items || []).map((item: any) => {
-          const stock = allExpiringProducts.value.find(s => Number(s.productId) === Number(item.productId))
-          const prod = library.value.find(p => String(p.barcode) === String(stock?.barcode))
-          const name = getLocale() === 'en' && prod?.productNameEn
-            ? prod.productNameEn
-            : (prod?.productName || `${t('common.unknown')} SKU`)
-          return { ...item, productName: name }
-        })
-        return { ...order, items: enrichedItems, customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` }
-      } catch (e) { return { ...order, items: [], customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}` } }
-    }))
+    const ordersWithDetails = await Promise.all(
+      rawOrders.map(async (order) => {
+        try {
+          const detailRes: any = await request.get(`/orders/${order.orderId}/details`)
+          const vo = detailRes.data || detailRes
+          const enrichedItems = (vo.items || []).map((item: any) => {
+            const stock = allExpiringProducts.value.find(
+              (s) => Number(s.productId) === Number(item.productId),
+            )
+            const prod = library.value.find((p) => String(p.barcode) === String(stock?.barcode))
+            const name =
+              getLocale() === 'en' && prod?.productNameEn
+                ? prod.productNameEn
+                : prod?.productName || `${t('common.unknown')} SKU`
+            return { ...item, productName: name }
+          })
+          return {
+            ...order,
+            items: enrichedItems,
+            customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}`,
+          }
+        } catch (e) {
+          return {
+            ...order,
+            items: [],
+            customerName: userMap.value[order.userId] || `${t('common.unknown')} #${order.userId}`,
+          }
+        }
+      }),
+    )
 
-    orderList.value = Array.from(new Map(ordersWithDetails.map(o => [o.orderId, o])).values())
-      .sort((a, b) => b.orderId - a.orderId)
+    orderList.value = Array.from(
+      new Map(ordersWithDetails.map((o) => [o.orderId, o])).values(),
+    ).sort((a, b) => b.orderId - a.orderId)
   } catch (e) {
     ElMessage.error(t('staff.syncFailed'))
-  } finally { loadingOrders.value = false }
+  } finally {
+    loadingOrders.value = false
+  }
 }
 
 const formatDateTime = (val: string) => {
@@ -364,15 +473,16 @@ const filteredOrderList = computed(() => {
 
   if (orderSearchQuery.value.trim()) {
     const q = orderSearchQuery.value.toLowerCase()
-    result = result.filter(o =>
-      String(o.orderId).includes(q) ||
-      (o.customerName || '').toLowerCase().includes(q) ||
-      (o.pickupCode || '').toLowerCase().includes(q)
+    result = result.filter(
+      (o) =>
+        String(o.orderId).includes(q) ||
+        (o.customerName || '').toLowerCase().includes(q) ||
+        (o.pickupCode || '').toLowerCase().includes(q),
     )
   }
 
   if (orderStatusFilter.value !== 'ALL') {
-    result = result.filter(o => o.status === orderStatusFilter.value)
+    result = result.filter((o) => o.status === orderStatusFilter.value)
   }
 
   return result
@@ -382,7 +492,7 @@ const verifyByPickupCode = async () => {
   const code = pickupCodeInput.value.trim()
   if (!code) return ElMessage.warning(t('staff.enterPickupCode'))
 
-  const target = orderList.value.find(o => o.pickupCode === code)
+  const target = orderList.value.find((o) => o.pickupCode === code)
   if (!target) return ElMessage.error(t('staff.orderNotFound'))
   if (target.status === 'COMPLETED') return ElMessage.info(t('staff.orderAlreadyCompleted'))
   if (target.status === 'CANCELLED') return ElMessage.warning(t('staff.orderCancelled'))
@@ -402,11 +512,12 @@ const verifyByPickupCode = async () => {
 
 // 基础关联数据
 const enrichedStockList = computed(() => {
-  return allExpiringProducts.value.map(stock => {
-    const std = library.value.find(p => String(p.barcode) === String(stock.barcode))
-    const name = getLocale() === 'en' && std?.productNameEn
-      ? std.productNameEn
-      : (std?.productName || `${t('common.unknown')} SKU`)
+  return allExpiringProducts.value.map((stock) => {
+    const std = library.value.find((p) => String(p.barcode) === String(stock.barcode))
+    const name =
+      getLocale() === 'en' && std?.productNameEn
+        ? std.productNameEn
+        : std?.productName || `${t('common.unknown')} SKU`
     return { ...stock, productName: name }
   })
 })
@@ -418,17 +529,18 @@ const filteredStockList = computed(() => {
   // 模糊搜索
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    result = result.filter(item =>
-      (item.productName || '').toLowerCase().includes(q) ||
-      (item.barcode || '').toLowerCase().includes(q)
+    result = result.filter(
+      (item) =>
+        (item.productName || '').toLowerCase().includes(q) ||
+        (item.barcode || '').toLowerCase().includes(q),
     )
   }
 
   // 状态过滤
   if (statusFilter.value === 'AVAILABLE') {
-    result = result.filter(item => item.status === 'AVAILABLE')
+    result = result.filter((item) => item.status === 'AVAILABLE')
   } else if (statusFilter.value === 'SOLD_OUT') {
-    result = result.filter(item => item.status === 'SOLD_OUT')
+    result = result.filter((item) => item.status === 'SOLD_OUT')
   }
 
   return result
@@ -441,86 +553,326 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.staff-app-container { min-height: 100vh; background-color: #f4f6f8; padding-bottom: 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.staff-app-container {
+  min-height: 100vh;
+  background-color: #f4f6f8;
+  padding-bottom: 40px;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
 
 /* 顶部品牌栏 */
 .top-brand-bar {
   background: linear-gradient(135deg, #008163 0%, #005a46 100%);
-  height: 64px; display: flex; justify-content: space-between; align-items: center;
-  padding: 0 30px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-.brand-content { display: flex; align-items: center; }
-.brand-logo { color: white; font-size: 24px; font-weight: 900; margin-right: 16px; border-right: 2px solid rgba(255,255,255,0.2); padding-right: 16px; letter-spacing: 1px; }
-.brand-title { color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500; letter-spacing: 0.5px; }
-.role-tag { font-weight: 800; letter-spacing: 1px; }
+.brand-content {
+  display: flex;
+  align-items: center;
+}
+.brand-logo {
+  color: white;
+  font-size: 24px;
+  font-weight: 900;
+  margin-right: 16px;
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  padding-right: 16px;
+  letter-spacing: 1px;
+}
+.brand-title {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.role-tag {
+  font-weight: 800;
+  letter-spacing: 1px;
+}
 
 /* 主体内容 */
-.main-content { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
 
 /* 标签页美化 */
-:deep(.brand-tabs .el-tabs__item) { font-size: 15px; font-weight: 600; color: #64748b; height: 50px; }
-:deep(.brand-tabs .el-tabs__item.is-active) { color: #008163; font-weight: 800; }
-:deep(.brand-tabs .el-tabs__active-bar) { background-color: #008163; height: 3px; border-radius: 3px; }
-:deep(.brand-tabs .el-tabs__nav-wrap::after) { background-color: #e2e8f0; }
-.tab-label { display: flex; align-items: center; gap: 8px; }
+:deep(.brand-tabs .el-tabs__item) {
+  font-size: 15px;
+  font-weight: 600;
+  color: #64748b;
+  height: 50px;
+}
+:deep(.brand-tabs .el-tabs__item.is-active) {
+  color: #008163;
+  font-weight: 800;
+}
+:deep(.brand-tabs .el-tabs__active-bar) {
+  background-color: #008163;
+  height: 3px;
+  border-radius: 3px;
+}
+:deep(.brand-tabs .el-tabs__nav-wrap::after) {
+  background-color: #e2e8f0;
+}
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 /* 卡片美化 */
-.modern-card { border-radius: 16px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.03) !important; background: #fff; }
-:deep(.modern-card .el-card__header) { border-bottom: 1px solid #f1f5f9; padding: 20px 24px; }
-:deep(.modern-card .el-card__body) { padding: 0; } /* 消除内边距让表格贴边 */
+.modern-card {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+  background: #fff;
+}
+:deep(.modern-card .el-card__header) {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 20px 24px;
+}
+:deep(.modern-card .el-card__body) {
+  padding: 0;
+} /* 消除内边距让表格贴边 */
 
-.card-header { display: flex; justify-content: space-between; align-items: center; }
-.title-group { display: flex; align-items: center; gap: 14px; }
-.title-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #008163, #006b52); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 10px rgba(0,129,99,0.2); }
-.title-icon.orange { background: linear-gradient(135deg, #ff7900, #ee7203); box-shadow: 0 4px 10px rgba(238,114,3,0.2); }
-.title-text-box { display: flex; flex-direction: column; }
-.title-text { font-size: 16px; font-weight: 800; color: #1e293b; }
-.title-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.title-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #008163, #006b52);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 10px rgba(0, 129, 99, 0.2);
+}
+.title-icon.orange {
+  background: linear-gradient(135deg, #ff7900, #ee7203);
+  box-shadow: 0 4px 10px rgba(238, 114, 3, 0.2);
+}
+.title-text-box {
+  display: flex;
+  flex-direction: column;
+}
+.title-text {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.title-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
 
 /* 按钮美化 */
-.brand-btn { background: #008163 !important; border: none; font-weight: 700; border-radius: 8px; }
-.brand-btn:hover { background: #006b52 !important; box-shadow: 0 4px 12px rgba(0,129,99,0.2); }
-.warning-btn { background: #EE7203 !important; border: none; font-weight: 700; border-radius: 8px; }
+.brand-btn {
+  background: #008163 !important;
+  border: none;
+  font-weight: 700;
+  border-radius: 8px;
+}
+.brand-btn:hover {
+  background: #006b52 !important;
+  box-shadow: 0 4px 12px rgba(0, 129, 99, 0.2);
+}
+.warning-btn {
+  background: #ee7203 !important;
+  border: none;
+  font-weight: 700;
+  border-radius: 8px;
+}
 
 /* === 工具栏 (搜索 & 过滤) === */
-.table-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: #fdfdfd; border-bottom: 1px solid #f1f5f9; }
-.search-input { width: 320px; }
-.search-input :deep(.el-input__wrapper) { background: #f8fafc; border-radius: 8px; box-shadow: 0 0 0 1px #e2e8f0 inset; }
-.search-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px rgba(0,129,99,0.4) inset; }
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #fdfdfd;
+  border-bottom: 1px solid #f1f5f9;
+}
+.search-input {
+  width: 320px;
+}
+.search-input :deep(.el-input__wrapper) {
+  background: #f8fafc;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+}
+.search-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px rgba(0, 129, 99, 0.4) inset;
+}
 
 /* 表格全局美化 */
-.custom-table { border-radius: 0 0 16px 16px; }
-:deep(.el-table th.el-table__cell) { background-color: #f8fafc !important; color: #475569; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+.custom-table {
+  border-radius: 0 0 16px 16px;
+}
+:deep(.el-table th.el-table__cell) {
+  background-color: #f8fafc !important;
+  color: #475569;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
 /* 库存单元格样式 */
-.product-info-cell { display: flex; flex-direction: column; }
-.p-name { font-weight: 700; color: #1e293b; font-size: 14px; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-.p-bc { font-size: 11px; color: #94a3b8; font-family: monospace; font-weight: 600; }
-.stock-num { font-weight: 900; font-size: 16px; color: #1e293b; }
-.stock-num.critical { color: #e2231a; }
-.expiry-time-cell { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; color: #475569; font-weight: 500; }
-.status-tag { font-weight: 800; letter-spacing: 0.5px; }
+.product-info-cell {
+  display: flex;
+  flex-direction: column;
+}
+.p-name {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 14px;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.p-bc {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: monospace;
+  font-weight: 600;
+}
+.stock-num {
+  font-weight: 900;
+  font-size: 16px;
+  color: #1e293b;
+}
+.stock-num.critical {
+  color: #e2231a;
+}
+.expiry-time-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+.status-tag {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
 
 /* 订单单元格样式 */
-.order-id-col { font-weight: 800; color: #64748b; font-family: monospace; }
-.customer-col { font-weight: 700; color: #334155; font-size: 13px; }
-.amount-text { color: #EE7203; font-weight: 900; font-size: 16px; }
-.code-badge { background: #f1f5f9; color: #008163; padding: 6px 12px; border-radius: 6px; font-family: monospace; font-weight: 900; font-size: 14px; border: 1px dashed #cbd5e1; }
-.status-select :deep(.el-input__wrapper) { border-radius: 8px; font-weight: 600; }
-.timestamp-col { font-size: 13px; color: #64748b; }
+.order-id-col {
+  font-weight: 800;
+  color: #64748b;
+  font-family: monospace;
+}
+.customer-col {
+  font-weight: 700;
+  color: #334155;
+  font-size: 13px;
+}
+.amount-text {
+  color: #ee7203;
+  font-weight: 900;
+  font-size: 16px;
+}
+.code-badge {
+  background: #f1f5f9;
+  color: #008163;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-weight: 900;
+  font-size: 14px;
+  border: 1px dashed #cbd5e1;
+}
+.status-select :deep(.el-input__wrapper) {
+  border-radius: 8px;
+  font-weight: 600;
+}
+.timestamp-col {
+  font-size: 13px;
+  color: #64748b;
+}
 
 /* 订单展开详情 */
-.order-detail-wrapper { padding: 20px 24px; background: #f8fafc; border-left: 4px solid #EE7203; margin: 0; box-shadow: inset 0 2px 8px rgba(0,0,0,0.02); }
-.detail-header { font-weight: 800; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; }
-.inner-table { border-radius: 8px; overflow: hidden; }
-.inner-price { color: #EE7203; font-weight: 700; }
+.order-detail-wrapper {
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-left: 4px solid #ee7203;
+  margin: 0;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+.detail-header {
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.inner-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+.inner-price {
+  color: #ee7203;
+  font-weight: 700;
+}
 
-.side-panel { background: white; padding: 24px; border-radius: 16px; height: 100%; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.03); }
+.side-panel {
+  background: white;
+  padding: 24px;
+  border-radius: 16px;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
 
 /* 核销栏 */
-.verify-bar { display: flex; gap: 12px; padding: 16px 24px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; }
-.verify-input { flex: 1; }
-.verify-input :deep(.el-input__wrapper) { background: #fff; border-radius: 10px; box-shadow: 0 0 0 1px #e2e8f0 inset; }
-.verify-input :deep(.el-input__wrapper.is-focus) { box-shadow: 0 0 0 2px rgba(0,129,99,0.4) inset; }
-.verify-btn { background: #008163 !important; border: none !important; font-weight: 700; border-radius: 10px; padding: 0 20px; }
+.verify-bar {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+.verify-input {
+  flex: 1;
+}
+.verify-input :deep(.el-input__wrapper) {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #e2e8f0 inset;
+}
+.verify-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 2px rgba(0, 129, 99, 0.4) inset;
+}
+.verify-btn {
+  background: #008163 !important;
+  border: none !important;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 0 20px;
+}
 </style>
