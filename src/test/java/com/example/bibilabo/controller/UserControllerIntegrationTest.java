@@ -25,7 +25,7 @@ class UserControllerIntegrationTest {
     private JwtUtils jwtUtils;
 
     private String adminToken() {
-        return jwtUtils.generateToken(1, "admin_super", "ADMIN");
+        return jwtUtils.generateToken(1, "admin_super", "ADMIN", null);
     }
 
     @Test

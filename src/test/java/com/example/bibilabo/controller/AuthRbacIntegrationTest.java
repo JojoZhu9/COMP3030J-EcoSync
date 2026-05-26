@@ -39,7 +39,7 @@ class AuthRbacIntegrationTest {
 
     @Test
     void consumerPostExpiringProducts_returns403() throws Exception {
-        String token = jwtUtils.generateToken(12, "user_alice", "CONSUMER");
+        String token = jwtUtils.generateToken(12, "user_alice", "CONSUMER", null);
 
         mockMvc.perform(post("/api/expiring-products")
                         .header("Authorization", "Bearer " + token)
@@ -50,7 +50,7 @@ class AuthRbacIntegrationTest {
 
     @Test
     void employeePostExpiringProducts_notForbidden() throws Exception {
-        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE");
+        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE", 1);
 
         // Employee 应该通过 RBAC 检查（不返回 403 即通过）
         mockMvc.perform(post("/api/expiring-products")

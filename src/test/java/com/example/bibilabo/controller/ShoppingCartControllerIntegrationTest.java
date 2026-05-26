@@ -25,7 +25,7 @@ class ShoppingCartControllerIntegrationTest {
     private JwtUtils jwtUtils;
 
     private String consumerToken() {
-        return jwtUtils.generateToken(12, "user_alice", "CONSUMER");
+        return jwtUtils.generateToken(12, "user_alice", "CONSUMER", null);
     }
 
     @Test

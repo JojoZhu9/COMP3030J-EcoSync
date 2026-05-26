@@ -36,11 +36,11 @@ class UserServiceImplTest {
         user.setStatus("NORMAL");
 
         when(userMapper.findByUsername("user_alice")).thenReturn(user);
-        when(jwtUtils.generateToken(12, "user_alice", "CONSUMER")).thenReturn("test-jwt-token");
+        when(jwtUtils.generateToken(12, "user_alice", "CONSUMER", null)).thenReturn("test-jwt-token");
 
         String result = userService.login("user_alice", "1");
         assertEquals("test-jwt-token", result);
-        verify(jwtUtils).generateToken(12, "user_alice", "CONSUMER");
+        verify(jwtUtils).generateToken(12, "user_alice", "CONSUMER", null);
     }
 
     @Test

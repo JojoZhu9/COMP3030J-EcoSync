@@ -25,7 +25,7 @@ class ExpiringProductControllerIntegrationTest {
     private JwtUtils jwtUtils;
 
     private String employeeToken() {
-        return jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE");
+        return jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE", 1);
     }
 
     @Test

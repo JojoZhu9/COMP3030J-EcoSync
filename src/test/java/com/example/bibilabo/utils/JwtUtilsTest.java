@@ -22,7 +22,7 @@ class JwtUtilsTest {
 
     @Test
     void generateAndParseToken_preservesClaims() {
-        String token = jwtUtils.generateToken(12, "user_alice", "CONSUMER");
+        String token = jwtUtils.generateToken(12, "user_alice", "CONSUMER", null);
         assertNotNull(token);
 
         Claims claims = jwtUtils.parseToken(token);
@@ -42,7 +42,7 @@ class JwtUtilsTest {
                 "RWNvU3luY1N1cGVyU2VjcmV0S2V5Rm9ySldUQXV0aGVudGljYXRpb24yMDI2",
                 -1000L
         );
-        String token = shortLivedJwtUtils.generateToken(1, "test", "CONSUMER");
+        String token = shortLivedJwtUtils.generateToken(1, "test", "CONSUMER", null);
 
         assertThrows(ExpiredJwtException.class, () -> jwtUtils.parseToken(token));
     }
@@ -53,7 +53,7 @@ class JwtUtilsTest {
                 "RGlmZmVyZW50U2VjcmV0S2V5Rm9yVGVzdGluZ1B1cnBvc2VzT25seQ==",
                 86400000L
         );
-        String token = otherJwtUtils.generateToken(1, "test", "CONSUMER");
+        String token = otherJwtUtils.generateToken(1, "test", "CONSUMER", null);
 
         assertThrows(Exception.class, () -> jwtUtils.parseToken(token));
     }

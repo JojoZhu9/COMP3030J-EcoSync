@@ -25,7 +25,7 @@ class OrderControllerIntegrationTest {
     private JwtUtils jwtUtils;
 
     private String consumerToken() {
-        return jwtUtils.generateToken(12, "user_alice", "CONSUMER");
+        return jwtUtils.generateToken(12, "user_alice", "CONSUMER", null);
     }
 
     @Test
@@ -43,7 +43,7 @@ class OrderControllerIntegrationTest {
     @Test
     void checkout_emptyCart_fails() throws Exception {
         // Charlie (userId=14) has 1 cart item, clear it first
-        String token = jwtUtils.generateToken(14, "user_charlie", "CONSUMER");
+        String token = jwtUtils.generateToken(14, "user_charlie", "CONSUMER", null);
         mockMvc.perform(delete("/api/cart/user/14")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
@@ -59,7 +59,7 @@ class OrderControllerIntegrationTest {
     @Test
     void pickup_validCode_success() throws Exception {
         // Seed data has order with pickup_code 'PICKUP-711-X9Y8Z7' in AWAITING_PICKUP status
-        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE");
+        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE", 1);
 
         mockMvc.perform(post("/api/orders/pickup")
                         .header("Authorization", "Bearer " + token)
@@ -70,7 +70,7 @@ class OrderControllerIntegrationTest {
 
     @Test
     void pickup_invalidCode_fails() throws Exception {
-        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE");
+        String token = jwtUtils.generateToken(2, "emp_bj_01", "EMPLOYEE", 1);
 
         mockMvc.perform(post("/api/orders/pickup")
                         .header("Authorization", "Bearer " + token)
@@ -82,7 +82,7 @@ class OrderControllerIntegrationTest {
     @Test
     void getUserOrders_returnsList() throws Exception {
         // Bob (userId=13) has 2 orders in seed data
-        String token = jwtUtils.generateToken(13, "user_bob", "CONSUMER");
+        String token = jwtUtils.generateToken(13, "user_bob", "CONSUMER", null);
 
         mockMvc.perform(get("/api/orders/user/13")
                         .header("Authorization", "Bearer " + token))
@@ -94,7 +94,7 @@ class OrderControllerIntegrationTest {
     @Test
     void getOrderDetails_returnsVO() throws Exception {
         // Order 1 has 1 order item in seed data
-        String token = jwtUtils.generateToken(13, "user_bob", "CONSUMER");
+        String token = jwtUtils.generateToken(13, "user_bob", "CONSUMER", null);
 
         mockMvc.perform(get("/api/orders/1/details")
                         .header("Authorization", "Bearer " + token))
