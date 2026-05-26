@@ -86,10 +86,10 @@
                   <el-table-column :label="$t('staff.status')" width="140" align="center">
                     <template #default="{row}">
                       <el-tag
-                        :type="row.remainingStock <= 0 ? 'info' : (isExpired(row) ? 'danger' : 'success')"
+                        :type="(row.status === 'SOLD_OUT' || row.remainingStock <= 0) ? 'info' : (isExpired(row) ? 'danger' : 'success')"
                         round effect="light" class="status-tag"
                       >
-                        {{ row.remainingStock <= 0 ? $t('staff.soldOut') : (isExpired(row) ? $t('staff.expired') : $t('staff.inStock')) }}
+                        {{ (row.status === 'SOLD_OUT' || row.remainingStock <= 0) ? $t('staff.soldOut') : (isExpired(row) ? $t('staff.expired') : $t('staff.inStock')) }}
                       </el-tag>
                     </template>
                   </el-table-column>

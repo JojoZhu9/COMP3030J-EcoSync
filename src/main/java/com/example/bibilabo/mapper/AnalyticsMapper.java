@@ -105,7 +105,7 @@ public interface AnalyticsMapper {
     List<StoreSales> getStoreSalesComparison();
 
     // Order status distribution
-    @Select("SELECT status, COUNT(*) as count FROM orders GROUP BY status")
+    @Select("SELECT status, COUNT(*) as count FROM orders WHERE status IN ('PAID', 'AWAITING_PICKUP', 'COMPLETED', 'CANCELLED') GROUP BY status")
     List<Map<String, Object>> getOrderStatusDistribution();
 
     // User growth by day (last 30 days)

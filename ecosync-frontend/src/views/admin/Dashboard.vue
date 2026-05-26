@@ -265,7 +265,9 @@ const fetchSalesTrend = async () => {
 const fetchOrderStatus = async () => {
   try {
     const res: any = await request.get('/analytics/order-status')
-    const list: any[] = res.data || res || []
+    const list: any[] = (res.data || res || []).filter((i: any) =>
+      ['PAID', 'AWAITING_PICKUP', 'COMPLETED', 'CANCELLED'].includes(i.status)
+    )
     const data = list.map(i => ({ value: i.count, name: t(statusLabelKeys[i.status] || i.status), rawStatus: i.status }))
     hasStatusData.value = data.length > 0
 
