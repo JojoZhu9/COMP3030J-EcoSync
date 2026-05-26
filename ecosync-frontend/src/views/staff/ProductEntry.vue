@@ -44,7 +44,7 @@ const form = reactive({
   barcode: '',
   expirationTime: '',
   remainingStock: 1,
-  storeId: Number(localStorage.getItem('lastStoreId') || 1),
+  storeId: Number(localStorage.getItem('storeId') || 1),
   status: 'AVAILABLE',
   createdBy: Number(localStorage.getItem('userId') || 1)
 })

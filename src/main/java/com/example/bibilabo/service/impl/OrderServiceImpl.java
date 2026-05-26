@@ -158,6 +158,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<Order> getOrdersByStoreId(Integer storeId) {
+        return orderMapper.findByStoreId(storeId);
+    }
+
+    @Override
     @Async("taskExecutor")
     public CompletableFuture<String> updateOrderStatus(Integer orderId, String status) {
         Order order = orderMapper.findById(orderId);

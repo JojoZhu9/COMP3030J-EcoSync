@@ -15,6 +15,9 @@ public interface OrderMapper {
     @Select("SELECT * FROM orders WHERE user_id = #{userId} ORDER BY created_at DESC")
     List<Order> findByUserId(Integer userId);
 
+    @Select("SELECT * FROM orders WHERE store_id = #{storeId} ORDER BY created_at DESC")
+    List<Order> findByStoreId(Integer storeId);
+
     @Select("SELECT * FROM orders WHERE order_id = #{orderId}")
     Order findById(Integer orderId);
 

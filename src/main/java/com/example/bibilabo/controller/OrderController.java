@@ -62,6 +62,12 @@ public class OrderController {
         return orderService.getUserOrders(userId);
     }
 
+    @GetMapping("/store/{storeId}")
+    @Operation(summary = "查询门店订单", description = "店员端主接口：获取指定门店的所有订单")
+    public List<Order> getOrdersByStore(@Parameter(description = "门店ID") @PathVariable("storeId") Integer storeId) {
+        return orderService.getOrdersByStoreId(storeId);
+    }
+
     @GetMapping("/{orderId}/details")
     @Operation(summary = "获取订单详情", description = "返回订单基本信息及包含的所有商品明细")
     public OrderVO getOrderDetails(@PathVariable("orderId") Integer orderId) {

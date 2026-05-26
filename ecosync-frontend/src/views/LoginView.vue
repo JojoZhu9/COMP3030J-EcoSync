@@ -124,6 +124,7 @@ const handleSubmit = async () => {
         localStorage.setItem('token', token)
         localStorage.setItem('role', (payload.role || 'CONSUMER').toUpperCase())
         localStorage.setItem('userId', String(payload.userId || payload.id))
+        localStorage.setItem('storeId', String(payload.storeId || ''))
         window.dispatchEvent(new Event('auth-change'))
         ElMessage.success({ message: t('login.success.login'), duration: 1500 })
         router.push('/')

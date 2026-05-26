@@ -13,6 +13,8 @@ public interface OrderService {
 
     List<Order> getUserOrders(Integer userId);
 
+    List<Order> getOrdersByStoreId(Integer storeId);
+
     // 新增：更新订单状态（异步）
     CompletableFuture<String> updateOrderStatus(Integer orderId, String status);
 

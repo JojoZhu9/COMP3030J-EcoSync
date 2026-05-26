@@ -332,6 +332,7 @@ const library = ref<any[]>([])
 const allExpiringProducts = ref<any[]>([])
 const orderList = ref<any[]>([])
 const userMap = ref<Record<number, string>>({})
+const staffStoreId = ref<number>(Number(localStorage.getItem('storeId') || 0))
 
 // === 新增：过滤与搜索相关的状态 ===
 const searchQuery = ref('')
@@ -348,7 +349,7 @@ const fetchData = async () => {
   loading.value = true
   try {
     const [stockRes, libRes]: any = await Promise.all([
-      request.get('/expiring-products'),
+      request.get(`/expiring-products/store/${staffStoreId.value}`),
       request.get('/products'),
     ])
     allExpiringProducts.value = stockRes.data || stockRes
@@ -394,20 +395,11 @@ const fetchUsers = async () => {
 const syncAllOrders = async () => {
   loadingOrders.value = true
   try {
-    const userIds = Object.keys(userMap.value).map(Number)
-    if (userIds.length === 0) {
+    if (Object.keys(userMap.value).length === 0) {
       await fetchUsers()
-      userIds.push(...Object.keys(userMap.value).map(Number))
     }
-    const results = await Promise.all(
-      userIds.map((id) => request.get(`/orders/user/${id}`).catch(() => null)),
-    )
-
-    let rawOrders: any[] = []
-    results.forEach((res: any) => {
-      const data = res?.data || res
-      if (Array.isArray(data)) rawOrders = [...rawOrders, ...data]
-    })
+    const res: any = await request.get(`/orders/store/${staffStoreId.value}`)
+    const rawOrders: any[] = res.data || res || []
 
     const ordersWithDetails = await Promise.all(
       rawOrders.map(async (order) => {

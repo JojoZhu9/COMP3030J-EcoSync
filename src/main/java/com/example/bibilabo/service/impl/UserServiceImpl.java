@@ -38,7 +38,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("This account has been banned, please contact the administrator");
         }
 
-        return jwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole());
+        return jwtUtils.generateToken(user.getUserId(), user.getUsername(), user.getRole(), user.getStoreId());
     }
 
     @Override

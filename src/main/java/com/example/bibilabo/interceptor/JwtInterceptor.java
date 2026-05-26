@@ -37,6 +37,7 @@ public class JwtInterceptor implements HandlerInterceptor {
             // 3. 将解析出的用户信息存入 request 属性中，方便后续 Controller 使用
             request.setAttribute("currentUserId", claims.get("userId"));
             request.setAttribute("currentUserRole", claims.get("role"));
+            request.setAttribute("currentStoreId", claims.get("storeId"));
 
             // 🔥 RBAC 粗粒度权限拦截示例：
             // 如果请求路径包含 "/expiring-products" 且是 POST/PUT/DELETE 请求，必须是员工或管理员
