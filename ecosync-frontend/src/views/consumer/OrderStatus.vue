@@ -35,7 +35,7 @@
             <div :class="['status-badge', order.status]">
               <el-icon :size="12" style="margin-right: 4px">
                 <Check v-if="order.status === 'COMPLETED'" />
-                <Clock v-else-if="order.status === 'AWAITING_PICKUP'" />
+                <Clock v-else-if="order.status === 'PAID' || order.status === 'AWAITING_PICKUP'" />
                 <Close v-else />
               </el-icon>
               {{ formatStatus(order.status) }}
@@ -96,7 +96,7 @@
               </div>
             </div>
             <!-- 操作按钮区：Awaiting Pickup 显示 Cancel + Shop More -->
-            <div class="action-group" v-if="order.status === 'AWAITING_PICKUP'">
+            <div class="action-group" v-if="order.status === 'PAID' || order.status === 'AWAITING_PICKUP'">
               <el-button
                 type="danger"
                 size="small"
@@ -267,7 +267,6 @@ const cancelOrder = async (orderId: number) => {
 
 const formatStatus = (s: string) => {
   const map: Record<string, string> = {
-    PENDING: t('staff.pending'),
     PAID: t('staff.paid'),
     AWAITING_PICKUP: t('staff.awaitingPickup'),
     COMPLETED: t('staff.completed'),

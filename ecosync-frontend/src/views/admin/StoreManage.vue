@@ -36,13 +36,21 @@
 
         <el-table-column prop="storeName" :label="$t('admin.storeManage.storeName')" min-width="180">
           <template #default="{ row }">
-            <span class="store-name">{{ row.storeName || row.store_name }}</span>
+            <span class="store-name">{{ locale === 'en' && (row.storeNameEn || row.store_name_en) ? (row.storeNameEn || row.store_name_en) : (row.storeName || row.store_name) }}</span>
           </template>
         </el-table-column>
 
-        <el-table-column prop="city" :label="$t('admin.storeManage.city')" width="120" align="center" />
+        <el-table-column :label="$t('admin.storeManage.city')" width="120" align="center">
+          <template #default="{ row }">
+            <span>{{ locale === 'en' && (row.cityEn || row.city_en) ? (row.cityEn || row.city_en) : (row.city || '') }}</span>
+          </template>
+        </el-table-column>
 
-        <el-table-column prop="address" :label="$t('admin.storeManage.address')" min-width="200" />
+        <el-table-column :label="$t('admin.storeManage.address')" min-width="200">
+          <template #default="{ row }">
+            <span>{{ locale === 'en' && (row.addressEn || row.address_en) ? (row.addressEn || row.address_en) : (row.address || '') }}</span>
+          </template>
+        </el-table-column>
 
         <el-table-column :label="$t('admin.storeManage.coordinates')" width="200" align="center">
           <template #default="{ row }">
@@ -68,25 +76,25 @@
 
     <el-dialog v-model="showDialog" :title="isEdit ? $t('admin.storeManage.editStore') : $t('admin.storeManage.addNewStore')" width="520px" class="modern-dialog" destroy-on-close>
       <el-form :model="form" label-position="top">
-        <el-form-item label="门店名称 (中文)">
-          <el-input v-model="form.storeName" placeholder="输入中文门店名称" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.storeNameCnLabel')">
+          <el-input v-model="form.storeName" :placeholder="$t('admin.storeManage.storeNameCnPlaceholder')" class="dialog-input" />
         </el-form-item>
-        <el-form-item label="Store Name (English)">
-          <el-input v-model="form.storeNameEn" placeholder="Enter English store name" class="dialog-input" />
-        </el-form-item>
-
-        <el-form-item label="城市 (中文)">
-          <el-input v-model="form.city" placeholder="输入中文城市" class="dialog-input" />
-        </el-form-item>
-        <el-form-item label="City (English)">
-          <el-input v-model="form.cityEn" placeholder="Enter English city" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.storeNameEnLabel')">
+          <el-input v-model="form.storeNameEn" :placeholder="$t('admin.storeManage.storeNameEnPlaceholder')" class="dialog-input" />
         </el-form-item>
 
-        <el-form-item label="地址 (中文)">
-          <el-input v-model="form.address" type="textarea" :rows="2" placeholder="输入中文地址" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.cityCnLabel')">
+          <el-input v-model="form.city" :placeholder="$t('admin.storeManage.cityCnPlaceholder')" class="dialog-input" />
         </el-form-item>
-        <el-form-item label="Address (English)">
-          <el-input v-model="form.addressEn" type="textarea" :rows="2" placeholder="Enter English address" class="dialog-input" />
+        <el-form-item :label="$t('admin.storeManage.cityEnLabel')">
+          <el-input v-model="form.cityEn" :placeholder="$t('admin.storeManage.cityEnPlaceholder')" class="dialog-input" />
+        </el-form-item>
+
+        <el-form-item :label="$t('admin.storeManage.addressCnLabel')">
+          <el-input v-model="form.address" type="textarea" :rows="2" :placeholder="$t('admin.storeManage.addressCnPlaceholder')" class="dialog-input" />
+        </el-form-item>
+        <el-form-item :label="$t('admin.storeManage.addressEnLabel')">
+          <el-input v-model="form.addressEn" type="textarea" :rows="2" :placeholder="$t('admin.storeManage.addressEnPlaceholder')" class="dialog-input" />
         </el-form-item>
 
         <el-row :gutter="16">
@@ -120,7 +128,8 @@ import { ElMessageBox } from 'element-plus'
 import { ElMessage } from '@/utils/message'
 import { Plus, Search, Shop } from '@element-plus/icons-vue'
 
-const { t } = useI18n()
+
+const { t, locale } = useI18n()
 const stores = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -146,8 +155,11 @@ const filteredStores = computed(() => {
     const q = searchQuery.value.toLowerCase()
     result = result.filter((s) =>
       (s.storeName || s.store_name || '').toLowerCase().includes(q) ||
+      (s.storeNameEn || s.store_name_en || '').toLowerCase().includes(q) ||
       (s.city || '').toLowerCase().includes(q) ||
-      (s.address || '').toLowerCase().includes(q)
+      (s.cityEn || s.city_en || '').toLowerCase().includes(q) ||
+      (s.address || '').toLowerCase().includes(q) ||
+      (s.addressEn || s.address_en || '').toLowerCase().includes(q)
     )
   }
   return result
@@ -164,7 +176,7 @@ const openEditDialog = async (row: any) => {
   // 获取原始数据（中文），避免被当前语言覆盖
   let raw = row
   try {
-    const res: any = await storeApi.getById(row.storeId || row.store_id, { lang: 'zh' })
+    const res: any = await storeApi.getById(row.storeId || row.store_id)
     raw = res.data || res || row
   } catch (e) {}
   form.value = {

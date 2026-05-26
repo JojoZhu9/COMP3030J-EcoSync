@@ -70,7 +70,7 @@ public class OrderController {
 
     // 修改点：放弃使用 Order 对象接收，直接用 Map 精准捕捉前端传来的 {"status": "xxx"}
     @PutMapping("/{orderId}")
-    @Operation(summary = "修改订单状态", description = "店员端修改订单为PENDING/PAID/AWAITING_PICKUP/COMPLETED/CANCELLED")
+    @Operation(summary = "修改订单状态", description = "店员端修改订单为PAID/AWAITING_PICKUP/COMPLETED/CANCELLED")
     public CompletableFuture<String> updateOrderStatus(@PathVariable("orderId") Integer orderId, @RequestBody Map<String, String> payload) {
         String status = payload.get("status");
 

@@ -9,7 +9,7 @@ public class Order {
     private Integer storeId;
     private BigDecimal totalAmount; // 修改：总金额
     private String pickupCode;      // 新增：唯一核销码
-    private String status;          // 状态：PENDING, CANCELLED, PAID, AWAITING_PICKUP, COMPLETED
+    private String status;          // 状态：PAID, AWAITING_PICKUP, COMPLETED, CANCELLED
     private Date createdAt;
     private Date completedAt;       // 修改：送达时间变为核销完成时间
 

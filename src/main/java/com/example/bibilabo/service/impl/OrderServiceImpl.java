@@ -82,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
             order.setStoreId(storeId);
             order.setPickupCode(pickupCode);
             order.setTotalAmount(BigDecimal.ZERO);
-            order.setStatus(OrderStatus.AWAITING_PICKUP);
+            order.setStatus(OrderStatus.PAID);
             orderMapper.insert(order);
 
             BigDecimal storeTotal = BigDecimal.ZERO;
@@ -215,8 +215,8 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Order does not exist");
         }
 
-        if (!OrderStatus.AWAITING_PICKUP.equals(order.getStatus())) {
-            throw new RuntimeException("Only awaiting pickup orders can be cancelled");
+        if (!OrderStatus.PAID.equals(order.getStatus()) && !OrderStatus.AWAITING_PICKUP.equals(order.getStatus())) {
+            throw new RuntimeException("Only paid or awaiting pickup orders can be cancelled");
         }
 
         List<OrderItem> items = orderItemMapper.findByOrderId(orderId);

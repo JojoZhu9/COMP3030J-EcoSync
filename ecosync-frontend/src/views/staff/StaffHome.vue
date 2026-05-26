@@ -151,7 +151,6 @@
               />
               <el-radio-group v-model="orderStatusFilter" class="custom-radio">
                 <el-radio-button label="ALL">{{ $t('common.all') }}</el-radio-button>
-                <el-radio-button label="PENDING">{{ $t('staff.pending') }}</el-radio-button>
                 <el-radio-button label="PAID">{{ $t('staff.paid') }}</el-radio-button>
                 <el-radio-button label="AWAITING_PICKUP">{{ $t('staff.awaitingPickup') }}</el-radio-button>
                 <el-radio-button label="COMPLETED">{{ $t('staff.completed') }}</el-radio-button>
@@ -202,7 +201,6 @@
                     :disabled="row.status === 'CANCELLED' || row.status === 'COMPLETED'"
                     class="status-select"
                   >
-                    <el-option :label="$t('staff.pending')" value="PENDING" />
                     <el-option :label="$t('staff.paid')" value="PAID" />
                     <el-option :label="$t('staff.awaitingPickup')" value="AWAITING_PICKUP" />
                     <el-option :label="$t('staff.completed')" value="COMPLETED" />
@@ -345,6 +343,11 @@ const syncAllOrders = async () => {
 
 const formatDateTime = (val: string) => {
   if (!val) return t('common.na')
+  const d = new Date(val)
+  if (!isNaN(d.getTime())) {
+    const pad = (n: number) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
   return val.replace('T', ' ').substring(0, 16)
 }
 

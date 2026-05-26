@@ -63,7 +63,7 @@
 
         <el-table-column :label="$t('admin.inventory.productName')" min-width="200">
           <template #default="{ row }">
-            <span class="product-name-txt">{{ row.product_name || row.productName || $t('admin.inventory.unnamedProduct') }}</span>
+            <span class="product-name-txt">{{ locale === 'en' && (row.product_name_en || row.productNameEn) ? (row.product_name_en || row.productNameEn) : (row.product_name || row.productName || $t('admin.inventory.unnamedProduct')) }}</span>
           </template>
         </el-table-column>
 
@@ -182,7 +182,7 @@ import { ElMessage } from '@/utils/message'
 import { Plus, Camera, TrendCharts, Search, Box, Delete } from '@element-plus/icons-vue'
 import { Html5Qrcode } from 'html5-qrcode'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const formRef = ref<FormInstance>()
 const products = ref<any[]>([])
@@ -239,6 +239,7 @@ const filteredProducts = computed(() => {
     const q = searchQuery.value.toLowerCase()
     result = result.filter(p =>
       (p.product_name || p.productName || '').toLowerCase().includes(q) ||
+      (p.product_name_en || p.productNameEn || '').toLowerCase().includes(q) ||
       (p.barcode || '').toLowerCase().includes(q)
     )
   }

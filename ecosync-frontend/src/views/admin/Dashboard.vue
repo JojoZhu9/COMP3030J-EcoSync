@@ -120,7 +120,6 @@ import {
 const { t } = useI18n()
 
 const statusLabelKeys: Record<string, string> = {
-  PENDING: 'staff.pending',
   PAID: 'staff.paid',
   AWAITING_PICKUP: 'staff.awaitingPickup',
   COMPLETED: 'staff.completed',
@@ -271,7 +270,6 @@ const fetchOrderStatus = async () => {
     hasStatusData.value = data.length > 0
 
     const statusColors: Record<string, string> = {
-      PENDING: '#f59e0b',
       PAID: '#3b82f6',
       AWAITING_PICKUP: '#8b5cf6',
       COMPLETED: '#008163',
