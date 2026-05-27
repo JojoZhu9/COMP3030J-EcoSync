@@ -291,7 +291,9 @@
       "updateFailed": "更新失败",
       "deleteFailed": "删除失败",
       "orderSuccess": "下单成功！共生成 {count} 笔订单。自提码: {codes}",
-      "paymentError": "支付处理异常"
+      "paymentError": "支付处理异常",
+      "expired": "已过期",
+      "someItemsUnavailable": "购物车中部分商品已失效，已自动取消勾选"
     },
     "category": {
       "fresh": "鲜食",

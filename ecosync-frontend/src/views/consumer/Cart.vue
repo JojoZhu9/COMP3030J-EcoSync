@@ -35,9 +35,9 @@
                 <span class="store-group-name">{{ group.storeName }}</span>
                 <span class="store-group-addr">{{ group.storeAddress }}</span>
               </div>
-              <div v-for="item in group.items" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected}">
+              <div v-for="item in group.items" :key="item.cartItemId" class="item-tile" :class="{'is-selected': item.selected, 'is-unavailable': item.unavailable}">
               <div class="item-check">
-                <el-checkbox v-model="item.selected" size="large" class="custom-checkbox" />
+                <el-checkbox v-model="item.selected" size="large" class="custom-checkbox" :disabled="item.unavailable" />
               </div>
 
               <div class="item-preview">
@@ -78,6 +78,7 @@
                       step-strictly
                       size="default"
                       class="modern-input-number"
+                      :disabled="item.unavailable"
                       @change="(val: number) => updateCartQuantity(item, val)"
                     />
                   </div>
@@ -256,11 +257,33 @@ const initData = async () => {
     const cartRes: any = await request.get(`/cart/user/${uid}`)
     const rawItems = cartRes.data || cartRes || []
 
-    cartItems.value = await Promise.all(rawItems.map(async (item: any) => {
+    cartItems.value = (await Promise.all(rawItems.map(async (item: any) => {
       const pId = item.productId || item.product_id
       try {
         const expRes: any = await request.get(`/expiring-products/${pId}`)
         const exp = expRes.data || expRes
+
+        const expired = new Date(exp.expirationTime).getTime() <= Date.now()
+        const unavailable = exp.status !== 'AVAILABLE' || expired
+
+        if (unavailable) {
+          return {
+            ...item,
+            productId: pId,
+            barcode: exp.barcode,
+            productName: `[${expired ? t('consumer.cart.expired') : exp.status}] ` + (exp.barcode || 'Unknown'),
+            originalPrice: 0,
+            pointsPrice: 0,
+            maxStock: 0,
+            selected: false,
+            unavailable: true,
+            imageUrl: null,
+            storeId: exp.storeId,
+            storeName: 'Unavailable',
+            storeAddress: ''
+          }
+        }
+
         const stdRes: any = await request.get(`/products/${exp.barcode}`)
         const std = stdRes.data || stdRes
         const normalPrice = Number(std.normalPrice || 0)
@@ -276,15 +299,19 @@ const initData = async () => {
           pointsPrice: +(normalPrice * rate).toFixed(2),
           maxStock: Number(exp.remainingStock),
           selected: true,
+          unavailable: false,
           imageUrl: std.imageUrl || std.image_url || null,
           storeId: exp.storeId,
           storeName: getLocale() === 'en' && store?.storeNameEn ? store.storeNameEn : (store?.storeName || `Store #${exp.storeId}`),
           storeAddress: getLocale() === 'en' && store?.addressEn ? store.addressEn : (store?.address || '')
         }
       } catch {
-        return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false, storeId: null, storeName: 'Unknown', storeAddress: '' }
+        return { ...item, productId: pId, productName: 'Detail Error', pointsPrice: 0, maxStock: 0, selected: false, unavailable: true, storeId: null, storeName: 'Unknown', storeAddress: '' }
       }
-    }))
+    })))
+    if (cartItems.value.some((i: any) => i.unavailable)) {
+      ElMessage.warning(t('consumer.cart.someItemsUnavailable'))
+    }
   } catch (e) { ElMessage.error(t('consumer.cart.dataSyncFailed')) }
 }
 
@@ -422,8 +449,9 @@ const executePayment = async () => {
   border: 2px solid transparent; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
-.item-tile:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.06); transform: translateY(-2px); }
+.item-tile:hover:not(.is-unavailable) { box-shadow: 0 8px 16px rgba(0,0,0,0.06); transform: translateY(-2px); }
 .item-tile.is-selected { border-color: #008163; background: #f8fafc; box-shadow: 0 8px 16px rgba(0, 129, 99, 0.08); }
+.item-tile.is-unavailable { opacity: 0.55; filter: grayscale(0.6); background: #f8f8f8; border-color: #e5e5e5; cursor: not-allowed; }
 
 .item-check { display: flex; align-items: center; justify-content: center; }
 .custom-checkbox :deep(.el-checkbox__inner) {

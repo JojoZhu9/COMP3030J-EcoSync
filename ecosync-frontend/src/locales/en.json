@@ -291,7 +291,9 @@
       "updateFailed": "Update failed",
       "deleteFailed": "Delete failed",
       "orderSuccess": "Order successful! {count} order(s) created. Pickup codes: {codes}",
-      "paymentError": "Payment logic error"
+      "paymentError": "Payment logic error",
+      "expired": "Expired",
+      "someItemsUnavailable": "Some items in your cart are no longer available and have been deselected"
     },
     "category": {
       "fresh": "Fresh",

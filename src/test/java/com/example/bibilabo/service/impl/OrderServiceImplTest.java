@@ -79,7 +79,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1, null));
-        assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
+        assertTrue(ex.getMessage().contains("SOLD_OUT"));
     }
 
     @Test
@@ -93,7 +93,7 @@ class OrderServiceImplTest {
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> orderService.checkout(12, 1, null));
-        assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
+        assertTrue(ex.getMessage().contains("Product not found"));
     }
 
     @Test

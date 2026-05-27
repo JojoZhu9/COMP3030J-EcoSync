@@ -56,8 +56,12 @@ public class OrderServiceImpl implements OrderService {
 
         for (ShoppingCart item : cartItems) {
             ExpiringProduct expProduct = expiringProductMapper.findByIdForUpdate(item.getProductId());
-            if (expProduct == null || !ProductStatus.AVAILABLE.equals(expProduct.getStatus())) {
-                throw new RuntimeException("Product is unavailable or sold out");
+            if (expProduct == null) {
+                throw new RuntimeException("Product not found (ID: " + item.getProductId() + ")");
+            }
+            if (!ProductStatus.AVAILABLE.equals(expProduct.getStatus())) {
+                throw new RuntimeException("Product '" + expProduct.getBarcode()
+                    + "' is " + expProduct.getStatus() + " and cannot be ordered");
             }
             if (expProduct.getRemainingStock() < item.getQuantity()) {
                 throw new RuntimeException("Insufficient stock for product: " + expProduct.getBarcode());
