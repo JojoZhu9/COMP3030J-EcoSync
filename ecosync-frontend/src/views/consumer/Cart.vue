@@ -233,7 +233,8 @@ const getDiscountRate = (expirationTime: string, discountRatesStr: string): numb
     const rates: number[] = JSON.parse(discountRatesStr)
     if (!Array.isArray(rates) || rates.length === 0) return 1.0
     const hoursLeft = (new Date(expirationTime).getTime() - Date.now()) / (1000 * 60 * 60)
-    const index = Math.min(Math.max(0, 12 - Math.ceil(hoursLeft)), rates.length - 1)
+    if (hoursLeft < 0 || hoursLeft >= 12) return 1.0
+    const index = Math.min(Math.max(0, 11 - Math.floor(hoursLeft)), rates.length - 1)
     return Number(rates[index]) || 1.0
   } catch { return 1.0 }
 }
@@ -306,16 +307,19 @@ const updateCartQuantity = async (item: any, rawVal: number) => {
 
   const previousQty = item.quantity
   try {
-    await request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
     const expRes: any = await request.get(`/expiring-products/${item.productId}`)
     const exp = expRes.data || expRes
-    item.maxStock = Number(exp.remainingStock)
+    const stock = Number(exp.remainingStock)
+    item.maxStock = stock
 
-    if (qty > item.maxStock) {
-      item.quantity = item.maxStock
-      await request.put(`/cart/${item.cartItemId}?quantity=${item.maxStock}`)
+    if (qty > stock) {
+      item.quantity = stock
+      await request.put(`/cart/${item.cartItemId}?quantity=${stock}`)
       ElMessage.warning(t('consumer.cart.qtyAdjusted'))
+      return
     }
+
+    await request.put(`/cart/${item.cartItemId}?quantity=${qty}`)
   } catch (e) {
     item.quantity = previousQty
     ElMessage.error(t('consumer.cart.updateFailed'))
@@ -358,8 +362,10 @@ const executePayment = async () => {
   const uid = getUserId()
 
   try {
+    const selectedProductIds = selectedItems.value.map(i => i.productId)
     const res: any = await request.post('/orders/checkout', {
-      userId: Number(uid)
+      userId: Number(uid),
+      productIds: selectedProductIds
     })
 
     if (res && res.message && res.message.includes('失败')) {

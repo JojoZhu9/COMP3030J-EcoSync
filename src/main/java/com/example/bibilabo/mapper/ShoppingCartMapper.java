@@ -15,6 +15,9 @@ public interface ShoppingCartMapper {
     @Select("SELECT * FROM shopping_cart WHERE user_id = #{userId} AND product_id = #{productId}")
     ShoppingCart findByUserIdAndProductId(@Param("userId") Integer userId, @Param("productId") Integer productId);
 
+    @Select("SELECT * FROM shopping_cart WHERE cart_item_id = #{cartItemId}")
+    ShoppingCart findById(Integer cartItemId);
+
     @Insert("INSERT INTO shopping_cart(user_id, product_id, quantity) VALUES(#{userId}, #{productId}, #{quantity})")
     @Options(useGeneratedKeys = true, keyProperty = "cartItemId")
     int insert(ShoppingCart cart);

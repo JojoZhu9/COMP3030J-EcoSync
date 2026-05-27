@@ -7,7 +7,7 @@ import java.util.List;
 @Mapper
 public interface ExpiringProductMapper {
 
-    @Select("SELECT * FROM expiring_products WHERE expiration_time > NOW()")
+    @Select("SELECT * FROM expiring_products")
     List<ExpiringProduct> findAll();
 
     @Select("SELECT * FROM expiring_products WHERE product_id = #{productId}")
@@ -16,9 +16,9 @@ public interface ExpiringProductMapper {
     @Select("SELECT * FROM expiring_products WHERE product_id = #{productId} FOR UPDATE")
     ExpiringProduct findByIdForUpdate(@Param("productId") Integer productId);
 
-    // 常用业务查询：根据门店ID查找所有正在售卖的临期商品
+    // Include AVAILABLE and SOLD_OUT so sold-out items remain visible in store listing
     @Select("SELECT * FROM expiring_products WHERE store_id = #{storeId} " +
-            "AND status = 'AVAILABLE' AND expiration_time > NOW()")
+            "AND status IN ('AVAILABLE', 'SOLD_OUT') AND expiration_time > NOW()")
     List<ExpiringProduct> findAvailableByStore(Integer storeId);
 
     @Insert("INSERT INTO expiring_products(barcode, store_id, expiration_time, remaining_stock, status, created_by) " +

@@ -5,11 +5,12 @@ import com.example.bibilabo.entity.Order;
 import com.example.bibilabo.entity.OrderVO;
 
 import java.util.List;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface OrderService {
     // 下单按店铺拆单，返回多个订单信息
-    CheckoutResult checkout(Integer userId, Integer storeId);
+    CheckoutResult checkout(Integer userId, Integer storeId, List<Integer> productIds);
 
     List<Order> getUserOrders(Integer userId);
 

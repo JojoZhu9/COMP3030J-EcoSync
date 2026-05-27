@@ -399,7 +399,7 @@ const fetchProducts = async () => {
       }
     }))
     const now = new Date()
-    productList.value = enriched.filter(i => i.status === 'AVAILABLE' && new Date(i.expirationTime) > now)
+    productList.value = enriched.filter(i => (i.status === 'AVAILABLE' || i.status === 'SOLD_OUT') && new Date(i.expirationTime) > now)
   } catch (e) {
     ElMessage.error(t('consumer.home.productSyncFailed'))
   } finally {

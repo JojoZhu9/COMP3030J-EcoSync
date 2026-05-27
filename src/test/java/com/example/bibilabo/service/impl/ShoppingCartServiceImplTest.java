@@ -1,6 +1,8 @@
 package com.example.bibilabo.service.impl;
 
+import com.example.bibilabo.entity.ExpiringProduct;
 import com.example.bibilabo.entity.ShoppingCart;
+import com.example.bibilabo.mapper.ExpiringProductMapper;
 import com.example.bibilabo.mapper.ShoppingCartMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +22,18 @@ class ShoppingCartServiceImplTest {
     @Mock
     private ShoppingCartMapper shoppingCartMapper;
 
+    @Mock
+    private ExpiringProductMapper expiringProductMapper;
+
     @InjectMocks
     private ShoppingCartServiceImpl shoppingCartService;
+
+    private ExpiringProduct createProduct(int stock) {
+        ExpiringProduct p = new ExpiringProduct();
+        p.setProductId(1);
+        p.setRemainingStock(stock);
+        return p;
+    }
 
     @Test
     void addToCart_newItem_inserts() {
@@ -31,6 +43,7 @@ class ShoppingCartServiceImplTest {
         cart.setQuantity(2);
 
         when(shoppingCartMapper.findByUserIdAndProductId(12, 1)).thenReturn(null);
+        when(expiringProductMapper.findById(1)).thenReturn(createProduct(5));
 
         shoppingCartService.addToCart(cart);
 
@@ -52,6 +65,7 @@ class ShoppingCartServiceImplTest {
         newItem.setQuantity(3);
 
         when(shoppingCartMapper.findByUserIdAndProductId(12, 1)).thenReturn(existing);
+        when(expiringProductMapper.findById(1)).thenReturn(createProduct(10));
 
         String result = shoppingCartService.addToCart(newItem);
 
@@ -66,7 +80,7 @@ class ShoppingCartServiceImplTest {
 
         verify(shoppingCartMapper).deleteById(1);
         verify(shoppingCartMapper, never()).updateQuantity(anyInt(), anyInt());
-        assertTrue(result.contains("移除"));
+        assertTrue(result.contains("removed"));
     }
 
     @Test
@@ -74,7 +88,7 @@ class ShoppingCartServiceImplTest {
         String result = shoppingCartService.updateCartItemQuantity(1, -5);
 
         verify(shoppingCartMapper).deleteById(1);
-        assertTrue(result.contains("移除"));
+        assertTrue(result.contains("removed"));
     }
 
     @Test

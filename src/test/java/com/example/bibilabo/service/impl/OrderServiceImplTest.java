@@ -51,7 +51,7 @@ class OrderServiceImplTest {
         when(cartMapper.findByUserId(12)).thenReturn(List.of());
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Cart is empty"));
     }
 
@@ -60,7 +60,7 @@ class OrderServiceImplTest {
         when(cartMapper.findByUserId(12)).thenReturn(null);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Cart is empty"));
     }
 
@@ -75,10 +75,10 @@ class OrderServiceImplTest {
         product.setStatus("SOLD_OUT");
 
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
-        when(expiringProductMapper.findById(1)).thenReturn(product);
+        when(expiringProductMapper.findByIdForUpdate(1)).thenReturn(product);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
     }
 
@@ -89,10 +89,10 @@ class OrderServiceImplTest {
         cartItem.setQuantity(1);
 
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
-        when(expiringProductMapper.findById(1)).thenReturn(null);
+        when(expiringProductMapper.findByIdForUpdate(1)).thenReturn(null);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Product is unavailable or sold out"));
     }
 
@@ -106,13 +106,13 @@ class OrderServiceImplTest {
         product.setProductId(1);
         product.setBarcode("6901234560001");
         product.setStatus("AVAILABLE");
+        product.setRemainingStock(3);
 
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
-        when(expiringProductMapper.findById(1)).thenReturn(product);
-        when(expiringProductMapper.decreaseStock(1, 5)).thenReturn(0);
+        when(expiringProductMapper.findByIdForUpdate(1)).thenReturn(product);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Insufficient stock"));
     }
 
@@ -126,6 +126,8 @@ class OrderServiceImplTest {
         product.setProductId(1);
         product.setBarcode("6901234560001");
         product.setStatus("AVAILABLE");
+        product.setRemainingStock(10);
+        product.setStoreId(1);
         product.setExpirationTime(new Date(System.currentTimeMillis() + 24 * 3600 * 1000));
 
         StandardProduct stdProduct = new StandardProduct();
@@ -138,14 +140,12 @@ class OrderServiceImplTest {
         user.setBalance(new BigDecimal("1.00"));
 
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
-        when(expiringProductMapper.findById(1)).thenReturn(product);
-        when(expiringProductMapper.decreaseStock(1, 1)).thenReturn(1);
+        when(expiringProductMapper.findByIdForUpdate(1)).thenReturn(product);
         when(standardProductMapper.findByBarcode("6901234560001")).thenReturn(stdProduct);
-        when(userMapper.findById(12)).thenReturn(user);
-        when(userMapper.decreaseBalance(eq(12), any(BigDecimal.class))).thenReturn(0);
+        when(userMapper.findByIdForUpdate(12)).thenReturn(user);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> orderService.checkout(12, 1));
+                () -> orderService.checkout(12, 1, null));
         assertTrue(ex.getMessage().contains("Insufficient balance"));
     }
 
@@ -161,10 +161,10 @@ class OrderServiceImplTest {
         user.setBalance(new BigDecimal("9999.00"));
 
         when(cartMapper.findByUserId(12)).thenReturn(List.of(cartItem));
-        when(expiringProductMapper.findById(1)).thenReturn(product);
+        when(expiringProductMapper.findByIdForUpdate(1)).thenReturn(product);
         when(expiringProductMapper.decreaseStock(1, 1)).thenReturn(1);
         when(standardProductMapper.findByBarcode("6901234560001")).thenReturn(stdProduct);
-        when(userMapper.findById(12)).thenReturn(user);
+        when(userMapper.findByIdForUpdate(12)).thenReturn(user);
         when(userMapper.decreaseBalance(eq(12), any(BigDecimal.class))).thenReturn(1);
     }
 
@@ -181,6 +181,7 @@ class OrderServiceImplTest {
         p.setProductId(1);
         p.setBarcode("6901234560001");
         p.setStatus("AVAILABLE");
+        p.setRemainingStock(10);
         // 加30分钟缓冲，避免整数除法截断：diffMillis/3600000 在边界处会少1
         p.setExpirationTime(new Date(System.currentTimeMillis() + hoursFromNow * 3600 * 1000 + 30 * 60 * 1000));
         return p;
@@ -196,7 +197,7 @@ class OrderServiceImplTest {
                         "[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]")
         );
 
-        CheckoutResult result = orderService.checkout(12, 1);
+        CheckoutResult result = orderService.checkout(12, 1, null);
 
         assertTrue(result.getMessage().contains("Order placed successfully"));
         assertFalse(result.getOrders().isEmpty());
@@ -217,7 +218,7 @@ class OrderServiceImplTest {
                         "[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]")
         );
 
-        orderService.checkout(12, 1);
+        orderService.checkout(12, 1, null);
 
         verify(orderMapper).updateTotalAmount(eq(99), amountCaptor.capture());
         assertEquals(0, new BigDecimal("10.00").compareTo(amountCaptor.getValue()),
@@ -234,7 +235,7 @@ class OrderServiceImplTest {
                         "[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]")
         );
 
-        orderService.checkout(12, 1);
+        orderService.checkout(12, 1, null);
 
         verify(orderMapper).updateTotalAmount(eq(99), amountCaptor.capture());
         assertEquals(0, new BigDecimal("10.00").compareTo(amountCaptor.getValue()),
@@ -251,7 +252,7 @@ class OrderServiceImplTest {
                         "[1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.1,0.1]")
         );
 
-        orderService.checkout(12, 1);
+        orderService.checkout(12, 1, null);
 
         verify(orderMapper).updateTotalAmount(eq(99), amountCaptor.capture());
         assertEquals(0, new BigDecimal("1.00").compareTo(amountCaptor.getValue()),
@@ -265,7 +266,7 @@ class OrderServiceImplTest {
                 createStandardProduct(new BigDecimal("10.00"), "invalid-json")
         );
 
-        orderService.checkout(12, 1);
+        orderService.checkout(12, 1, null);
 
         // JSON 解析失败，回退到原价
         verify(orderMapper).updateTotalAmount(eq(99), amountCaptor.capture());

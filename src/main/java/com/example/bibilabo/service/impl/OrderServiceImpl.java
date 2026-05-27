@@ -28,11 +28,22 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public CheckoutResult checkout(Integer userId, Integer ignoredStoreId) {
+    public CheckoutResult checkout(Integer userId, Integer ignoredStoreId, List<Integer> productIds) {
 
         List<ShoppingCart> cartItems = cartMapper.findByUserId(userId);
         if (cartItems == null || cartItems.isEmpty()) {
             throw new RuntimeException("Cart is empty, cannot place order");
+        }
+
+        // Filter to only selected items
+        if (productIds != null && !productIds.isEmpty()) {
+            cartItems = cartItems.stream()
+                .filter(item -> productIds.contains(item.getProductId()))
+                .toList();
+        }
+
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("No items selected for checkout");
         }
 
         ObjectMapper mapper = new ObjectMapper();

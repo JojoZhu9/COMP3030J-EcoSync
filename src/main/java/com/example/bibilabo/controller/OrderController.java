@@ -42,9 +42,11 @@ public class OrderController {
     public CheckoutResult checkout(@RequestBody Map<String, Object> payload) {
         Integer userId = (Integer) payload.get("userId");
         Integer storeId = (Integer) payload.get("storeId");
+        @SuppressWarnings("unchecked")
+        List<Integer> productIds = (List<Integer>) payload.get("productIds");
 
         try {
-            return orderService.checkout(userId, storeId);
+            return orderService.checkout(userId, storeId, productIds);
         } catch (Exception e) {
             throw new RuntimeException("Order placement failed: " + e.getMessage());
         }
