@@ -1,36 +1,30 @@
-<p align="right"><a href="./README.md#english">English</a> | <strong>中文</strong> | <a href="./README.md#zh-cn">返回仓库首页中文区</a></p>
+<p align="right"><a href="./README.md">English</a> | <strong>简体中文</strong></p>
 
-# EcoSync - 7-ELEVEn 临期商品平台
+# EcoSync：临期商品库存与订购平台
 
-> 说明：GitHub 仓库首页只会自动渲染根目录的 `README.md`。如果希望在仓库首页内切换语言，请使用 [README.md 的中文区](./README.md#zh-cn)。本文件作为中文独立版保留。
+[![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://www.java.com/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+[![MySQL 8](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-supported-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![License: No license](https://img.shields.io/badge/License-No%20license-lightgrey)](#项目状态)
 
-EcoSync 是一个面向便利店临期商品管理与销售的全栈平台，覆盖门店管理、标准商品字典、临期库存上架、消费者下单、到店自提核销和数据分析。
+EcoSync 是 COMP3030J 的小组课程项目。团队共同构建了这个全栈平台，用于通过管理员、门店员工和消费者协作流程管理并销售便利店临期商品。
 
-## 功能亮点
+## 项目状态
 
-- 支持管理员、门店员工、消费者三类角色流程。
-- 支持标准商品字典和门店级临期商品库存管理。
-- 支持购物车、下单、订单状态追踪和自提码核销。
-- 支持销售趋势、折扣分布、热门商品等分析数据。
-- Vue 前端已接入中英文 i18n 语言文件。
-- 使用 Flyway 管理 MySQL 表结构迁移和演示数据。
-- 提供 Docker Compose 部署方案，包含 MySQL、Spring Boot、Vue、MinIO 和 Nginx gateway。
+本仓库是用于演示、评审和学习贡献的课程项目快照，并非生产服务；部署流程仅由维护者管理。
 
-## 技术栈
+## 项目功能
 
-| 层级 | 技术 |
-| --- | --- |
-| 后端 | Spring Boot 3.2、Java 17、MyBatis、JWT |
-| 前端 | Vue 3、TypeScript、Vite、Element Plus、Pinia、vue-i18n |
-| 数据库 | MySQL 8、Flyway |
-| 对象存储 | MinIO |
-| 接口文档 | Knife4j / OpenAPI 3 |
-| DevOps | Docker Compose、Nginx gateway、GitHub Actions、GHCR |
-| 测试 | JUnit、Mockito、Spring Boot Test、Vitest、Playwright |
+- **管理员**管理门店、账号、标准商品、临期库存和销售分析。
+- **门店员工**录入门店库存、维护个人资料并支持本地库存流程。
+- **消费者**浏览折扣临期商品、管理购物车、下单、跟踪订单状态，并通过取货码完成核销。
+- 技术栈包括 Spring Boot、Vue 3、MySQL/Flyway、MinIO 对象存储、Docker Compose、Nginx 和 GitHub Actions。
 
 ## 快速启动
 
-### Docker Compose 一键启动
+### Docker Compose
 
 ```powershell
 git clone https://github.com/JojoZhu9/COMP3030J-EcoSync.git
@@ -39,9 +33,7 @@ $env:DOCKER_BUILDKIT=1
 docker compose up -d --build
 ```
 
-访问：
-
-- 前端网站：<http://localhost>
+- Web 应用：<http://localhost>
 - API 文档：<http://localhost/doc.html>
 - OpenAPI JSON：<http://localhost/v3/api-docs>
 - MinIO 控制台：<http://localhost:9001>
@@ -51,19 +43,17 @@ docker compose up -d --build
 ```powershell
 docker compose ps
 docker compose logs -f
-docker compose stop
 docker compose down
-docker compose down -v
 ```
 
 ### 本地开发
+
+先启动 MySQL，再在不同终端启动后端和前端：
 
 ```powershell
 docker compose up -d mysql
 .\mvnw.cmd spring-boot:run
 ```
-
-另开终端启动前端：
 
 ```powershell
 cd ecosync-frontend
@@ -71,82 +61,52 @@ npm install
 npm run dev
 ```
 
-访问：
-
-- 前端 dev server：<http://localhost:5173>
+- 前端开发服务器：<http://localhost:5173>
 - 后端 API 文档：<http://localhost:8080/doc.html>
 
-## 测试账号
+## 演示账号
 
-以下演示账号密码均为 `1`。
+以下为本地演示和测试使用的预置账号，密码均为 `1`。
 
-| 角色 | 用户名示例 | 说明 |
+| 角色 | 用户名示例 | 对应流程 |
 | --- | --- | --- |
-| 管理员 | `admin_super` | 系统管理员 |
-| 门店员工 | `emp_bj_01`、`emp_sh_01`、`emp_sz_01` | 关联不同演示门店 |
-| 消费者 | `user_alice`、`user_bob`、`user_charlie`、`user_diana` | 普通消费者账号 |
-| 封禁消费者 | `user_eve` | 用于测试封禁账号流程 |
+| 管理员 | `admin_super` | 管理门店、用户、库存和分析数据。 |
+| 门店员工 | `emp_bj_01`、`emp_sh_01`、`emp_sz_01` | 录入并管理门店级库存。 |
+| 消费者 | `user_alice`、`user_bob`、`user_charlie`、`user_diana` | 浏览、下单、跟踪和取货。 |
+| 被禁用消费者 | `user_eve` | 验证受限账号行为。 |
 
-## 测试
+## 验证
 
-后端测试：
-
-```powershell
-.\mvnw.cmd test -B
-```
-
-如需显式指定测试数据库连接：
+后端集成测试需要 MySQL 在已配置的测试数据源上可用：
 
 ```powershell
 docker compose up -d mysql
-$env:SPRING_DATASOURCE_URL="jdbc:mysql://127.0.0.1:3306/711ex?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai"
-$env:SPRING_DATASOURCE_USERNAME="root"
-$env:SPRING_DATASOURCE_PASSWORD="ecosync123"
-.\mvnw.cmd test -B -Dspring.profiles.active=test
+.\mvnw.cmd test -B
 ```
 
-前端测试：
+前端验证：
 
 ```powershell
-cd ecosync-frontend
-npm install
-npx vitest run --reporter=verbose
+npm --prefix ecosync-frontend install
+npm --prefix ecosync-frontend run build
+npm --prefix ecosync-frontend exec -- vitest run --reporter=verbose
 ```
 
-## 部署说明
+## 部署边界
 
-- CI 会编译后端、构建前端，并运行后端/前端测试。
-- CD 会构建后端和前端镜像，推送到 GHCR，再通过指定 commit SHA 的镜像完成部署。
-- 运行镜像由 `APP_IMAGE`、`FRONTEND_IMAGE`、`IMAGE_TAG` 控制。
+GitHub Actions 会编译/打包后端并构建前端。仓库中的 CD 工作流仅通过维护者管理的基础设施和密钥构建 GHCR 镜像并部署。贡献者不得在 issue、PR、文档或源代码中添加凭据，也不得将演示环境视为生产环境。
 
-手动部署模式：
+## 贡献与安全
 
-```bash
-export APP_IMAGE=ghcr.io/<owner>/ecosync-app
-export FRONTEND_IMAGE=ghcr.io/<owner>/ecosync-frontend
-export IMAGE_TAG=<commit-sha>
-docker compose pull app frontend
-docker compose up -d --remove-orphans
-docker compose up -d --force-recreate frontend gateway
-```
+欢迎提交尊重小组课程项目共同署名、范围清晰且便于评审的改进。提交 PR 前请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)；报告安全问题前请阅读 [SECURITY.md](./SECURITY.md)。
 
 ## 项目结构
 
 ```text
 COMP3030J-EcoSync/
-|-- src/main/java/com/example/bibilabo/
-|   |-- controller/
-|   |-- service/
-|   |-- mapper/
-|   `-- entity/
-|-- src/main/resources/
-|   |-- application.yml
-|   `-- db/migration/
-|-- ecosync-frontend/
-|   |-- src/
-|   |-- package.json
-|   `-- vite.config.ts
-|-- docker-compose.yml
-|-- Dockerfile
-`-- pom.xml
+|-- src/                  # Spring Boot 后端与测试
+|-- ecosync-frontend/     # Vue 3 前端与测试
+|-- docker-compose.yml    # 本地多服务环境
+|-- .github/workflows/    # CI/CD 定义
+`-- docs/                 # 项目文档
 ```
